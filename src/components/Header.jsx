@@ -1,25 +1,51 @@
+import { Link, useLocation } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
+import "./Header.css";
+import { UserOutlined } from "@ant-design/icons";
+import { Avatar, Space } from "antd";
 
-import { Link } from "react-router-dom";
 const Header = () => {
+  const location = useLocation();
 
   return (
-    <header className="bg-blue-600 text-white fixed top-0 w-full shadow-md z-50">
-      <nav className="container mx-auto flex justify-between items-center p-4">
-        {/* Logo */}
-        <h1 className="text-xl font-bold">
-          <Link to="/">My Website</Link>
-        </h1>
-
-        {/* Menu Desktop */}
-        <ul className="hidden md:flex space-x-6">
-          <li><Link to="/" className="hover:underline">Home</Link></li>
-          <li><Link to="/about" className="hover:underline">About</Link></li>
-          <li><Link to="/contact" className="hover:underline">Contact</Link></li>
+    <div className="container-header">
+      <nav className="navbar">
+        <ul className="nav-list">
+          <li className="nav-icon">
+            <Link to="/" className={location.pathname === "/" ? "active" : ""}>  <FontAwesomeIcon icon={faPersonBreastfeeding} /></Link>
+          
+          </li>
+          <div className="nav-links">
+            <li>
+              <Link to="/" className={location.pathname === "/" ? "active" : ""}>Home</Link>
+            </li>
+            <li>
+              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>Comunity</Link>
+            </li>
+            <li>
+              <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
+            </li>
+            <li>
+              <Link to="/mom" className={location.pathname === "/mom" ? "active" : ""}>Mom</Link>
+            </li>
+            <li>
+              <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
+            </li>
+            <li>
+              <Link to="/faq" className={location.pathname === "/faq" ? "active" : ""}>FAQ</Link>
+            </li>
+          </div>
+          <li className="nav-avatar">
+            <Space direction="vertical" size={16}>
+              <Space wrap size={16}>
+                <Avatar size={32} icon={<UserOutlined />} />
+              </Space>
+            </Space>
+          </li>
         </ul>
       </nav>
-
-  
-    </header>
+    </div>
   );
 };
 

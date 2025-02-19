@@ -1,0 +1,72 @@
+/* Tổng quan về navbar */
+.container-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 40px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar {
+  width: 100%;
+}
+
+.nav-list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.nav-icon a {
+  color: #303132 !important;
+  font-size: 32px;
+  transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.nav-icon a:hover {
+  color: #2e2d2d !important; /* Đổi màu khi hover */
+  transform: scale(1.2) !important; /* Phóng to nhẹ */
+}
+
+/* Định dạng danh sách điều hướng */
+.nav-links {
+  display: flex;
+  gap: 30px;
+}
+
+.nav-links li {
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 12px 16px;
+  transition: all 0.3s ease-in-out;
+  border-radius: 5px;
+}
+
+/* Hiệu ứng hover cho menu */
+.nav-links a:hover {
+  background-color: #a6a9ab;
+  color: #fff;
+}
+
+/* Hiệu ứng active khi ở trang hiện tại */
+.nav-links a.active {
+  background-color: transparent;
+  color: #a6a9ab;
+  border-bottom: 3px solid #a6a9ab;
+  padding-bottom: 4px;
+}
+
+/* Định dạng avatar bên phải */
+.nav-avatar {
+  display: flex;
+  align-items: center;
+}
