@@ -1,9 +1,10 @@
 import React from "react";
-import { Typography, Row, Col, Card, Button } from "antd";
+import { Row, Col, Card, Button } from "antd";
 import { Link } from "react-router-dom";
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 
-const { Title, Text } = Typography;
+// Remove this line since we're using MUI Typography
+// const { Title, Text } = Typography;
 
 const HomePage = () => {
   return (
