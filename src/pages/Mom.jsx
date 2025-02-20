@@ -1,11 +1,9 @@
-import React from 'react';
+import React from 'react'
 
 function Mom() {
   return (
-    <div>
-      <h1>Mom Care</h1>
-    </div>
-  );
+    <div>Mom</div>
+  )
 }
 
-export default Mom;
+export default Mom

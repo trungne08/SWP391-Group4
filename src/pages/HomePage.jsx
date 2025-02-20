@@ -1,5 +1,9 @@
+import React from "react";
+import { Typography, Row, Col, Card, Button } from "antd";
 import { Link } from "react-router-dom";
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
+
+const { Title, Text } = Typography;
 
 const HomePage = () => {
   return (
@@ -152,6 +156,7 @@ const HomePage = () => {
         </Grid>
       </Container>
     </Box>
+
   );
 };
 
