@@ -6,22 +6,23 @@ import Blog from "./pages/Blog";
 import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";  
+import Login from "./pages/Login";  
+import ForgotPassword from "./pages/Forgot_password";  
 
 function App() {
   return (
-
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route  path="/comunity" index element={<Comunity />} />
-          <Route  path="/blog" index element={<Blog />} />
-          <Route  path="/mom" index element={<Mom />} />
-          <Route  path="/baby" index element={<Baby />} />
-          <Route  path="/faq" index element={<FAQ />} />
-         
+          <Route path="/comunity" element={<Comunity />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/mom" element={<Mom />} />
+          <Route path="/baby" element={<Baby />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
       </Routes>
- 
   );
 }
 
