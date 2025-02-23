@@ -1,0 +1,86 @@
+.footer-container {
+  background-color: #f8f9fa;
+  padding: 30px 50px;
+  border-top: 1px solid #ddd;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Cột chứa logo và social */
+.footer-column.social-column {
+  display: flex;
+  flex-direction: column; /* Sắp xếp theo chiều dọc */
+  align-items: center; /* Căn giữa logo và icon */
+  text-align: center;
+}
+
+.footer-logo {
+  font-size: 3rem; /* Tăng kích thước logo */
+  color: #303132;
+  margin-bottom: 15px; /* Tạo khoảng cách giữa logo và social media */
+}
+
+.footer-social {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.footer-social svg {
+  font-size: 24px;
+  color: #333;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.footer-social svg:hover {
+  color: #a6a9ab;
+  transform: scale(1.2);
+}
+
+/* Cột thông tin và điều khoản */
+.footer-column {
+  flex: 1;
+  min-width: 250px;
+  margin-bottom: 20px;
+}
+
+.footer-column h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-column ul li {
+  margin-bottom: 8px;
+}
+
+.footer-column ul li a {
+  text-decoration: none;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.footer-column ul li a:hover {
+  color: #ff6b6b;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-column {
+    text-align: center;
+  }
+}
