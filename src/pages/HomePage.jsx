@@ -1,151 +1,134 @@
 import React from "react";
-import { Typography, Row, Col, Card, Button } from "antd";
+import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import { Link } from "react-router-dom";
-
-const { Title, Text } = Typography;
 
 const HomePage = () => {
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
+    <Box>
       {/* Hero Section */}
-      <div
-        style={{
-          position: "relative",
-          height: "500px",
-          marginBottom: "40px",
-          backgroundImage: "url('/img3.jpg')",
+      <Box
+        sx={{
+          backgroundImage: 'url("/images/doctor-patient.jpg")',
           backgroundSize: "cover",
           backgroundPosition: "top center",
-          borderRadius: "8px",
-          overflow: "hidden",
+          backgroundRepeat: "no-repeat",
+          height: "500px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          mb: 4,
+          position: "relative",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(255, 255, 255, 0.3)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            textAlign: "center",
-            zIndex: 1,
-            width: "100%",
-            padding: "0 20px",
-          }}
-        >
-          <Title
-            level={1}
-            style={{
-              color: "#333",
-              marginBottom: "16px",
-              fontSize: "48px",
-              fontWeight: "600",
+        <Container sx={{ textAlign: "center" }}>
+          <Typography
+            variant="h2"
+            sx={{
+              color: "#000",
+              fontWeight: "bold",
+              mb: 2,
+              position: "relative",
+              zIndex: 1,
+              textShadow:
+                "1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff",
             }}
           >
             BabyCare Center
-          </Title>
-          <Text
-            style={{
-              fontSize: "24px",
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
               color: "#666",
-              display: "block",
-              margin: "0 auto",
-              maxWidth: "600px",
+              position: "relative",
+              zIndex: 1,
+              textShadow:
+                "0.5px 0.5px 0 #fff, -0.5px -0.5px 0 #fff, 0.5px -0.5px 0 #fff, -0.5px 0.5px 0 #fff",
             }}
           >
-            Pregnancy Growth Tracking System
-          </Text>
-        </div>
-      </div>
-      {/* Featured Images Grid */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "40px" }}>
-        <Col xs={24} md={12}>
-          <div
-            style={{
-              height: "300px",
-              backgroundImage: "url('/img4.webp')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              borderRadius: "8px",
-              backgroundColor: "#faf9f9",
-            }}
-          />
-        </Col>
-        <Col xs={24} md={12}>
-          <div
-            style={{
-              height: "300px",
-              backgroundImage: "url('/img5.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              borderRadius: "8px",
-            }}
-          />
-        </Col>
-      </Row>
-      {/* Main Content Section */}
-      <div style={{ marginBottom: "40px" }}>
-        <Title level={2} style={{ marginBottom: "8px" }}>
-          Heading
-        </Title>
-        <Text
-          type="secondary"
-          style={{ display: "block", marginBottom: "24px" }}
-        >
-          Sub Heading
-        </Text>
+            Professional Growth | Tracking System
+          </Typography>
+        </Container>
+      </Box>
 
-        {/* Content Cards */}
-        {[1, 2, 3].map((item) => (
-          <Card
-            key={item}
-            style={{ marginBottom: "16px", borderRadius: "8px" }}
-          >
-            <Title level={4}>Title</Title>
-            <Text style={{ display: "block", marginBottom: "16px" }}>
-              Body text for whatever you'd like to say. Add high relevancy
-              points, quotes, examples, or even a very nice story here.
-            </Text>
-            <Button>Button</Button>
-          </Card>
-        ))}
-      </div>
+      {/* Featured Images */}
+      <Container sx={{ mb: 6 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <img
+              src="/images/pregnant-teddy.jpg"
+              alt="Pregnancy Care"
+              style={{
+                width: "100%",
+                height: "300px",
+                objectFit: "cover",
+                borderRadius: "8px",
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <img
+              src="/images/baby-smile.jpg"
+              alt="Baby Care"
+              style={{
+                width: "100%",
+                height: "300px",
+                objectFit: "cover",
+                objectPosition: "top center",
+                borderRadius: "8px",
+              }}
+            />
+          </Grid>
+        </Grid>
+      </Container>
 
-      {/* Grid Section */}
-      <Row gutter={[16, 16]}>
-        {[1, 2, 3, 4, 5, 6].map((item) => (
-          <Col xs={24} sm={12} md={8} key={item}>
-            <Card
-              style={{ marginBottom: "16px" }}
-              cover={
-                <div
-                  style={{
-                    height: "160px",
-                    background: "#f5f5f5",
-                    borderRadius: "8px 8px 0 0",
-                  }}
-                />
-              }
-            >
-              <Title level={5}>Title</Title>
-              <Text>
-                Body text for whatever you'd like to say. Add high relevancy
-                points, quotes, examples, or even a very nice story here.
-              </Text>
-            </Card>
-          </Col>
+      {/* Trimester Sections */}
+      <Container sx={{ mb: 6 }}>
+        {[
+          { title: "First Trimester (Weeks 1-12)", link: "/pregnancy/first-trimester" },
+          { title: "Second Trimester (Weeks 13-26)", link: "/pregnancy/second-trimester" },
+          { title: "Third Trimester (Weeks 27-40)", link: "/pregnancy/third-trimester" },
+        ].map((trimester, index) => (
+          <Paper key={index} sx={{ p: 3, bgcolor: "#f5f5f5", mb: 3 }}>
+            <Typography variant="h6">{trimester.title}</Typography>
+            <Typography variant="body2" sx={{ color: "#666", my: 2 }}>
+              Learn about your baby’s growth and development during this period.
+            </Typography>
+            <Link to={trimester.link} style={{ textDecoration: "none" }}>
+              <Typography sx={{ color: "#000" }}>Read more</Typography>
+            </Link>
+          </Paper>
         ))}
-      </Row>
-    </div>
+      </Container>
+
+      {/* Blog Section */}
+      <Container sx={{ mb: 8 }}>
+        <Grid container spacing={4}>
+          {[1, 2, 3].map((item) => (
+            <Grid item xs={12} sm={6} md={4} key={item}>
+              <Paper
+                sx={{
+                  p: 3,
+                  height: "100%",
+                  '&:hover': {
+                    transform: "translateY(-4px)",
+                    transition: "transform 0.3s ease",
+                  },
+                }}
+              >
+                <Box sx={{ width: "100%", height: "200px", bgcolor: "#f5f5f5", mb: 2 }} />
+                <Typography variant="h6">Blog's Title</Typography>
+                <Typography variant="body2" sx={{ color: "#666", mb: 2 }}>
+                  Learn more about pregnancy and baby care in our latest blog posts.
+                </Typography>
+                <Link to="/" style={{ textDecoration: "none" }}>
+                  <Typography sx={{ color: "#000" }}>Read more</Typography>
+                </Link>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

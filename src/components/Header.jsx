@@ -27,7 +27,7 @@ const Header = () => {
               <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
             </li>
             <li>
-              <Link to="/mom" className={location.pathname === "/mom" ? "active" : ""}>Mom</Link>
+              {/* <Link to="/mom" className={location.pathname === "/mom" ? "active" : ""}>Mom</Link> */}
             </li>
             <li>
               <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
@@ -37,11 +37,20 @@ const Header = () => {
             </li>
           </div>
           <li className="nav-avatar">
+
             <Space direction="vertical" size={16}>
               <Space wrap size={16}>
                 <Avatar size={32} icon={<UserOutlined />} />
               </Space>
             </Space>
+            <Link to="/login">
+              <Space direction="vertical" size={16}>
+                <Space wrap size={16}>
+                  <Avatar size={32} icon={<UserOutlined />} />
+                </Space>
+              </Space>
+            </Link>
+
           </li>
         </ul>
       </nav>

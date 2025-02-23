@@ -5,5 +5,3 @@ function Mom() {
     <div>Mom</div>
   )
 }
-
-export default Mom
