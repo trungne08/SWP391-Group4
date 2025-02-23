@@ -36,12 +36,17 @@ const ForgotPassword = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ mt: 3, mb: 2,
+              bgcolor: 'black',
+                '&:hover': {
+                  bgcolor: '#333'
+                }
+              }}
             >
               Reset Password
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Link to="/login" style={{ textDecoration: 'none', color: '#1976d2' }}>
+              <Link to="/login" style={{ textDecoration: 'underline', color: 'black' }}>
                 Back to Sign in
               </Link>
             </Box>

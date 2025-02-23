@@ -16,7 +16,8 @@ const Login = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
-            Sign in
+            Welcome to Baby Care!<br />
+            Login to continue
           </Typography>
           <form>
             <TextField
@@ -43,12 +44,19 @@ const Login = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ 
+                mt: 3, 
+                mb: 2,
+                bgcolor: 'black',
+                '&:hover': {
+                  bgcolor: '#333'
+                }
+              }}
             >
               Sign In
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Link to="/forgot-password" style={{ textDecoration: 'none', color: '#1976d2' }}>
+              <Link to="/forgot-password" style={{ textDecoration: 'underline', color: 'black' }}>
                 Forgot password?
               </Link>
             </Box>

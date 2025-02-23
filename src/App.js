@@ -7,15 +7,16 @@ import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
 import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
+import FAQ from "./pages/FAQ";  
+import Login from "./pages/Login";  
+import ForgotPassword from "./pages/Forgot_password";  
+import ContactUs from "./pages/ContactUs";  //
 import AdminBlog from "./pages/AdminBlog";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMember from "./pages/AdminMember";
 import FeePackage from "./pages/FeePackage";
 import Payment from "./pages/Payment";
 import Confirm from "./pages/Confirm";
-import FAQ from "./pages/FAQ";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/Forgot_password";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         {/* Main routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
+          <Route path="/contact" element={<ContactUs />} /> 
           <Route path="comunity" element={<Comunity />} />
           <Route path="blog" element={<Blog />} />
           {/* <Route path="mom" element={<Mom />} /> */}

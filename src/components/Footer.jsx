@@ -7,6 +7,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
 import "./Footer.css";
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -44,11 +45,11 @@ const Footer = () => {
         <div className="footer-column">
           <h4>Quick Links</h4>
           <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Membership Plans</a></li>
-            <li><a href="#">Experience Blog</a></li>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Contact Us</a></li>
+            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/membership">Membership Plans</Link></li>
+            <li><Link to="/blog">Experience Blog</Link></li>
+            <li><Link to="/faq">FAQ</Link></li>
+            <li><Link to="/contact">Contact Us</Link></li>
           </ul>
         </div>
       </div>
