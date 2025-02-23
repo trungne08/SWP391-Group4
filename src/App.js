@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";  // Remove BrowserRouter import
 import Layout from "./layouts/Layouts";
 import AdminLayout from "./layouts/AdminLayout";
 import "./App.css";
@@ -20,33 +20,30 @@ import Confirm from "./pages/Confirm";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Main routes */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="/contact" element={<ContactUs />} /> 
-          <Route path="comunity" element={<Comunity />} />
-          <Route path="blog" element={<Blog />} />
-          {/* <Route path="mom" element={<Mom />} /> */}
-          <Route path="baby" element={<Baby />} />
-          <Route path="faq" element={<FAQ />} />
-          <Route path="feepackage" element={<FeePackage />} />
-          <Route path="payment" element={<Payment />} />
-          <Route path="confirm" element={<Confirm />} />
-          <Route path="login" element={<Login />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
-        </Route>
-
-        {/* Admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="members" element={<AdminMember />} />
-          <Route path="blog" element={<AdminBlog />} />
-        </Route>
-      </Routes>
-    </Router>
+    <Routes>
+      {/* Main routes */}
+      <Route path="/" element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="/contact" element={<ContactUs />} /> 
+        <Route path="comunity" element={<Comunity />} />
+        <Route path="blog" element={<Blog />} />
+        {/* <Route path="mom" element={<Mom />} /> */}
+        <Route path="baby" element={<Baby />} />
+        <Route path="faq" element={<FAQ />} />
+        <Route path="feepackage" element={<FeePackage />} />
+        <Route path="payment" element={<Payment />} />
+        <Route path="confirm" element={<Confirm />} />
+        <Route path="login" element={<Login />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+      </Route>
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="members" element={<AdminMember />} />
+        <Route path="blog" element={<AdminBlog />} />
+      </Route>
+    </Routes>
   );
 }
 
