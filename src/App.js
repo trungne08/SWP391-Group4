@@ -8,6 +8,7 @@ import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";  
 import Login from "./pages/Login";  
 import ForgotPassword from "./pages/Forgot_password";  
+import ContactUs from "./pages/ContactUs";  // Add this import
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/faq" element={<FAQ />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/contact" element={<ContactUs />} />  {/* Add this route */}
         </Route>
       </Routes>
   );
