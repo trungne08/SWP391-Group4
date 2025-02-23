@@ -37,12 +37,6 @@ const Header = () => {
             </li>
           </div>
           <li className="nav-avatar">
-
-            <Space direction="vertical" size={16}>
-              <Space wrap size={16}>
-                <Avatar size={32} icon={<UserOutlined />} />
-              </Space>
-            </Space>
             <Link to="/login">
               <Space direction="vertical" size={16}>
                 <Space wrap size={16}>
@@ -50,7 +44,6 @@ const Header = () => {
                 </Space>
               </Space>
             </Link>
-
           </li>
         </ul>
       </nav>
