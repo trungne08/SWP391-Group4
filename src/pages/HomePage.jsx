@@ -8,16 +8,21 @@ const HomePage = () => {
       {/* Hero Section */}
       <Box
         sx={{
+          maxWidth: "1200px",
+          mx: "auto",
           backgroundImage: 'url("/images/doctor-patient.jpg")',
           backgroundSize: "cover",
           backgroundPosition: "top center",
           backgroundRepeat: "no-repeat",
           height: "500px",
+          marginBottom: "40px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           mb: 4,
           position: "relative",
+          borderRadius: "8px", // bo góc
+          overflow: "hidden",  // ẩn phần ảnh thừa
         }}
       >
         <Container sx={{ textAlign: "center" }}>
