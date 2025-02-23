@@ -3,9 +3,21 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px 40px;
+  padding: 15px 40px;
   background-color: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+  /* Cố định header khi cuộn */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+/* Tạo khoảng trống để tránh header che mất nội dung */
+body {
+  padding-top: 80px; /* Điều chỉnh phù hợp với chiều cao header */
 }
 
 .navbar {
@@ -20,6 +32,7 @@
   padding: 0;
   margin: 0;
 }
+
 .nav-icon a {
   color: #303132 !important;
   font-size: 32px;
@@ -27,8 +40,8 @@
 }
 
 .nav-icon a:hover {
-  color: #2e2d2d !important; /* Đổi màu khi hover */
-  transform: scale(1.2) !important; /* Phóng to nhẹ */
+  color: #2e2d2d !important;
+  transform: scale(1.2) !important;
 }
 
 /* Định dạng danh sách điều hướng */

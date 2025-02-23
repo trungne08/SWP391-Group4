@@ -4,7 +4,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import Home from "./pages/HomePage";
 import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
-import Mom from "./pages/Mom";
+// import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";
 import AdminBlog from "./pages/AdminBlog";
@@ -22,7 +22,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path="comunity" element={<Comunity />} />
         <Route path="blog" element={<Blog />} />
-        <Route path="mom" element={<Mom />} />
+        {/* <Route path="mom" element={<Mom />} /> */}
         <Route path="baby" element={<Baby />} />
         <Route path="faq" element={<FAQ />} />
         <Route path="feepackage" element={<FeePackage />} />
