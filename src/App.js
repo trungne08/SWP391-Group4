@@ -1,27 +1,43 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Layout from "./layouts/Layouts";
-import HomePage from "./pages/HomePage";
+import AdminLayout from "./layouts/AdminLayout";
+import Home from "./pages/HomePage";
 import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
 import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
-import FAQ from "./pages/FAQ";  
+import FAQ from "./pages/FAQ";
+import AdminBlog from "./pages/AdminBlog";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminMember from "./pages/AdminMember";
+import FeePackage from "./pages/FeePackage";
+import Payment from "./pages/Payment";
+import Confirm from "./pages/Confirm";
 
 function App() {
   return (
+    <Routes>
+      {/* Main routes */}
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route path="comunity" element={<Comunity />} />
+        <Route path="blog" element={<Blog />} />
+        <Route path="mom" element={<Mom />} />
+        <Route path="baby" element={<Baby />} />
+        <Route path="faq" element={<FAQ />} />
+        <Route path="feepackage" element={<FeePackage />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/confirm" element={<Confirm />} />
+      </Route>
 
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route  path="/comunity" index element={<Comunity />} />
-          <Route  path="/blog" index element={<Blog />} />
-          <Route  path="/mom" index element={<Mom />} />
-          <Route  path="/baby" index element={<Baby />} />
-          <Route  path="/faq" index element={<FAQ />} />
-         
-        </Route>
-      </Routes>
- 
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="members" element={<AdminMember />} />
+        <Route path="blog" element={<AdminBlog />} />
+      </Route>
+    </Routes>
   );
 }
 
