@@ -18,6 +18,8 @@ import FeePackage from "./pages/FeePackage";
 import Payment from "./pages/Payment";
 import Confirm from "./pages/Confirm";
 import Profile from "./pages/Profile";
+import Reminder from "./pages/Reminder";  // Add this import
+import Register from "./pages/Register";  // Add this import
 
 function App() {
   return (
@@ -35,8 +37,10 @@ function App() {
         <Route path="payment" element={<Payment />} />
         <Route path="confirm" element={<Confirm />} />
         <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />  {/* Add this route */}
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="reminder" element={<Reminder />} />  {/* Add this route */}
       </Route>
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLayout />}>

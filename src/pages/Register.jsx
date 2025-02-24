@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Paper } from '@mui/material';
 
-const Login = () => {
+const Register = () => {
   return (
     <Container component="main" maxWidth="xs">
       <Box
@@ -16,10 +16,20 @@ const Login = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
-            Welcome to Baby Care!<br />
-            Login to continue
+            Create your account<br />
+            Join Baby Care today
           </Typography>
           <form>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="fullName"
+              label="Full Name"
+              name="fullName"
+              autoComplete="name"
+              autoFocus
+            />
             <TextField
               margin="normal"
               required
@@ -28,7 +38,6 @@ const Login = () => {
               label="Email Address"
               name="email"
               autoComplete="email"
-              autoFocus
             />
             <TextField
               margin="normal"
@@ -38,7 +47,17 @@ const Login = () => {
               label="Password"
               type="password"
               id="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              id="confirmPassword"
+              autoComplete="new-password"
             />
             <Button
               type="submit"
@@ -53,16 +72,13 @@ const Login = () => {
                 }
               }}
             >
-              Sign In
+              Register
             </Button>
-            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link to="/forgot-password" style={{ textDecoration: 'underline', color: 'black' }}>
-                Forgot password?
-              </Link>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Don't have an account?{' '}
-                <Link to="/register" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'bold' }}>
-                  Register here
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2">
+                Already have an account?{' '}
+                <Link to="/login" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'bold' }}>
+                  Sign in here
                 </Link>
               </Typography>
             </Box>
@@ -73,4 +89,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
