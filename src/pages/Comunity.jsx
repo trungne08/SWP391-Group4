@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio, Upload } from 'antd';
+import { UserOutlined, PaperClipOutlined, PictureOutlined } from '@ant-design/icons';
 
 const { Title, Text, TextArea } = Typography;
 
@@ -120,6 +120,19 @@ function Comunity() {
                 label="Description"
               >
                 <Input.TextArea rows={4} placeholder="Add any additional information about your baby's growth..." />
+                <div style={{ marginTop: '8px' }}>
+                  <Space>
+                    <Upload
+                      listType="picture-card"
+                      maxCount={4}
+                      beforeUpload={() => false}
+                    >
+                      <Button icon={<PictureOutlined />} type="text">
+                        Photo
+                      </Button>
+                    </Upload>
+                  </Space>
+                </div>
               </Form.Item>
             </>
           ) : (
@@ -131,7 +144,6 @@ function Comunity() {
               >
                 <Input />
               </Form.Item>
-
               <Form.Item
                 name="content"
                 label="Content"
