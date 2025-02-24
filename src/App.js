@@ -17,6 +17,7 @@ import AdminMember from "./pages/AdminMember";
 import FeePackage from "./pages/FeePackage";
 import Payment from "./pages/Payment";
 import Confirm from "./pages/Confirm";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
         <Route path="confirm" element={<Confirm />} />
         <Route path="login" element={<Login />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLayout />}>

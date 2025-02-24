@@ -1,7 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Avatar, Typography, Row, Col } from "antd";
+
 import { UserOutlined } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {Modal, Input,Button,DatePicker } from "antd";
+import { Line } from "react-chartjs-2";
+
 import {
   faWeightScale,
   faRuler,
@@ -9,11 +13,11 @@ import {
   faNewspaper,
   faCalendarDays,
   faShoePrints,
-  faChildDress,
-  faChild,
+  // faChildDress,
+  // faChild,
 } from "@fortawesome/free-solid-svg-icons";
+import { useRef } from "react";
 
-import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,6 +28,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useNavigate } from "react-router-dom";
 
 ChartJS.register(
   CategoryScale,
@@ -35,11 +40,45 @@ ChartJS.register(
   Legend
 );
 
+
 const { Title } = Typography;
 
 function Baby() {
+  const navigate = useNavigate();
+  const weightRef= useRef(null);
+  const heightRef= useRef(null);
+  const circumferenceRef= useRef(null);
+
+  const scrollToChart = (ref) =>{
+    ref.current?.scrollIntoView({ behavior :"smooth",block:"start"})
+  }
+
   // Dữ liệu biểu đồ
   const labels = Array.from({ length: 40 }, (_, i) => i + 1);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const openModal = (type) => {
+    setSelectedType(type);
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    console.log(`Nhập ${selectedType}:`, inputValue, "Ngày:", selectedDate);
+    setIsModalOpen(false);
+    setInputValue("");
+    setSelectedDate(null);
+  };
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setInputValue("");
+    setSelectedDate(null);
+  };
+
+
 
   const weightData = {
     labels: Array.from({ length: 33 }, (_, i) => i + 8), // Tuần 8 đến 40
@@ -119,6 +158,52 @@ function Baby() {
     ],
   };
 
+  
+  const circumferenceData = {
+    labels: Array.from({ length: 29 }, (_, i) => i + 12), // Tuần 12 đến 40
+    datasets: [
+      {
+        label: "Upper Bound (Max Circumference) (mm)",
+        data: [
+          80, 94, 107.9, 124, 132, 144, 158, 170, 187, 192, 203, 218, 231, 249, 
+          251, 266, 281, 283, 287, 292, 302, 312, 319, 327, 332, 340, 346, 355, 365
+        ],
+        borderColor: "red",
+        backgroundColor: "rgba(255, 0, 0, 0.2)",
+        tension: 0.3,
+      },
+      {
+        label: "Standard Value (Normal Circumference) (mm)",
+        data: [
+          70, 84, 97.9, 114, 122, 134, 148, 160, 177, 182, 193, 208, 221, 239, 
+          241, 256, 271, 273, 277, 282, 292, 302, 309, 317, 322, 330, 336, 345, 354
+        ],
+        borderColor: "green",
+        backgroundColor: "rgba(0, 255, 0, 0.2)",
+        tension: 0.3,
+      },
+      {
+        label: "Lower Bound (Min Circumference) (mm)",
+        data: [
+          60, 74, 87.9, 104, 112, 124, 138, 150, 167, 172, 183, 198, 211, 229, 
+          231, 246, 261, 263, 267, 272, 282, 292, 299, 307, 312, 320, 326, 335, 345
+        ],
+        borderColor: "blue",
+        backgroundColor: "rgba(0, 0, 255, 0.2)",
+        tension: 0.3,
+      },
+    ],
+  };
+  
+  const iconList = [
+    { icon: faWeightScale, label: "Cân nặng",ref: weightRef },
+    { icon: faRuler, label: "Chiều dài", ref: heightRef },
+    { icon: faCircleNotch, label: "Chu vi vòng đầu", ref: circumferenceRef },
+    { icon: faNewspaper, label: "Tin tức" },
+    { icon: faCalendarDays, label: "Lịch tiêm" },
+    { icon: faShoePrints, label: "Tổng số bước đạp" },
+  ];
+
   return (
     <div
       style={{
@@ -128,84 +213,185 @@ function Baby() {
         background: "#fff",
       }}
     >
-      <Row gutter={[16, 16]} align="middle">
-        {/* Cột 1: Avatar */}
-        <Col xs={24} md={6} style={{ textAlign: "center" }}>
-          <Avatar size={128} icon={<UserOutlined />} />
+      <Row
+        gutter={[4, 4]}
+        justify="center"
+        align="middle"
+        style={{ minHeight: "30vh" }}
+      >
+         {/* Cột 1: Avatar */}
+          <Col xs={24} md={4} className="text-center">
+            <Avatar size={100} icon={<UserOutlined />} />
+          </Col>
+        
+          {/* Cột 2: Thông tin cơ bản */}
+          <Col xs={24} md={6}>
+            <Title level={4}>Mom Information</Title>
+            {[
+              { label: "Name", value: "[Insert Name]" },
+              { label: "Current Week of Pregnancy", value: "[Insert Week]" },
+              { label: "Baby's Birthday", value: "[Insert Date]" },
+              { label: "Estimated Due Date", value: "[Insert Date]" }
+            ].map((item, index) => (
+              <p key={index} className="info-text">
+                <strong>{item.label}:</strong> {item.value}
+              </p>
+            ))}
+          </Col>
+        
+          {/* Cột 3: Thông tin liên hệ */}
+          <Col xs={24} md={6}>
+            <Title level={4} className="hidden-title">Contact Information</Title>
+            {[
+              { label: "Email", value: "[Insert Email]" },
+              { label: "Phone", value: "[Insert Phone]" },
+              { label: "Address", value: "[Insert Address]" }
+            ].map((item, index) => (
+              <p key={index} className="info-text">
+                <strong>{item.label}:</strong> {item.value}
+              </p>
+            ))}
+            <div className="button-group">
+              <button>Edit</button>
+              <button>Update</button>
+            </div>
+          </Col>
+        
+          {/* Cột 4: Avatar */}
+          <Col xs={24} md={4} className="text-center">
+                  <Avatar size={100} icon={<UserOutlined />} onClick={() => navigate("/baby")} style={{ cursor: "pointer" }} />
+                </Col>
+        </Row>
+      {/* Đường kẻ ngang */}
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
+      </Col>
 
-          {/* Bọc icon trong một div và thêm margin-top */}
-          <div style={{ fontSize: "40px", marginTop: "10px" }}>
-            <FontAwesomeIcon
-              icon={faChildDress}
-              style={{ marginRight: "10px" }}
-            />
-            <FontAwesomeIcon icon={faChild} />
-          </div>
-        </Col>
-
-        {/* Cột 2: Thông tin Baby */}
-        <Col xs={24} md={10}>
-          <Title level={3}>Baby Information</Title>
-          <p>
-            <strong>Name:</strong> [Insert Name]
-          </p>
-          <p>
-            <strong>Estimated Due Date:</strong> [Insert Date]
-          </p>
-        </Col>
-
-        {/* Đường kẻ ngang */}
-        <Col span={24}>
-          <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
-        </Col>
-
-        {/* Cột 3: Các icon */}
-        <Col xs={24} md={24} style={{ width: "100%" }}>
-          <Row
-            gutter={[16, 16]}
-            justify="space-between"
-            style={{ width: "100%" }}
+      {/* Cột 3: Các icon */}
+      <Col xs={24} md={24} style={{ width: "100%" }}>
+      <Row gutter={[16, 16]} justify="space-between" style={{ width: "100%" }}>
+        {iconList.map((item, index) => (
+          <Col
+            flex={1}
+            style={{ textAlign: "center", position: "relative" }}
+            key={index}
+            onClick={() => item.ref && scrollToChart(item.ref)}
           >
-            <Col flex={1} style={{ textAlign: "center" }}>
-              <FontAwesomeIcon icon={faWeightScale} size="3x" />
-            </Col>
-            <Col flex={1} style={{ textAlign: "center" }}>
-              <FontAwesomeIcon icon={faRuler} size="3x" />
-            </Col>
-            <Col flex={1} style={{ textAlign: "center" }}>
-              <FontAwesomeIcon icon={faCircleNotch} size="3x" />
-            </Col>
-            <Col flex={1} style={{ textAlign: "center" }}>
-              <FontAwesomeIcon icon={faNewspaper} size="3x" />
-            </Col>
-            <Col flex={1} style={{ textAlign: "center" }}>
-              <FontAwesomeIcon icon={faCalendarDays} size="3x" />
-            </Col>
-            <Col flex={1} style={{ textAlign: "center" }}>
-              <FontAwesomeIcon icon={faShoePrints} size="3x" />
-            </Col>
-          </Row>
-        </Col>
+            <div
+              style={{
+                display: "inline-block",
+                position: "relative",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                const icon = e.currentTarget.querySelector(".icon");
+                const text = e.currentTarget.querySelector(".tooltip");
+                icon.style.transform = "scale(1.2)";
+                icon.style.color = "#a6a9ab";
+                text.style.opacity = "1";
+                text.style.visibility = "visible";
+              }}
+              onMouseLeave={(e) => {
+                const icon = e.currentTarget.querySelector(".icon");
+                const text = e.currentTarget.querySelector(".tooltip");
+                icon.style.transform = "scale(1)";
+                icon.style.color = "black";
+                text.style.opacity = "0";
+                text.style.visibility = "hidden";
+              }}
+            >
+              {/* Icon */}
+              <FontAwesomeIcon
+                icon={item.icon}
+                size="3x"
+                className="icon"
+                style={{
+                  transition: "transform 0.2s, color 0.2s",
+                }}
+              />
 
-        {/* Đường kẻ ngang */}
-        <Col span={24}>
-          <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
-        </Col>
-
-        {/* Biểu đồ cân nặng */}
-        <Col span={20} offset={2} style={{ textAlign: "center" }}>
-          <Title level={4}>Weight Chart</Title>
-          <Line data={weightData} />
-        </Col>
-
-        {/* Biểu đồ chiều dài */}
-        <Col span={20} offset={2} style={{ textAlign: "center" }}>
-          <Title level={4}>Height Chart</Title>
-          <Line data={heightData} />
-        </Col>
+              {/* Tooltip hiển thị ngay trên icon */}
+              <span
+                className="tooltip"
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  background: "rgba(0, 0, 0, 0.8)",
+                  color: "white",
+                  padding: "5px 10px",
+                  borderRadius: "5px",
+                  fontSize: "14px",
+                  whiteSpace: "nowrap",
+                  opacity: 0,
+                  visibility: "hidden",
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                {item.label}
+              </span>
+            </div>
+          </Col>
+        ))}
       </Row>
-    </div>
+    </Col>
+
+      {/* Đường kẻ ngang */}
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
+      </Col>
+
+     {/* Biểu đồ cân nặng */}
+     <Col span={20} offset={2} style={{ textAlign: "center" }}>
+        <Title level={4}>Weight Chart</Title>
+        <Line data={weightData} />
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+          <Button onClick={() => openModal("Cân nặng")}>Nhập cân nặng</Button>
+
+        </div>
+      </Col>
+
+      {/* Biểu đồ chiều dài */}
+      <Col span={20} offset={2} style={{ textAlign: "center" }}>
+        <Title level={4}>Height Chart</Title>
+        <Line data={heightData} />
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+          <Button onClick={() => openModal("Chiều dài")}>Nhập chiều dài</Button>
+        </div>
+      </Col>
+
+      {/* Đường kẻ ngang */}
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
+      </Col>
+
+      {/* Biểu đồ vòng đầu */}
+      <Col span={20} offset={2} style={{ textAlign: "center" }}>
+        <Title level={4}>Circumference Chart</Title>
+        <Line data={circumferenceData} />
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+          <Button onClick={() => openModal("Chu vi vòng đầu")}>Nhập chu vi vòng đầu</Button>
+        </div>
+      </Col>
+
+      {/* Đường kẻ ngang */}  
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} /> 
+      </Col>  
+       {/* Modal nhập dữ liệu */}
+       <Modal title={`Nhập ${selectedType}`} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+        <DatePicker style={{ width: "100%", marginBottom: "10px" }} onChange={(date) => setSelectedDate(date)} />
+        <Input
+          placeholder={`Nhập ${selectedType}...`}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+        />
+      </Modal>
+      </div>
+
   );
+
 }
 
 export default Baby;

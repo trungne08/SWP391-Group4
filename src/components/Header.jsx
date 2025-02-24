@@ -3,10 +3,24 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
 import "./Header.css";
 import { UserOutlined } from "@ant-design/icons";
-import { Avatar, Space } from "antd";
+import {  Avatar, Dropdown, Menu  } from "antd";
+
 
 const Header = () => {
   const location = useLocation();
+
+  const menu = (
+    <Menu>
+      <Menu.Item key="profile">
+        <Link to="/profile">Trang cá nhân</Link>
+      </Menu.Item>
+      <Menu.Item key="login">
+        <Link to="/login">Đăng nhập</Link>
+      </Menu.Item>
+    </Menu>
+  );
+
+
 
   return (
     <div className="container-header">
@@ -25,10 +39,7 @@ const Header = () => {
             </li>
             <li>
               <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
-            </li>
-            <li>
-              {/* <Link to="/mom" className={location.pathname === "/mom" ? "active" : ""}>Mom</Link> */}
-            </li>
+            </li> 
             <li>
               <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
             </li>
@@ -37,14 +48,10 @@ const Header = () => {
             </li>
           </div>
           <li className="nav-avatar">
-            <Link to="/login">
-              <Space direction="vertical" size={16}>
-                <Space wrap size={16}>
-                  <Avatar size={32} icon={<UserOutlined />} />
-                </Space>
-              </Space>
-            </Link>
-          </li>
+  <Dropdown overlay={menu} trigger={["click"]}>
+    <Avatar size={32} icon={<UserOutlined />} style={{ cursor: "pointer" }} />
+  </Dropdown>
+</li>
         </ul>
       </nav>
     </div>
