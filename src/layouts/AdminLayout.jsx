@@ -1,21 +1,14 @@
 import { Outlet } from "react-router-dom";
 import AdminHeader from "../components/AdminHeader";
-import Footer from "../components/Footer";
 
 const AdminLayout = () => {
   return (
-    <>
-      {/* Header */}
+    <div style={{ display: 'flex' }}>
       <AdminHeader />
-      
-      {/* Main Content */}
-      <main className="pt-16 p-4">
+      <main style={{ marginLeft: '250px', width: '100%', padding: '24px' }}>
         <Outlet />
       </main>
-      
-      {/* Footer */}
-      <Footer />
-    </>
+    </div>
   );
 };
 

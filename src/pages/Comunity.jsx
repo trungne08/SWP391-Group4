@@ -1,10 +1,15 @@
-import React from 'react';
-import { Typography, Button, Avatar, List, Space } from 'antd';
+import React, { useState } from 'react';
+import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Title, Text, TextArea } = Typography;
 
 function Comunity() {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [postType, setPostType] = useState('question');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [form] = Form.useForm();
+
   const quotes = [
     { id: 1, author: "Tim", content: "Quote content here" },
     { id: 2, author: "Tim", content: "Quote content here" },
@@ -13,6 +18,17 @@ function Comunity() {
     { id: 5, author: "Tim", content: "Quote content here" },
     { id: 6, author: "Tim", content: "Quote content here" },
   ];
+
+  const showPostModal = (type) => {
+    setPostType(type);
+    setIsModalVisible(true);
+  };
+
+  const handleSubmit = (values) => {
+    console.log({ ...values, isAnonymous });
+    setIsModalVisible(false);
+    form.resetFields();
+  };
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
@@ -47,9 +63,107 @@ function Comunity() {
 
       {/* Action Buttons */}
       <Space size="large" style={{ marginBottom: "30px" }}>
-        <Button type="primary" size="large">Post question</Button>
-        <Button size="large">Post baby's chart</Button>
+        <Button type="primary" size="large" onClick={() => showPostModal('question')}>
+          Post question
+        </Button>
+        <Button size="large" onClick={() => showPostModal('chart')}>
+          Post baby's chart
+        </Button>
       </Space>
+{/* Post Modal */}
+      <Modal
+        title={postType === 'question' ? "Post a Question" : "Post Baby's Chart"}
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        footer={null}
+        width={postType === 'chart' ? 800 : 520}
+      >
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          {postType === 'chart' ? (
+            <>
+              <Form.Item
+                name="babyName"
+                label="Baby's Name"
+                rules={[{ required: true, message: 'Please input baby name!' }]}
+              >
+                <Input />
+              </Form.Item>
+
+              <Space size="large" style={{ display: 'flex', marginBottom: '24px' }}>
+                <Form.Item
+                  name="age"
+                  label="Age (months)"
+                  rules={[{ required: true, message: 'Please input age!' }]}
+                >
+                  <Input type="number" min={0} max={36} />
+                </Form.Item>
+
+                <Form.Item
+                  name="weight"
+                  label="Weight (kg)"
+                  rules={[{ required: true, message: 'Please input weight!' }]}
+                >
+                  <Input type="number" step="0.1" />
+                </Form.Item>
+
+                <Form.Item
+                  name="height"
+                  label="Height (cm)"
+                  rules={[{ required: true, message: 'Please input height!' }]}
+                >
+                  <Input type="number" step="0.1" />
+                </Form.Item>
+              </Space>
+
+              <Form.Item
+                name="description"
+                label="Description"
+              >
+                <Input.TextArea rows={4} placeholder="Add any additional information about your baby's growth..." />
+              </Form.Item>
+            </>
+          ) : (
+            <>
+              <Form.Item
+                name="title"
+                label="Title"
+                rules={[{ required: true, message: 'Please input a title!' }]}
+              >
+                <Input />
+              </Form.Item>
+
+              <Form.Item
+                name="content"
+                label="Content"
+                rules={[{ required: true, message: 'Please input content!' }]}
+              >
+                <Input.TextArea rows={4} />
+              </Form.Item>
+            </>
+          )}
+
+          <Form.Item label="Posting As">
+            <Radio.Group 
+              value={isAnonymous} 
+              onChange={(e) => setIsAnonymous(e.target.value)}
+            >
+              <Radio value={false}>Public (Your name will be visible)</Radio>
+              <Radio value={true}>Anonymous</Radio>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                Post
+              </Button>
+              <Button onClick={() => setIsModalVisible(false)}>
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Quotes List */}
       <List
