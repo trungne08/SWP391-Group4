@@ -9,6 +9,7 @@ import {
   Input,
   Button,
 
+
   Table,
 } from "antd";
 import { UserOutlined } from "@ant-design/icons";
@@ -45,12 +46,14 @@ ChartJS.register(
 );
 const { Title } = Typography;
 
+
 // Add this state for form values
 function Baby() {
   const navigate = useNavigate();
   const weightRef = useRef(null);
   const heightRef = useRef(null);
   const circumferenceRef = useRef(null);
+
 
   const iconList = [
     { icon: faWeightScale, label: "Cân nặng", ref: weightRef },
@@ -60,6 +63,7 @@ function Baby() {
     { icon: faCalendarDays, label: "Lịch tiêm" },
     { icon: faShoePrints, label: "Tổng số bước đạp" },
   ];
+
 
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -74,9 +78,11 @@ function Baby() {
     }));
   };
 
+
   const scrollToChart = (ref) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
 
   // Move these state declarations up with other states
   // State declarations (giữ phần này ở trên)
@@ -92,23 +98,25 @@ function Baby() {
     circumference: "",
   });
 
+
   // Sửa lại hàm calculateDates để tính từ tuần và ngày
   const calculateDates = (weeks, days) => {
     if (!weeks || !days) return { pregnancyStart: null, dueDate: null };
-  
+ 
     const today = new Date();
     const totalDays = (Number(weeks) * 7) + Number(days);
-    
+   
     // Tính ngày bắt đầu mang thai bằng cách lùi lại số ngày
     const pregnancyStart = new Date(today);
     pregnancyStart.setDate(today.getDate() - totalDays);
-    
+   
     // Tính ngày dự sinh (thêm 280 ngày từ ngày bắt đầu)
     const dueDate = new Date(pregnancyStart);
     dueDate.setDate(pregnancyStart.getDate() + 280);
-    
+   
     return { pregnancyStart, dueDate };
   };
+
 
   // Sửa lại hàm handleFormSubmit
   const handleFormSubmit = () => {
@@ -128,6 +136,8 @@ function Baby() {
   };
 
 
+
+
   return (
     <div>
       <Row
@@ -140,6 +150,7 @@ function Baby() {
         <Col xs={24} md={4} className="text-center">
           <Avatar size={100} icon={<UserOutlined />} />
         </Col>
+
 
         {/* Cột 2: Thông tin cơ bản */}
         <Col xs={24} md={6}>
@@ -171,6 +182,7 @@ function Baby() {
          ))}
         </Col>
 
+
         {/* Cột 3: Avatar */}
         <Col xs={24} md={4} className="text-center">
           <Avatar
@@ -185,6 +197,7 @@ function Baby() {
       <Col span={24}>
         <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
       </Col>
+
 
       {/* Cột 3: Các icon */}
       <Col xs={24} md={24} style={{ width: "100%" }}>
@@ -233,6 +246,7 @@ function Baby() {
                   }}
                 />
 
+
                 {/* Tooltip hiển thị ngay trên icon */}
                 <span
                   className="tooltip"
@@ -260,6 +274,7 @@ function Baby() {
         </Row>
       </Col>
 
+
       {/* Đường kẻ ngang */}
       <Col span={24}>
         <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
@@ -273,6 +288,7 @@ function Baby() {
           Nhập số liệu của em bé
         </Button>
       </div>
+
 
       <Modal
         title="Nhập số liệu của em bé"
@@ -379,9 +395,9 @@ function Baby() {
         <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
       </Col>
       {/* Biểu đồ cân nặng */}
-      <Col 
-        span={20} 
-        offset={2} 
+      <Col
+        span={20}
+        offset={2}
         style={{ textAlign: "center" }}
         ref={weightRef}  // Thêm ref cho biểu đồ cân nặng
       >
@@ -389,9 +405,10 @@ function Baby() {
         <Line data={weightData} />
       </Col>
 
-      <Col 
-        span={20} 
-        offset={2} 
+
+      <Col
+        span={20}
+        offset={2}
         style={{ textAlign: "center" }}
         ref={heightRef}  // Thêm ref cho biểu đồ chiều cao
       >
@@ -399,10 +416,12 @@ function Baby() {
         <Line data={heightData} />
       </Col>
 
+
       {/* Đường kẻ ngang */}
       <Col span={24}>
         <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
       </Col>
+
 
       {/* Biểu đồ vòng đầu */}
       <Col
@@ -417,5 +436,6 @@ function Baby() {
     </div>
   );
 }
+
 
 export default Baby;

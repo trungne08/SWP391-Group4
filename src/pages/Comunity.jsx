@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio, Upload } from 'antd';
-import { UserOutlined,  PictureOutlined } from '@ant-design/icons';
+import { UserOutlined, PaperClipOutlined, PictureOutlined } from '@ant-design/icons';
 
 const { Title, Text, TextArea } = Typography;
 
