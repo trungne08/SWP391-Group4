@@ -2,28 +2,39 @@ package com.example.pregnancy_tracking.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import com.example.pregnancy_tracking.entity.User;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-@Component
+@Service
 public class JwtUtil {
-    private final String SECRET_KEY = "aGhpZGphZGthZG1rYWRmMTIzMTIzMTIzMTIzMTIzMTIzMTIzMTIzMTIz"; 
-    private final long EXPIRATION_TIME = 86400000; // 1 ngày
+    @Value("${jwt.secret}")
+    private String secret;
 
-    private Key getSigningKey() {
-        byte[] keyBytes = Base64.getDecoder().decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
+    @Value("${jwt.expiration}")
+    private Long expiration;
 
-    public String generateToken(String email) { 
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", user.getRole().name());
+        
         return Jwts.builder()
-                .setSubject(email) // Lưu email vào subject
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setClaims(claims)
+                .setSubject(user.getEmail())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    private Key getSigningKey() {
+        byte[] keyBytes = Base64.getDecoder().decode(secret);  // Changed SECRET_KEY to secret
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractEmail(String token) {

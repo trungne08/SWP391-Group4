@@ -10,7 +10,6 @@ import com.example.pregnancy_tracking.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.example.pregnancy_tracking.security.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.pregnancy_tracking.dto.UserDTO;
 import com.example.pregnancy_tracking.entity.UserProfile;
 import java.util.List;
@@ -21,61 +20,45 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
-    private final PasswordEncoder passwordEncoder;
-
-    public String encodePassword(String rawPassword) {
-        return passwordEncoder.encode(rawPassword);
-    }
-
+    // Remove PasswordEncoder since we're not using it
+    
     public String register(RegisterRequest request) {
-        // Check if email exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already taken");
         }
 
-        // Create new user
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.GUEST);
+        user.setPassword(request.getPassword());  // Store password directly
+        user.setRole(Role.MEMBER);
 
         userRepository.save(user);
         return "User registered successfully!";
     }
 
     public AuthResponse login(LoginRequest request) {
-        System.out.println("Login attempt with email: " + request.getEmail());
-
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        System.out.println("Found user: " + user.getEmail());
-        System.out.println("Stored password hash: " + user.getPassword());
-        System.out.println("Input password: " + request.getPassword());
-
-        boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
-        System.out.println("Password matches: " + matches);
-
-        if (!matches) {
+        if (!user.getPassword().equals(request.getPassword())) {
             throw new RuntimeException("Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user);  // Truyền user thay vì email
         return new AuthResponse(token);
     }
 
-    public void changePassword(String email, ChangePasswordRequest request) { // Đổi từ username thành email
+    public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Kiểm tra mật khẩu cũ
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+        // Direct password comparison
+        if (!user.getPassword().equals(request.getOldPassword())) {
             throw new RuntimeException("Old password is incorrect");
         }
 
-        // Cập nhật mật khẩu mới
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPassword(request.getNewPassword());  // Store new password directly
         userRepository.save(user);
     }
 
