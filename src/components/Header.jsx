@@ -3,32 +3,44 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
 import "./Header.css";
 import { UserOutlined } from "@ant-design/icons";
-import {  Avatar, Dropdown, Menu  } from "antd";
-
+import { Avatar, Dropdown, Menu, Button } from "antd";
+import { useState, useEffect } from "react";
 
 const Header = () => {
   const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const menu = (
+  useEffect(() => {
+    // Check if user is logged in by looking for token
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    // You might want to redirect to home page here
+  };
+
+  const authenticatedMenu = (
     <Menu>
       <Menu.Item key="profile">
-        <Link to="/profile">Trang cá nhân</Link>
+        <Link to="/profile">Profile</Link>
       </Menu.Item>
-      <Menu.Item key="login">
-        <Link to="/login">Đăng nhập</Link>
+      <Menu.Item key="logout" onClick={handleLogout}>
+        Logout
       </Menu.Item>
     </Menu>
   );
-
-
 
   return (
     <div className="container-header">
       <nav className="navbar">
         <ul className="nav-list">
           <li className="nav-icon">
-            <Link to="/" className={location.pathname === "/" ? "active" : ""}>  <FontAwesomeIcon icon={faPersonBreastfeeding} /></Link>
-          
+            <Link to="/" className={location.pathname === "/" ? "active" : ""}>
+              <FontAwesomeIcon icon={faPersonBreastfeeding} />
+            </Link>
           </li>
           <div className="nav-links">
             <li>
@@ -48,10 +60,21 @@ const Header = () => {
             </li>
           </div>
           <li className="nav-avatar">
-  <Dropdown overlay={menu} trigger={["click"]}>
-    <Avatar size={32} icon={<UserOutlined />} style={{ cursor: "pointer" }} />
-  </Dropdown>
-</li>
+            {isLoggedIn ? (
+              <Dropdown overlay={authenticatedMenu} trigger={["click"]}>
+                <Avatar size={32} icon={<UserOutlined />} style={{ cursor: "pointer" }} />
+              </Dropdown>
+            ) : (
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Button type="primary">
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button>
+                  <Link to="/register">Sign Up</Link>
+                </Button>
+              </div>
+            )}
+          </li>
         </ul>
       </nav>
     </div>

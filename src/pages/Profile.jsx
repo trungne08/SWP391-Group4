@@ -1,42 +1,155 @@
-import React from "react";
-import { Card, Avatar, Button, Descriptions, Divider } from "antd";
+import React, { useState, useEffect } from "react";
+import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message } from "antd";
 import { UserOutlined, EditOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import api from '../services/api';
 
 const Profile = () => {
+  const [userData, setUserData] = useState(null);
+  const [profileData, setProfileData] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setUserData(user);
+          // Fetch additional profile data
+          const profile = await api.user.getUserProfile(user.user_id);
+          setProfileData(profile);
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        message.error('Failed to load user data');
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+  // Update Descriptions component
+  <Descriptions title="Account Information" column={1} bordered>
+      <Descriptions.Item label="Username">{userData?.username}</Descriptions.Item>
+      <Descriptions.Item label="Full Name">{profileData?.full_name}</Descriptions.Item>
+      <Descriptions.Item label="Email">{userData?.email}</Descriptions.Item>
+      <Descriptions.Item label="Phone Number">{profileData?.phone_number}</Descriptions.Item>
+      <Descriptions.Item label="Role">{userData?.role}</Descriptions.Item>
+      <Descriptions.Item label="Member Since">
+          {userData?.created_at ? new Date(userData.created_at).toLocaleDateString() : 'N/A'}
+      </Descriptions.Item>
+  </Descriptions>
+  const handleEdit = () => {
+    if (!userData || !profileData) return;
+    
+    form.setFieldsValue({
+      username: userData.username,
+      email: userData.email,
+      full_name: profileData.full_name,
+      phone_number: profileData.phone_number
+    });
+    setIsModalVisible(true);
+  };
+
+  const handleUpdate = async (values) => {
+    try {
+      await api.user.updateProfile(values);
+      setUserData(prev => ({ ...prev, ...values }));
+      setProfileData(prev => ({ ...prev, ...values }));
+      message.success('Profile updated successfully');
+      setIsModalVisible(false);
+    } catch (error) {
+      message.error('Failed to update profile');
+    }
+  };
+
+  if (!userData || !profileData) {
+    return <div style={{ textAlign: 'center', marginTop: '50px' }}>Loading...</div>;
+  }
+
   return (
-    <div style={{ display: "flex", justifyContent: "center", marginTop: "50px" }}>
+    <div style={{ display: "flex", justifyContent: "center", marginTop: "50px", marginBottom: "50px" }}>
       <Card style={{ width: 500, padding: "20px", borderRadius: "10px" }}>
         <div style={{ textAlign: "center" }}>
-          <Avatar size={80} icon={<UserOutlined />} />
-          <h2>Nguyễn Văn A</h2>
-          <p>Email: nguyenvana@example.com</p>
-          <p>Số điện thoại: 0123-456-789</p>
-          <Button type="primary" icon={<EditOutlined />} style={{ marginBottom: "10px" }}>
-            Chỉnh sửa thông tin
+          <Avatar 
+            size={80} 
+            src={profileData.avatar || null}
+            icon={!profileData.avatar && <UserOutlined />} 
+          />
+          <h2>{profileData.full_name || userData.username}</h2>
+          <p>Email: {userData.email}</p>
+          <p>Role: {userData.role}</p>
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />} 
+            onClick={handleEdit}
+            style={{ marginBottom: "10px" }}
+          >
+            Edit Profile
           </Button>
         </div>
 
         <Divider />
 
-        <Descriptions title="Thông tin thai kỳ" column={1} bordered>
-          <Descriptions.Item label="Tuần thai">28 tuần</Descriptions.Item>
-          <Descriptions.Item label="Ngày dự sinh">15/05/2025</Descriptions.Item>
-          <Descriptions.Item label="Cân nặng mẹ">60 kg</Descriptions.Item>
-          <Descriptions.Item label="Cân nặng thai nhi">1.2 kg</Descriptions.Item>
-          <Descriptions.Item label="Chiều dài thai nhi">38 cm</Descriptions.Item>
-          <Descriptions.Item label="Lần khám thai gần nhất">20/02/2025</Descriptions.Item>
-          <Descriptions.Item label="Lịch khám tiếp theo">05/03/2025</Descriptions.Item>
-          <Descriptions.Item label="Ghi chú bác sĩ">Tình trạng ổn định, tiếp tục theo dõi chế độ dinh dưỡng.</Descriptions.Item>
+        <Descriptions title="Account Information" column={1} bordered>
+          <Descriptions.Item label="Username">{userData.username}</Descriptions.Item>
+          <Descriptions.Item label="Full Name">{profileData.full_name}</Descriptions.Item>
+          <Descriptions.Item label="Email">{userData.email}</Descriptions.Item>
+          <Descriptions.Item label="Phone Number">{profileData.phone_number}</Descriptions.Item>
+          <Descriptions.Item label="Role">{userData.role}</Descriptions.Item>
+          <Descriptions.Item label="Member Since">
+            {userData.created_at ? new Date(userData.created_at).toLocaleDateString() : 'N/A'}
+          </Descriptions.Item>
         </Descriptions>
 
-        <Divider />
-
-        <Descriptions title="Thông tin sức khỏe mẹ bầu" column={1} bordered>
-          <Descriptions.Item label="Huyết áp">110/70 mmHg</Descriptions.Item>
-          <Descriptions.Item label="Đường huyết">5.2 mmol/L</Descriptions.Item>
-          <Descriptions.Item label="Tiêm phòng uốn ván">Đã tiêm mũi 1</Descriptions.Item>
-          <Descriptions.Item label="Bổ sung vitamin">Sắt, Canxi, DHA</Descriptions.Item>
-        </Descriptions>
+        <Modal
+          title="Edit Profile"
+          open={isModalVisible}
+          onCancel={() => setIsModalVisible(false)}
+          footer={null}
+        >
+          <Form
+            form={form}
+            onFinish={handleUpdate}
+            layout="vertical"
+          >
+            <Form.Item
+              name="full_name"
+              label="Full Name"
+              rules={[{ required: true, message: 'Please input your full name!' }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: 'Please input your email!' },
+                { type: 'email', message: 'Please enter a valid email!' }
+              ]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="phone_number"
+              label="Phone Number"
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block>
+                Update Profile
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
       </Card>
     </div>
   );
