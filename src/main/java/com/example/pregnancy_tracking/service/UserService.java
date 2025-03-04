@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
-    // Remove PasswordEncoder since we're not using it
     
     public String register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -30,7 +29,7 @@ public class UserService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());  // Store password directly
+        user.setPassword(request.getPassword()); 
         user.setRole(Role.MEMBER);
 
         userRepository.save(user);
@@ -71,34 +70,42 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với id: " + id));
+                .orElseThrow(() -> new RuntimeException("User not found: " + id));
         return new UserDTO(user, user.getUserProfile());
     }
 
     public UserDTO updateUser(Long id, UserDTO userDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với id: " + id));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         UserProfile userProfile = user.getUserProfile();
         if (userProfile == null) {
             userProfile = new UserProfile();
             userProfile.setUser(user);
+            userProfile.setFullName("");
+            userProfile.setPhoneNumber("");
+            userProfile.setAvatar("");
             user.setUserProfile(userProfile);
         }
 
-        // Cập nhật thông tin cơ bản
-        if (userDTO.getUsername() != null)
+        // Update basic info
+        if (userDTO.getUsername() != null) {
             user.setUsername(userDTO.getUsername());
-        if (userDTO.getEmail() != null)
+        }
+        if (userDTO.getEmail() != null) {
             user.setEmail(userDTO.getEmail());
+        }
 
-        // Cập nhật thông tin profile
-        if (userDTO.getFullName() != null)
+        // Update profile info
+        if (userDTO.getFullName() != null) {
             userProfile.setFullName(userDTO.getFullName());
-        if (userDTO.getPhoneNumber() != null)
+        }
+        if (userDTO.getPhoneNumber() != null) {
             userProfile.setPhoneNumber(userDTO.getPhoneNumber());
-        if (userDTO.getAvatar() != null)
+        }
+        if (userDTO.getAvatar() != null) {
             userProfile.setAvatar(userDTO.getAvatar());
+        }
 
         User savedUser = userRepository.save(user);
         return new UserDTO(savedUser, savedUser.getUserProfile());

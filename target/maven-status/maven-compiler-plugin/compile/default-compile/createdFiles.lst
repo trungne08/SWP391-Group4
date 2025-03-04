@@ -5,6 +5,7 @@ com\example\pregnancy_tracking\dto\ChangePasswordRequest.class
 com\example\pregnancy_tracking\entity\UserProfile.class
 com\example\pregnancy_tracking\security\JwtUtil.class
 com\example\pregnancy_tracking\dto\AuthResponse.class
+com\example\pregnancy_tracking\config\SecurityConfig$1.class
 com\example\pregnancy_tracking\dto\LoginRequest.class
 com\example\pregnancy_tracking\config\JwtAuthenticationFilter.class
 com\example\pregnancy_tracking\exception\UserNotFoundException.class
