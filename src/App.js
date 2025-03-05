@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";  // Remove BrowserRouter import
+import { Routes, Route, Navigate } from "react-router-dom";  // Add Navigate import
 import Layout from "./layouts/Layouts";
 import AdminLayout from "./layouts/AdminLayout";
 import "./App.css";
@@ -20,11 +20,23 @@ import Confirm from "./pages/Confirm";
 import Profile from "./pages/Profile";
 import Reminder from "./pages/Reminder";  // Add this import
 import Register from "./pages/Register";  // Add this import
+import Logout from "./pages/Logout";
+
+// Inside your Routes component
+<Route path="logout" element={<Logout />} />
+
+// Add this protected route component
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('token'); // or your auth check
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  return children;
+};
 
 function App() {
   return (
     <Routes>
-      {/* Main routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="/contact" element={<ContactUs />} /> 
@@ -41,13 +53,11 @@ function App() {
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="profile" element={<Profile />} />
         <Route path="reminder" element={<Reminder />} />  {/* Add this route */}
-      </Route>
-      {/* Admin routes */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="members" element={<AdminMember />} />
-        <Route path="blog" element={<AdminBlog />} />
+        <Route path="logout" element={
+          <ProtectedRoute>
+            <Logout />
+          </ProtectedRoute>
+        } />
       </Route>
     </Routes>
   );

@@ -17,6 +17,9 @@ const Header = () => {
       <Menu.Item key="login">
         <Link to="/login">Đăng nhập</Link>
       </Menu.Item>
+      <Menu.Item key="logout">
+        <Link to="/logout">Đăng xuất</Link>
+      </Menu.Item>
     </Menu>
   );
 
