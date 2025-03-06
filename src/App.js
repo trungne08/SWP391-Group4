@@ -5,7 +5,6 @@ import "./App.css";
 import HomePage from "./pages/HomePage";
 import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
-import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";  
 import Login from "./pages/Login";  
@@ -21,9 +20,12 @@ import Profile from "./pages/Profile";
 import Reminder from "./pages/Reminder";  // Add this import
 import Register from "./pages/Register";  // Add this import
 
+
 function App() {
   return (
+    
     <Routes>
+     
       {/* Main routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
@@ -41,6 +43,7 @@ function App() {
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="profile" element={<Profile />} />
         <Route path="reminder" element={<Reminder />} />  {/* Add this route */}
+      
       </Route>
       {/* Admin routes */}
       <Route path="/admin" element={<AdminLayout />}>
