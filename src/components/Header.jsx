@@ -27,19 +27,27 @@ const Header = () => {
       <nav className="navbar">
         <ul className="nav-list">
           <li className="nav-icon">
-            <Link to="/" className={location.pathname === "/" ? "active" : ""}>  <FontAwesomeIcon icon={faPersonBreastfeeding} /></Link>
-          
+            <Link to="/" className={location.pathname === "/" ? "active" : ""}>
+              <FontAwesomeIcon icon={faPersonBreastfeeding} />
+            </Link>
           </li>
           <div className="nav-links">
             <li>
               <Link to="/" className={location.pathname === "/" ? "active" : ""}>Home</Link>
             </li>
             <li>
-              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>Comunity</Link>
+              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>Community</Link>
             </li>
             <li>
               <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
+<<<<<<< HEAD
             </li> 
+=======
+            </li>
+            {/* <li>
+              <Link to="/mom" className={location.pathname === "/mom" ? "active" : ""}>Mom</Link>
+            </li> */}
+>>>>>>> 9f8570a96ab593c5ce98f66e0f03343c1e48acfe
             <li>
               <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
             </li>
