@@ -1,94 +1,77 @@
-import React, { useState } from 'react';
-import { Typography, Button, Card, Avatar, Row, Col, Pagination } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Typography, Button, Card, Avatar, Row, Col, Pagination, Modal, message } from 'antd';
+import api from '../services/api';
 
 const { Title, Text } = Typography;
 
 function AdminMember() {
+  const [members, setMembers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
-  const members = [
-    {
-      id: 1,
-      title: "John Smith",
-      body: "Premium member since 2023. Active participant in pregnancy tracking program.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=1"
-    },
-    {
-      id: 2,
-      title: "Sarah Johnson",
-      body: "New member, joined our community last month. Expecting first child.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=2"
-    },
-    {
-      id: 3,
-      title: "Michael Brown",
-      body: "Premium member, actively participating in parenting workshops.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=3"
-    },
-    {
-      id: 4,
-      title: "Emma Davis",
-      body: "Member since 2022. Regular contributor to community discussions.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=4"
-    },
-    {
-      id: 5,
-      title: "James Wilson",
-      body: "Premium member, frequently attends online seminars.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=5"
-    },
-    {
-      id: 6,
-      title: "Lisa Anderson",
-      body: "Active community member, shares valuable pregnancy tips.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=6"
-    },
-    {
-      id: 7,
-      title: "Robert Taylor",
-      body: "New premium member, expecting twins in 2024.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=7"
-    },
-    {
-      id: 8,
-      title: "Emily White",
-      body: "Regular member, actively participates in Q&A sessions.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=8"
-    },
-    {
-      id: 9,
-      title: "David Miller",
-      body: "Premium member since 2021, community moderator.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=9"
-    },
-    {
-      id: 10,
-      title: "Jennifer Clark",
-      body: "Active member in pregnancy nutrition programs.",
-      avatar: "https://xsgames.co/randomusers/avatar.php?g=pixel&key=10"
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const response = await api.user.getAllUsers();
+      const filteredMembers = response.filter(user => user.role === 'MEMBER');
+      setMembers(filteredMembers);
+      setTotal(filteredMembers.length);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      message.error('Failed to load members');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const handleDelete = async (memberId) => {
+    try {
+      await api.user.deleteUser(memberId);
+      message.success('Member deleted successfully');
+      fetchMembers(); // Refresh list
+    } catch (error) {
+      console.error('Error deleting member:', error);
+      message.error('Failed to delete member');
+    }
+    setDeleteModalVisible(false);
+  };
+
+  const showDeleteConfirm = (member) => {
+    setSelectedMember(member);
+    setDeleteModalVisible(true);
+  };
+
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
-      <Title level={2}>Admin Member</Title>
+      <Title level={2}>Member Management</Title>
       
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Title level={4} style={{ margin: 0 }}>Member List</Title>
       </Row>
 
       {members.map((member) => (
-        <Card key={member.id} style={{ marginBottom: 16 }}>
+        <Card key={member.user_id} style={{ marginBottom: 16 }} loading={loading}>
           <div style={{ display: 'flex', gap: 16 }}>
-            <Avatar size={64} src={member.avatar} />
+            <Avatar size={64} src={member.avatar || `https://ui-avatars.com/api/?name=${member.username}`} />
             <div style={{ flex: 1 }}>
-              <Title level={5} style={{ marginTop: 0 }}>{member.title}</Title>
-              <Text type="secondary">{member.body}</Text>
+              <Title level={5} style={{ marginTop: 0 }}>{member.username}</Title>
+              <Text>Email: {member.email}</Text>
+              <div style={{ marginTop: 8 }}>
+                <Text type="secondary">Role: {member.role}</Text>
+              </div>
               <div style={{ marginTop: 16 }}>
-                <Button size="small" style={{ marginRight: 8 }}>Edit</Button>
                 <Button 
                   size="small" 
                   danger
                   type="primary"
+                  onClick={() => showDeleteConfirm(member)}
                 >
                   Delete
                 </Button>
@@ -98,11 +81,22 @@ function AdminMember() {
         </Card>
       ))}
 
+      <Modal
+        title="Confirm Delete"
+        open={deleteModalVisible}
+        onOk={() => handleDelete(selectedMember?.user_id)}
+        onCancel={() => setDeleteModalVisible(false)}
+        okText="Delete"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to delete member {selectedMember?.username}?</p>
+      </Modal>
+
       <Row justify="center" style={{ marginTop: 24 }}>
         <Pagination 
           current={currentPage}
           onChange={(page) => setCurrentPage(page)}
-          total={100}
+          total={total}
           showSizeChanger={false}
         />
       </Row>

@@ -10,6 +10,7 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
+  
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -17,13 +18,32 @@ const Register = () => {
     const { name, value } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: value.trim()
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Basic validation
+    if (!formData.username || !formData.email || !formData.password) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Password validation
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -32,17 +52,26 @@ const Register = () => {
 
     try {
       const registerData = {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        role: 'MEMBER'
+        username: formData.username.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
       };
-      
+
       await api.auth.register(registerData);
-      navigate('/login');
+      navigate('/login', { 
+        state: { message: 'Registration successful! Please login.' },
+        replace: true 
+      });
+      
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err.message || 'Registration failed. Please try again.');
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message?.includes('Failed to fetch') || err.message?.includes('Network Error')) {
+        setError('Unable to connect to server. Please try again later.');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     }
   };
 
@@ -55,7 +84,7 @@ const Register = () => {
             Join Baby Care
           </Typography>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <TextField
               margin="normal"
               required
@@ -67,6 +96,7 @@ const Register = () => {
               autoFocus
               value={formData.username}
               onChange={handleChange}
+              error={!!error}
             />
             <TextField
               margin="normal"
@@ -75,9 +105,11 @@ const Register = () => {
               id="email"
               label="Email Address"
               name="email"
+              type="email"
               autoComplete="email"
               value={formData.email}
               onChange={handleChange}
+              error={!!error}
             />
             <TextField
               margin="normal"
@@ -89,6 +121,7 @@ const Register = () => {
               id="password"
               value={formData.password}
               onChange={handleChange}
+              error={!!error}
             />
             <TextField
               margin="normal"
@@ -100,6 +133,7 @@ const Register = () => {
               id="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
+              error={!!error}
             />
             <Button
               type="submit"

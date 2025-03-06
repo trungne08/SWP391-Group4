@@ -4,22 +4,14 @@ import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
 import "./Header.css";
 import { UserOutlined } from "@ant-design/icons";
 import { Avatar, Dropdown, Menu, Button } from "antd";
-import { useState, useEffect } from "react";
+import { useAuth } from '../context/AuthContext';  // Import useAuth
 
 const Header = () => {
   const location = useLocation();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    // Check if user is logged in by looking for token
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-  }, []);
+  const { isAuthenticated, user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsLoggedIn(false);
-    // You might want to redirect to home page here
+    logout();
   };
 
   const authenticatedMenu = (
@@ -27,6 +19,11 @@ const Header = () => {
       <Menu.Item key="profile">
         <Link to="/profile">Profile</Link>
       </Menu.Item>
+      {user?.role === 'ADMIN' && (
+        <Menu.Item key="dashboard">
+          <Link to="/admin/dashboard">Dashboard</Link>
+        </Menu.Item>
+      )}
       <Menu.Item key="logout" onClick={handleLogout}>
         Logout
       </Menu.Item>
@@ -60,9 +57,12 @@ const Header = () => {
             </li>
           </div>
           <li className="nav-avatar">
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <Dropdown overlay={authenticatedMenu} trigger={["click"]}>
-                <Avatar size={32} icon={<UserOutlined />} style={{ cursor: "pointer" }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <Avatar size={32} icon={<UserOutlined />} />
+                  <span>{user?.username}</span>
+                </div>
               </Dropdown>
             ) : (
               <div style={{ display: 'flex', gap: '10px' }}>

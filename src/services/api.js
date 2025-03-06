@@ -1,63 +1,82 @@
-const API_BASE_URL = 'http://localhost:8080/api/user';  // Changed back to /api/user
+const API_BASE_URL = 'http://localhost:8080/api/user';
 
 const api = {
     auth: {
         login: async (credentials) => {
             try {
-                console.log('Sending login request:', credentials);
-                
                 const response = await fetch(`${API_BASE_URL}/login`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        email: credentials.email,
+                        email: credentials.email.trim(),
                         password: credentials.password
                     })
                 });
                 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Login failed');
-                }
-
                 const data = await response.json();
                 console.log('Server response:', data);
-                return data;
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Login failed');
+                }
+                
+                // Kiểm tra và trích xuất thông tin từ token
+                const tokenData = JSON.parse(atob(data.token.split('.')[1]));
+                console.log('Token data:', tokenData);
+                
+                return {
+                    token: data.token,
+                    user_id: tokenData.user_id, // Sửa id thành user_id
+                    username: tokenData.sub,
+                    email: tokenData.email,
+                    role: tokenData.role
+                };
             } catch (error) {
                 console.error('Login error:', error);
-                throw new Error('Invalid email or password');
+                throw error;
             }
         },
+
         register: async (userData) => {
             try {
+                console.log('Sending registration data:', userData);
                 const response = await fetch(`${API_BASE_URL}/register`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         username: userData.username,
                         email: userData.email,
                         password: userData.password,
-                        role: 'MEMBER',
-                        profile: {
-                            full_name: userData.full_name || userData.username,
-                            phone_number: userData.phone_number || '',
-                            avatar: userData.avatar || ''
-                        }
+                        role: "MEMBER"
                     })
                 });
                 
+                // Xử lý response text trước
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                // Nếu response không ok, ném lỗi với message
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Registration failed');
+                    throw new Error(responseText || 'Registration failed');
                 }
                 
-                return await response.json();
+                // Nếu response text rỗng, return true để chỉ ra thành công
+                if (!responseText) {
+                    return true;
+                }
+                
+                // Thử parse JSON nếu có data
+                try {
+                    return JSON.parse(responseText);
+                } catch {
+                    return true; // Nếu không parse được JSON, vẫn coi như thành công
+                }
             } catch (error) {
-                console.error('Register error:', error);
+                console.error('Registration error:', error);
                 throw error;
             }
         },
@@ -69,7 +88,6 @@ const api = {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    mode: 'cors',
                     body: JSON.stringify(passwordData)
                 });
                 
@@ -79,6 +97,7 @@ const api = {
                 }
                 return data;
             } catch (error) {
+                console.error('Change password error:', error);
                 throw error;
             }
         }
@@ -90,9 +109,9 @@ const api = {
                 const response = await fetch(`${API_BASE_URL}/all`, {
                     method: 'GET',
                     headers: {
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    mode: 'cors'
+                    }
                 });
                 
                 const data = await response.json();
@@ -101,18 +120,118 @@ const api = {
                 }
                 return data;
             } catch (error) {
+                console.error('Get all users error:', error);
                 throw error;
             }
         },
 
+        deleteUser: async (userId) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to delete user');
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Delete user error:', error);
+                throw error;
+            }
+        },
+
+        updateUserRole: async (userId, newRole) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update user role');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Update user role error:', error);
+                throw error;
+            }
+        },
+        
+        getProfile: async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const user = JSON.parse(localStorage.getItem('user'));
+                
+                const response = await fetch(`${API_BASE_URL}/${user.user_id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile');
+                }
+                
+                const data = await response.json();
+                console.log('Profile data:', data);
+                return data;
+            } catch (error) {
+                console.error('Get profile error:', error);
+                throw error;
+            }
+        },
+
+        updateProfile: async (data) => {
+            try {
+                const token = localStorage.getItem('token');
+                const user = JSON.parse(localStorage.getItem('user'));
+                
+                const response = await fetch(`${API_BASE_URL}/${user.user_id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        full_name: data.full_name,
+                        phone_number: data.phone_number
+                    })
+                });
+            
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update profile');
+                }
+            
+                return await response.json();
+            } catch (error) {
+                console.error('Update profile error:', error);
+                throw error;
+            }
+        },
         getUserById: async (id) => {
             try {
                 const response = await fetch(`${API_BASE_URL}/${id}`, {
                     method: 'GET',
                     headers: {
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    mode: 'cors'
+                    }
                 });
                 
                 const data = await response.json();
@@ -121,6 +240,7 @@ const api = {
                 }
                 return data;
             } catch (error) {
+                console.error('Get user error:', error);
                 throw error;
             }
         }

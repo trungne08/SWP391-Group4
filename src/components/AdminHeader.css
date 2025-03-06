@@ -26,7 +26,6 @@
   font-size: 18px;
   font-weight: bold;
 }
-
 .admin-profile {
   margin-top: auto;
   padding: 20px;
@@ -35,11 +34,15 @@
   align-items: center;
   gap: 10px;
 }
-
 .admin-name {
   color: white;
 }
-
+.admin-profile {
+  transition: background-color 0.3s;
+}
+.admin-profile:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
 /* Override ant-design menu styles */
 .ant-menu {
   background-color: transparent !important;

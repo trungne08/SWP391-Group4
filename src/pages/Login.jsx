@@ -2,20 +2,22 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Box, Container, TextField, Button, Typography, Paper, Alert } from '@mui/material';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',    // Changed from username to email
+    email: '',
     password: ''
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: value.trim()
     }));
   };
   const handleSubmit = async (e) => {
@@ -23,19 +25,26 @@ const Login = () => {
     setError('');
     
     try {
+      console.log('Attempting login...');
       const response = await api.auth.login(formData);
       
-      if (response && response.data) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data));
+      if (response) {
+        localStorage.setItem('token', response.token);
+        const userData = {
+          id: response.id,
+          username: response.username,
+          email: response.email,
+          role: response.role
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
         
-        if (response.data.role === 'ADMIN') {
-          navigate('/admin');
-        } else if (response.data.role === 'MEMBER') {
-          navigate('/');
+        login(userData);
+        
+        if (response.role === 'MEMBER') {
+          navigate('/', { replace: true }); // Chuyển về home và thay thế history
+        } else if (response.role === 'ADMIN') {
+          navigate('/admin', { replace: true });
         }
-      } else {
-        throw new Error('Invalid response format');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -50,8 +59,14 @@ const Login = () => {
             Welcome BabyCareCenter!<br />
             Login to continue
           </Typography>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <form onSubmit={handleSubmit}>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          <form onSubmit={handleSubmit} noValidate>
             <TextField
               margin="normal"
               required
@@ -64,6 +79,7 @@ const Login = () => {
               value={formData.email}
               onChange={handleChange}
               type="email"
+              error={!!error}
             />
             <TextField
               margin="normal"
@@ -76,6 +92,7 @@ const Login = () => {
               autoComplete="current-password"
               value={formData.password}
               onChange={handleChange}
+              error={!!error}
             />
             <Button
               type="submit"

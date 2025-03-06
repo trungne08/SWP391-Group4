@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";  // Remove Router import
+import { Routes, Route, Navigate } from "react-router-dom";  // Remove Router import
 import Header from "./components/Header"; 
 import Layout from "./layouts/Layouts";
 import AdminLayout from "./layouts/AdminLayout";
@@ -22,38 +22,76 @@ import Profile from "./pages/Profile";
 import Reminder from "./pages/Reminder";  // Add this import
 import Register from "./pages/Register";  // Add this import
 import PrivateRoute from './components/PrivateRoute';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';  // Add this import
+
+const AdminRoute = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (user?.role !== 'ADMIN') {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
+};
 
 function App() {
   return (
-    <>
-      <Routes>
-        {/* Main routes */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="/contact" element={<ContactUs />} /> 
-          <Route path="comunity" element={<Comunity />} />
-          <Route path="blog" element={<Blog />} />
-          {/* <Route path="mom" element={<Mom />} /> */}
-          <Route path="baby" element={<Baby />} />
-          <Route path="faq" element={<FAQ />} />
-          <Route path="feepackage" element={<FeePackage />} />
-          <Route path="payment" element={<Payment />} />
-          <Route path="confirm" element={<Confirm />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />  {/* Add this route */}
-          <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="reminder" element={<Reminder />} />  {/* Add this route */}
-        </Route>
-        {/* Admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="members" element={<AdminMember />} />
-          <Route path="blog" element={<AdminBlog />} />
-        </Route>
-      </Routes>
-    </>
+    <AuthProvider>
+      <>
+        <Routes>
+          {/* Main routes */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="/contact" element={<ContactUs />} /> 
+            <Route path="comunity" element={<Comunity />} />
+            <Route path="blog" element={<Blog />} />
+            {/* <Route path="mom" element={<Mom />} /> */}
+            <Route path="baby" element={<Baby />} />
+            <Route path="faq" element={<FAQ />} />
+            <Route path="feepackage" element={<FeePackage />} />
+            <Route path="payment" element={<Payment />} />
+            <Route path="confirm" element={<Confirm />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />  {/* Add this route */}
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="reminder" element={<Reminder />} />  {/* Add this route */}
+          </Route>
+          {/* Admin routes */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }>
+            <Route index element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
+            <Route path="dashboard" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
+            <Route path="members" element={
+              <AdminRoute>
+                <AdminMember />
+              </AdminRoute>
+            } />
+            <Route path="blog" element={
+              <AdminRoute>
+                <AdminBlog />
+              </AdminRoute>
+            } />
+          </Route>
+        </Routes>
+      </>
+    </AuthProvider>
   );
 }
 
