@@ -40,14 +40,11 @@ const Header = () => {
             </li>
             <li>
               <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
-<<<<<<< HEAD
+
             </li> 
-=======
-            </li>
-            {/* <li>
-              <Link to="/mom" className={location.pathname === "/mom" ? "active" : ""}>Mom</Link>
-            </li> */}
->>>>>>> 9f8570a96ab593c5ce98f66e0f03343c1e48acfe
+
+      
+
             <li>
               <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
             </li>

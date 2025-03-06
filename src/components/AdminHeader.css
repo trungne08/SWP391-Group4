@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 .admin-sidebar {
   width: 250px;
   height: 100vh;
@@ -57,7 +57,7 @@
 .ant-menu-item-selected {
   background-color: #1890ff !important;
   color: white !important;
-=======
+}
 .container-header {
   display: flex;
   justify-content: center;
@@ -139,5 +139,5 @@
 .nav-avatar {
   display: flex;
   align-items: center;
->>>>>>> 9f8570a96ab593c5ce98f66e0f03343c1e48acfe
+
 }
