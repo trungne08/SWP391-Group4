@@ -4,7 +4,10 @@ import AdminLayout from "./layouts/AdminLayout";
 import Home from "./pages/HomePage";
 import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
+<<<<<<< Updated upstream
 // import Mom from "./pages/Mom";
+=======
+>>>>>>> Stashed changes
 import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";
 import AdminBlog from "./pages/AdminBlog";
