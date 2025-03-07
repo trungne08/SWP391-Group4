@@ -1,75 +1,74 @@
 import React, { useState, useEffect } from "react";
-import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message } from "antd";
+import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message, Spin } from "antd";
 import { UserOutlined, EditOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!user) {
           navigate('/login');
           return;
         }
         
-        // Decode token để lấy thông tin user
-        const tokenData = JSON.parse(atob(token.split('.')[1]));
-        const userData = {
-          user_id: tokenData.user_id,
-          username: tokenData.sub,
-          email: tokenData.email,
-          role: tokenData.role
-        };
-        setUserData(userData);
+        setLoading(true);
+        const profileData = await api.user.getProfile();
         
-        try {
-          const profileData = await api.user.getProfile();
-          if (profileData) {
-            setUserData(prev => ({
-              ...prev,
-              ...profileData
-            }));
-          }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-          message.error('Failed to fetch profile data');
+        if (profileData) {
+          const updatedUserData = {
+            id: profileData.id,
+            username: profileData.username,
+            email: profileData.email,
+            role: profileData.role,
+            fullName: profileData.fullName,
+            phoneNumber: profileData.phoneNumber,
+            avatar: profileData.avatar
+          };
+          console.log("Profile Data:", profileData);
+          setUserData(updatedUserData);
+        } else {
+          setUserData(user);
         }
       } catch (error) {
-        console.error('Error loading user data:', error);
-        message.error('Failed to load user data');
+        console.error('Error fetching profile:', error);
+        message.error('Failed to load profile data');
+        setUserData(user);
+      } finally {
+        setLoading(false);
       }
     };
     fetchUserData();
-  }, [navigate]);
+  }, [user, navigate]);
+  
   const handleEdit = () => {
     if (!userData) return;
     
     form.setFieldsValue({
-      full_name: userData.full_name || '',
-      phone_number: userData.phone_number || ''
+      fullName: userData.fullName || '',
+      phoneNumber: userData.phoneNumber || ''
     });
     setIsModalVisible(true);
   };
+  
   const handleUpdate = async (values) => {
     try {
-      const response = await api.user.updateProfile({
-        profile_id: userData.profile_id,
-        user_id: userData.user_id,
-        full_name: values.full_name,
-        phone_number: values.phone_number,
-        avatar: userData.avatar || ''
-      });
+      setLoading(true);
+      const response = await api.user.updateProfile(values);
       
       if (response) {
         setUserData(prev => ({
           ...prev,
-          ...response
+          ...response  // Cập nhật với data mới từ API
         }));
         message.success('Profile updated successfully');
         setIsModalVisible(false);
@@ -77,37 +76,48 @@ const Profile = () => {
     } catch (error) {
       console.error('Update error:', error);
       message.error('Failed to update profile');
+    } finally {
+      setLoading(false);
     }
   };
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
   if (!userData) {
-    return <div style={{ textAlign: 'center', marginTop: '50px' }}>Loading...</div>;
+    return <div style={{ textAlign: 'center', marginTop: '50px' }}>No user data available</div>;
   }
   return (
-    <div style={{ display: "flex", justifyContent: "center", marginTop: "50px", marginBottom: "50px" }}>
-      <Card style={{ width: 500, padding: "20px", borderRadius: "10px" }}>
-        <div style={{ textAlign: "center" }}>
+    <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
+      <Card style={{ width: 600, borderRadius: "8px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <Avatar 
-            size={80} 
-            icon={<UserOutlined />}
+            size={100} 
+            src={userData.avatar}
+            icon={!userData.avatar && <UserOutlined />}
+            style={{ marginBottom: "16px" }}
           />
-          <h2>{userData.username}</h2>
-          <p>Email: {userData.email}</p>
-          <p>Role: {userData.role}</p>
+          <h2 style={{ margin: "8px 0" }}>{userData.username}</h2>
+          <p style={{ color: "#666" }}>{userData.email}</p>
           <Button 
             type="primary" 
             icon={<EditOutlined />} 
             onClick={handleEdit}
-            style={{ marginBottom: "10px" }}
+            style={{ marginTop: "16px" }}
           >
             Edit Profile
           </Button>
         </div>
         <Divider />
         <Descriptions title="Account Information" column={1} bordered>
+          <Descriptions.Item label="User ID">{userData.id}</Descriptions.Item>
           <Descriptions.Item label="Username">{userData.username}</Descriptions.Item>
-          <Descriptions.Item label="Full Name">{userData.full_name || 'Not set'}</Descriptions.Item>
+          <Descriptions.Item label="Full Name">{userData.fullName || 'Not set'}</Descriptions.Item>
           <Descriptions.Item label="Email">{userData.email}</Descriptions.Item>
-          <Descriptions.Item label="Phone Number">{userData.phone_number || 'Not set'}</Descriptions.Item>
+          <Descriptions.Item label="Phone Number">{userData.phoneNumber || 'Not set'}</Descriptions.Item>
           <Descriptions.Item label="Role">{userData.role}</Descriptions.Item>
         </Descriptions>
         <Modal
@@ -122,20 +132,26 @@ const Profile = () => {
             layout="vertical"
           >
             <Form.Item
-              name="full_name"
+              name="fullName"
               label="Full Name"
-              rules={[{ required: true, message: 'Please input your full name!' }]}
+              rules={[
+                { required: true, message: 'Please input your full name!' },
+                { max: 50, message: 'Full name cannot exceed 50 characters!' }
+              ]}
             >
               <Input />
             </Form.Item>
             <Form.Item
-              name="phone_number"
+              name="phoneNumber"
               label="Phone Number"
+              rules={[
+                { pattern: /^\d{10}$/, message: 'Please enter a valid 10-digit phone number!' }
+              ]}
             >
               <Input />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit" block>
+              <Button type="primary" htmlType="submit" block loading={loading}>
                 Update Profile
               </Button>
             </Form.Item>

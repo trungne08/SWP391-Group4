@@ -31,17 +31,19 @@ const Login = () => {
       if (response) {
         localStorage.setItem('token', response.token);
         const userData = {
-          id: response.id,
+          user_id: response.user_id,  // Thêm user_id từ response
           username: response.username,
           email: response.email,
           role: response.role
         };
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Log để debug
+        console.log('User Data:', userData);
         
+        localStorage.setItem('user', JSON.stringify(userData));
         login(userData);
         
         if (response.role === 'MEMBER') {
-          navigate('/', { replace: true }); // Chuyển về home và thay thế history
+          navigate('/', { replace: true });
         } else if (response.role === 'ADMIN') {
           navigate('/admin', { replace: true });
         }
