@@ -5,10 +5,26 @@ import "./Header.css";
 import { UserOutlined } from "@ant-design/icons";
 import { Avatar, Dropdown, Menu, Button } from "antd";
 import { useAuth } from '../context/AuthContext';  // Import useAuth
-
+import api from '../services/api';
+import { useState, useEffect } from "react";
 const Header = () => {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (user) {
+          const response = await api.user.getProfile();
+          setUserData(response);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    fetchUserData();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -66,7 +82,15 @@ const Header = () => {
             {isAuthenticated ? (
               <Dropdown overlay={authenticatedMenu} trigger={["click"]}>
                 <div style={{ cursor: 'pointer' }}>
-                  <Avatar size={32} src={user?.avatar} icon={!user?.avatar && <UserOutlined />} />
+                  <Avatar 
+                    size={40} 
+                    src={userData?.avatar} 
+                    icon={<UserOutlined />}
+                    style={{ 
+                      backgroundColor: '#1890ff',
+                      verticalAlign: 'middle'
+                    }} 
+                  />
                 </div>
               </Dropdown>
             ) : (
