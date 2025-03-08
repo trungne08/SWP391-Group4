@@ -10,7 +10,7 @@ const api = {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: credentials.email.trim(),  // Giữ nguyên là email
+            email: credentials.email.trim(), // Giữ nguyên là email
             password: credentials.password,
           }),
         });
@@ -46,8 +46,8 @@ const api = {
     },
 
     logout: () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
 
     register: async (userData) => {
@@ -149,8 +149,16 @@ const api = {
           },
         });
 
+        // Handle non-JSON response
+        const responseText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          errorData = { message: responseText };
+        }
+
         if (!response.ok) {
-          const errorData = await response.json();
           throw new Error(errorData.message || "Failed to delete user");
         }
 
@@ -222,7 +230,7 @@ const api = {
           ...data,
           fullName: data.fullName === undefined ? null : data.fullName,
           phoneNumber: data.phoneNumber === undefined ? null : data.phoneNumber,
-          avatar: data.avatar === undefined ? null : data.avatar
+          avatar: data.avatar === undefined ? null : data.avatar,
         };
       } catch (error) {
         console.error("Get profile error:", error);
@@ -233,10 +241,10 @@ const api = {
     updateProfile: async (data) => {
       try {
         const token = localStorage.getItem("token");
-        const tokenData = JSON.parse(atob(token.split(".")[1]));
-        const userId = tokenData.id;
+        // Sử dụng userId được truyền vào từ tham số data
+        const userId = data.userId;
 
-        console.log("Sending update data:", data);
+        console.log("Updating user profile:", userId, data);
 
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
           method: "PUT",
@@ -257,13 +265,171 @@ const api = {
           throw new Error(responseData.message || "Failed to update profile");
         }
 
-        return {
-          ...responseData,
-          fullName: responseData.fullName,
-          phoneNumber: responseData.phoneNumber
-        };
+        return responseData;
       } catch (error) {
         console.error("Update profile error:", error);
+        throw error;
+      }
+    },
+  },
+  membership: {
+    getAllPackages: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        console.log("Token:", token); // Thêm log để debug token
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/membership/packages`,  // Endpoint đúng
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const responseText = await response.text();
+        console.log("Response text:", responseText); // Thêm log để debug response
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to fetch packages");
+        }
+
+        const data = responseText ? JSON.parse(responseText) : [];
+        console.log("Parsed data:", data); // Thêm log để debug parsed data
+        return data;
+      } catch (error) {
+        console.error("Get membership packages error:", error);
+        throw error;
+      }
+    },
+
+    registerMembership: async (packageId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        console.log("Registering with packageId:", packageId); // Debug log
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/subscriptions/subscribe/${packageId}`, // Endpoint đúng
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ packageId }) // Thêm packageId vào body
+          }
+        );
+
+        const responseText = await response.text();
+        console.log("Response text:", responseText);
+
+        if (!response.ok) {
+          const errorMessage = responseText || "Failed to register membership";
+          console.error("Server error:", errorMessage);
+          throw new Error(errorMessage);
+        }
+
+        return responseText ? JSON.parse(responseText) : { success: true };
+      } catch (error) {
+        console.error("Register membership error:", error);
+        throw error;
+      }
+    },
+
+    getUserMembership: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/subscriptions/my-subscriptions`, // Endpoint đúng
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user membership");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Get user membership error:", error);
+        throw error;
+      }
+    },
+
+    cancelSubscription: async (subscriptionId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+        
+        const response = await fetch(
+          `${API_BASE_URL}/api/subscriptions/cancel/${subscriptionId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to cancel subscription");
+        }
+        
+        return true;
+      } catch (error) {
+        console.error("Cancel subscription error:", error);
+        throw error;
+      }
+    },
+    upgradeSubscription: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        // ID của gói Premium Plan là 2
+        const premiumPackageId = 2;
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/subscriptions/subscribe/${premiumPackageId}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            }
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to upgrade subscription");
+        }
+
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error("Upgrade subscription error:", error);
         throw error;
       }
     },

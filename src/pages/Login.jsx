@@ -31,9 +31,10 @@ const Login = () => {
       if (response) {
         localStorage.setItem('token', response.token);
         const userData = {
-          user_id: response.user_id,  // Thêm user_id từ response
+          user_id: response.user_id,
           username: response.username,
           email: response.email,
+          fullName: response.fullName, // Thêm fullName, nếu không có thì dùng username
           role: response.role
         };
         // Log để debug

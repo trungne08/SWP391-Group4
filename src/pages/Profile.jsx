@@ -63,12 +63,18 @@ const Profile = () => {
   const handleUpdate = async (values) => {
     try {
       setLoading(true);
-      const response = await api.user.updateProfile(values);
+      const updateData = {
+        userId: userData.id, // Thêm userId vào request
+        fullName: values.fullName,
+        phoneNumber: values.phoneNumber
+      };
+      
+      const response = await api.user.updateProfile(updateData);
       
       if (response) {
         setUserData(prev => ({
           ...prev,
-          ...response  // Cập nhật với data mới từ API
+          ...response
         }));
         message.success('Profile updated successfully');
         setIsModalVisible(false);
@@ -96,11 +102,11 @@ const Profile = () => {
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <Avatar 
             size={100} 
-            src={userData.avatar}
+            src={userData.avatar || null}
             icon={!userData.avatar && <UserOutlined />}
             style={{ marginBottom: "16px" }}
           />
-          <h2 style={{ margin: "8px 0" }}>{userData.username}</h2>
+          <h2 style={{ margin: "8px 0" }}>{userData.fullName || userData.username}</h2>
           <p style={{ color: "#666" }}>{userData.email}</p>
           <Button 
             type="primary" 
@@ -113,12 +119,10 @@ const Profile = () => {
         </div>
         <Divider />
         <Descriptions title="Account Information" column={1} bordered>
-          <Descriptions.Item label="User ID">{userData.id}</Descriptions.Item>
           <Descriptions.Item label="Username">{userData.username}</Descriptions.Item>
           <Descriptions.Item label="Full Name">{userData.fullName || 'Not set'}</Descriptions.Item>
           <Descriptions.Item label="Email">{userData.email}</Descriptions.Item>
           <Descriptions.Item label="Phone Number">{userData.phoneNumber || 'Not set'}</Descriptions.Item>
-          <Descriptions.Item label="Role">{userData.role}</Descriptions.Item>
         </Descriptions>
         <Modal
           title="Edit Profile"

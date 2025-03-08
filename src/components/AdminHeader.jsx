@@ -64,7 +64,7 @@ const AdminHeader = () => {
       <Dropdown menu={profileMenu} placement="topRight" trigger={['click']}>
         <div className="admin-profile" style={{ cursor: 'pointer' }}>
           <Avatar size={40} icon={<UserOutlined />} />
-          <span className="admin-name">{user?.username || 'Admin'}</span>
+          <span className="admin-name">Admin</span>
         </div>
       </Dropdown>
     </div>

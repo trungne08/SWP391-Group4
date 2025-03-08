@@ -24,6 +24,7 @@ import Register from "./pages/Register";  // Add this import
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';  // Add this import
+import SubscriptionHistory from "./pages/SubscriptionHistory";
 
 const AdminRoute = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
@@ -56,6 +57,11 @@ function App() {
             <Route path="feepackage" element={<FeePackage />} />
             <Route path="payment" element={<Payment />} />
             <Route path="confirm" element={<Confirm />} />
+            <Route path="subscription-history" element={
+              <PrivateRoute>
+                <SubscriptionHistory />
+              </PrivateRoute>
+            } />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />  {/* Add this route */}
             <Route path="forgot-password" element={<ForgotPassword />} />

@@ -19,6 +19,12 @@ const Header = () => {
       <Menu.Item key="profile">
         <Link to="/profile">Profile</Link>
       </Menu.Item>
+      <Menu.Item key="membership">
+        <Link to="/feepackage">Membership Registration</Link>
+      </Menu.Item>
+      <Menu.Item key="subscriptionHistory">
+        <Link to="/subscription-history">Subscription History</Link>
+      </Menu.Item>
       {user?.role === 'ADMIN' && (
         <Menu.Item key="dashboard">
           <Link to="/admin/dashboard">Dashboard</Link>
@@ -59,9 +65,8 @@ const Header = () => {
           <li className="nav-avatar">
             {isAuthenticated ? (
               <Dropdown overlay={authenticatedMenu} trigger={["click"]}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <Avatar size={32} icon={<UserOutlined />} />
-                  <span>{user?.username}</span>
+                <div style={{ cursor: 'pointer' }}>
+                  <Avatar size={32} src={user?.avatar} icon={!user?.avatar && <UserOutlined />} />
                 </div>
               </Dropdown>
             ) : (
