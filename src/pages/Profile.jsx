@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message, Spin } from "antd";
-import { UserOutlined, EditOutlined, LockOutlined } from "@ant-design/icons"; // Thêm LockOutlined vào đây
+import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message, Spin, Dropdown } from "antd";
+import { UserOutlined, EditOutlined, LockOutlined, CameraOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -12,6 +12,8 @@ function Profile() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -55,18 +57,38 @@ function Profile() {
     
     form.setFieldsValue({
       fullName: userData.fullName || '',
-      phoneNumber: userData.phoneNumber || ''
+      phoneNumber: userData.phoneNumber || '',
+      avatar: userData.avatar || ''
     });
+    setAvatarUrl(userData.avatar || '');
     setIsModalVisible(true);
+  };
+  
+  const avatarMenuItems = {
+    items: [
+      {
+        key: '1',
+        label: 'View Profile Picture',
+        icon: <UserOutlined />,
+        onClick: () => setIsAvatarModalVisible(true),
+      },
+      {
+        key: '2',
+        label: 'Change Profile Picture',
+        icon: <CameraOutlined />,
+        onClick: handleEdit,
+      },
+    ],
   };
   
   const handleUpdate = async (values) => {
     try {
       setLoading(true);
       const updateData = {
-        userId: userData.id, // Thêm userId vào request
+        userId: userData.id,
         fullName: values.fullName,
-        phoneNumber: values.phoneNumber
+        phoneNumber: values.phoneNumber,
+        avatar: values.avatar
       };
       
       const response = await api.user.updateProfile(updateData);
@@ -100,12 +122,27 @@ function Profile() {
     <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
       <Card style={{ width: 600, borderRadius: "8px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}>
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <Avatar 
-            size={100} 
-            src={userData.avatar || null}
-            icon={!userData.avatar && <UserOutlined />}
-            style={{ marginBottom: "16px" }}
-          />
+          <Dropdown menu={avatarMenuItems} trigger={['click']}>
+            <div style={{ display: 'inline-block', position: 'relative', cursor: 'pointer' }}>
+              <Avatar 
+                size={100} 
+                src={userData.avatar || null}
+                icon={!userData.avatar && <UserOutlined />}
+                style={{ marginBottom: "16px" }}
+              />
+              <div style={{
+                position: 'absolute',
+                bottom: 16,
+                right: 0,
+                background: '#fff',
+                borderRadius: '50%',
+                padding: 4,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                <CameraOutlined style={{ fontSize: '16px' }} />
+              </div>
+            </div>
+          </Dropdown>
           <h2 style={{ margin: "8px 0" }}>{userData.fullName || userData.username}</h2>
           <p style={{ color: "#666" }}>{userData.email}</p>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
@@ -136,6 +173,27 @@ function Profile() {
             layout="vertical"
           >
             <Form.Item
+              name="avatar"
+              label="Avatar URL"
+              rules={[
+                { type: 'url', message: 'Please enter a valid URL!' }
+              ]}
+            >
+              <Input 
+                placeholder="Enter image URL"
+                onChange={(e) => setAvatarUrl(e.target.value)}
+              />
+            </Form.Item>
+            {avatarUrl && (
+              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                <Avatar 
+                  size={100} 
+                  src={avatarUrl}
+                  icon={!avatarUrl && <UserOutlined />}
+                />
+              </div>
+            )}
+            <Form.Item
               name="fullName"
               label="Full Name"
               rules={[
@@ -160,6 +218,28 @@ function Profile() {
               </Button>
             </Form.Item>
           </Form>
+        </Modal>
+        {/* Add Avatar View Modal */}
+        <Modal
+          title="Profile Picture"
+          open={isAvatarModalVisible}
+          onCancel={() => setIsAvatarModalVisible(false)}
+          footer={null}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <img
+              src={userData.avatar || ''}
+              alt="Profile"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '500px',
+                objectFit: 'contain'
+              }}
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/400?text=No+Image';
+              }}
+            />
+          </div>
         </Modal>
       </Card>
     </div>

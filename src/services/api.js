@@ -257,10 +257,7 @@ const api = {
     updateProfile: async (data) => {
       try {
         const token = localStorage.getItem("token");
-        // Sử dụng userId được truyền vào từ tham số data
         const userId = data.userId;
-
-        console.log("Updating user profile:", userId, data);
 
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
           method: "PUT",
@@ -268,20 +265,14 @@ const api = {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            fullName: data.fullName,
-            phoneNumber: data.phoneNumber,
-          }),
+          body: JSON.stringify(data), // Gửi toàn bộ data bao gồm avatar
         });
 
-        const responseData = await response.json();
-        console.log("Update response:", responseData);
-
         if (!response.ok) {
-          throw new Error(responseData.message || "Failed to update profile");
+          throw new Error("Failed to update profile");
         }
 
-        return responseData;
+        return await response.json();
       } catch (error) {
         console.error("Update profile error:", error);
         throw error;
