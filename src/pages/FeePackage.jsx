@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Row, Col, Card, Button, Spin, message } from 'antd';
+import { Typography, Row, Col, Card, Button, Spin, message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -29,6 +29,10 @@ function FeePackage() {
 
     fetchPackages();
   }, []);
+  // Add state for modal
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedPackageData, setSelectedPackageData] = useState(null);
+  
   const handlePackageSelect = async (selectedPackage) => {
     if (!isAuthenticated) {
       message.warning('Please login to subscribe to a package');
@@ -51,25 +55,17 @@ function FeePackage() {
           return;
         }
     
-        const confirmed = window.confirm(
-          'Do you want to upgrade to Premium Plan?'
-        );
-        
-        if (!confirmed) {
-          return;
-        }
-    
-        // Thực hiện upgrade với subscription_id
-        await api.membership.upgradeSubscription(activeSubscription.subscription_id);
-        message.success('Successfully upgraded to Premium');
-        navigate('/subscription-history?upgraded=true');
+        // Show modal instead of window.confirm
+        setSelectedPackageData({ 
+          subscription: activeSubscription,
+          package: selectedPackage 
+        });
+        setIsModalVisible(true);
       } else {
         const packageId = selectedPackage.id;
         if (!packageId) {
           throw new Error('Invalid package ID');
         }
-        
-        // Đăng ký gói mới
         await api.membership.registerMembership(packageId);
         message.success('Successfully registered for new membership package');
         navigate('/subscription-history?upgraded=true');
@@ -80,9 +76,18 @@ function FeePackage() {
     }
   };
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '40px' }}><Spin size="large" /></div>;
-  }
+  const handleModalConfirm = async () => {
+    try {
+      await api.membership.upgradeSubscription(selectedPackageData.subscription.subscription_id);
+      message.success('Successfully upgraded to Premium');
+      navigate('/subscription-history?upgraded=true');
+    } catch (error) {
+      message.error(error.message || 'Failed to upgrade subscription');
+    } finally {
+      setIsModalVisible(false);
+      setSelectedPackageData(null);
+    }
+  };
 
   return (
     <div style={{ padding: '40px 20px' }}>
@@ -157,6 +162,16 @@ function FeePackage() {
           </Col>
         ))}
       </Row>
+      
+      <Modal
+        title="Upgrade Confirmation"
+        open={isModalVisible}
+        onOk={handleModalConfirm}
+        onCancel={() => setIsModalVisible(false)}
+        centered
+      >
+        <p>Do you want to upgrade to Premium Plan?</p>
+      </Modal>
     </div>
   );
 }

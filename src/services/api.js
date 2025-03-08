@@ -93,23 +93,39 @@ const api = {
     },
     changePassword: async (passwordData) => {
       try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        console.log("Request data:", {
+          oldPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        });
+
         const response = await fetch(
-          `${API_BASE_URL}/api/user/change-password`,
+          `${API_BASE_URL}/api/user/change-password`, // Sửa lại endpoint theo API docs
           {
-            method: "POST",
+            method: "PUT", // Đổi method thành POST
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(passwordData),
+            body: JSON.stringify({
+              oldPassword: passwordData.currentPassword,
+              newPassword: passwordData.newPassword
+            }),
           }
         );
 
-        const data = await response.json();
+        const responseText = await response.text();
+        console.log("Response:", responseText);
+
         if (!response.ok) {
-          throw new Error(data.message || "Password change failed");
+          throw new Error(responseText || "Password change failed");
         }
-        return data;
+
+        return { success: true };
       } catch (error) {
         console.error("Change password error:", error);
         throw error;

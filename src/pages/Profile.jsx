@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message, Spin } from "antd";
-import { UserOutlined, EditOutlined } from "@ant-design/icons";
+import { UserOutlined, EditOutlined, LockOutlined } from "@ant-design/icons"; // Thêm LockOutlined vào đây
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
-const Profile = () => {
+function Profile() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -108,14 +108,14 @@ const Profile = () => {
           />
           <h2 style={{ margin: "8px 0" }}>{userData.fullName || userData.username}</h2>
           <p style={{ color: "#666" }}>{userData.email}</p>
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
-            onClick={handleEdit}
-            style={{ marginTop: "16px" }}
-          >
-            Edit Profile
-          </Button>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+              Edit Profile
+            </Button>
+            <Button icon={<LockOutlined />} onClick={() => navigate('/change-password')}>
+              Change Password
+            </Button>
+          </div>
         </div>
         <Divider />
         <Descriptions title="Account Information" column={1} bordered>
@@ -164,6 +164,5 @@ const Profile = () => {
       </Card>
     </div>
   );
-};
-
+}
 export default Profile;
