@@ -142,15 +142,26 @@ const api = {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Accept: "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          mode: "cors",
+          credentials: "include"
         });
-
-        const data = await response.json();
+    
+        const responseText = await response.text();
+        console.log("Get all users response:", responseText);
+    
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch users");
+          throw new Error("Failed to fetch users");
         }
-        return data;
+    
+        try {
+          return responseText ? JSON.parse(responseText) : [];
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          return [];
+        }
       } catch (error) {
         console.error("Get all users error:", error);
         throw error;
@@ -303,38 +314,40 @@ const api = {
   membership: {
     getAllPackages: async () => {
       try {
+        const token = localStorage.getItem('token');
+        
         const response = await fetch(
-          `${API_BASE_URL}/api/membership/packages`,
+          `${API_BASE_URL}/api/membership/packages`,  // Sửa lại endpoint đúng theo API docs
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              Accept: "application/json",
+              ...(token && { Authorization: `Bearer ${token}` })
             },
+            mode: "cors",
+            credentials: "include"
           }
         );
-
+    
+        console.log("Response status:", response.status);
         const responseText = await response.text();
-        console.log("Raw packages response:", responseText);
-
+        console.log("Raw response:", responseText);
+    
         if (!response.ok) {
-          throw new Error("Failed to fetch packages");
+          throw new Error(`Failed to fetch packages: ${response.status}`);
         }
-
-        // Kiểm tra response text trước khi parse
+    
         if (!responseText) {
           return [];
         }
-
-        try {
-          const data = JSON.parse(responseText);
-          return Array.isArray(data) ? data : [data];
-        } catch (parseError) {
-          console.error("Failed to parse packages response:", parseError);
-          return [];
-        }
+    
+        const data = JSON.parse(responseText);
+        console.log("Parsed data:", data);
+        return Array.isArray(data) ? data : [data];
       } catch (error) {
-        console.error("Get membership packages error:", error);
-        return []; // Return empty array instead of throwing
+        console.error("Get packages error:", error);
+        return [];
       }
     },
 
@@ -383,24 +396,35 @@ const api = {
         }
 
         const response = await fetch(
-          `${API_BASE_URL}/api/subscriptions/my-subscriptions`, // Endpoint đúng
+          `${API_BASE_URL}/api/subscriptions/my-subscriptions`,
           {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
+              Accept: "application/json"
             },
+            mode: "cors",
+            credentials: "include"
           }
         );
+
+        const responseText = await response.text();
+        console.log("User membership response:", responseText);
 
         if (!response.ok) {
           throw new Error("Failed to fetch user membership");
         }
 
-        return await response.json();
+        try {
+          return responseText ? JSON.parse(responseText) : [];
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          return [];
+        }
       } catch (error) {
         console.error("Get user membership error:", error);
-        throw error;
+        return [];
       }
     },
 

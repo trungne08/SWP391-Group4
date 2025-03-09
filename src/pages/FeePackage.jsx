@@ -15,13 +15,53 @@ function FeePackage() {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
+        setLoading(true);
         console.log("Fetching packages...");
         const data = await api.membership.getAllPackages();
         console.log("Received packages:", data);
-        setPackages(data);
+        
+        // Kiểm tra và xử lý dữ liệu trước khi set state
+        if (Array.isArray(data) && data.length > 0) {
+          setPackages(data);
+        } else {
+          // Nếu không có dữ liệu, set default packages
+          setPackages([
+            {
+              id: 1,
+              name: "Basic Plan",
+              description: "Essential features for getting started",
+              price: 0,
+              features: ["Basic tracking features", "Limited storage", "Email support"]
+            },
+            {
+              id: 2,
+              name: "Premium Plan",
+              description: "Advanced features for power users",
+              price: 9.99,
+              features: ["All basic features", "Unlimited storage", "Priority support", "Advanced analytics"]
+            }
+          ]);
+        }
       } catch (error) {
         console.error('Error fetching packages:', error);
         message.error('Failed to load packages');
+        // Set default packages khi có lỗi
+        setPackages([
+          {
+            id: 1,
+            name: "Basic Plan",
+            description: "Essential features for getting started",
+            price: 0,
+            features: ["Basic tracking features", "Limited storage", "Email support"]
+          },
+          {
+            id: 2,
+            name: "Premium Plan",
+            description: "Advanced features for power users",
+            price: 9.99,
+            features: ["All basic features", "Unlimited storage", "Priority support", "Advanced analytics"]
+          }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -41,7 +81,12 @@ function FeePackage() {
     }
     
     try {
-      const currentSubscriptions = await api.membership.getUserMembership();
+      // Thêm xử lý lỗi và kiểm tra response
+      const response = await api.membership.getUserMembership();
+      console.log("User membership response:", response);
+      
+      // Kiểm tra nếu response là array
+      const currentSubscriptions = Array.isArray(response) ? response : [];
       const activeSubscription = currentSubscriptions.find(sub => sub.status === 'Active');
       
       if (activeSubscription) {
@@ -55,7 +100,6 @@ function FeePackage() {
           return;
         }
     
-        // Show modal instead of window.confirm
         setSelectedPackageData({ 
           subscription: activeSubscription,
           package: selectedPackage 
@@ -72,7 +116,7 @@ function FeePackage() {
       }
     } catch (error) {
       console.error('Error managing subscription:', error);
-      message.error(error.message || 'Failed to manage subscription package');
+      message.error('Failed to manage subscription. Please try again later.');
     }
   };
 

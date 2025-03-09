@@ -46,35 +46,77 @@ function App() {
     <AuthProvider>
       <>
         <Routes>
-          {/* Main routes */}
           <Route path="/" element={<Layout />}>
+            {/* Public routes */}
             <Route index element={<HomePage />} />
-            <Route path="/contact" element={<ContactUs />} /> 
-            <Route path="comunity" element={<Comunity />} />
-            <Route path="blog" element={<Blog />} />
-            {/* <Route path="mom" element={<Mom />} /> */}
-            <Route path="baby" element={<Baby />} />
-            <Route path="faq" element={<FAQ />} />
-            <Route path="feepackage" element={<FeePackage />} />
-            <Route path="payment" element={<Payment />} />
-            <Route path="confirm" element={<Confirm />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+
+            {/* Protected routes */}
+            <Route path="contact" element={
+              <PrivateRoute>
+                <ContactUs />
+              </PrivateRoute>
+            } />
+            <Route path="comunity" element={
+              <PrivateRoute>
+                <Comunity />
+              </PrivateRoute>
+            } />
+            <Route path="blog" element={
+              <PrivateRoute>
+                <Blog />
+              </PrivateRoute>
+            } />
+            <Route path="baby" element={
+              <PrivateRoute>
+                <Baby />
+              </PrivateRoute>
+            } />
+            <Route path="faq" element={
+              <PrivateRoute>
+                <FAQ />
+              </PrivateRoute>
+            } />
+            <Route path="feepackage" element={
+              <PrivateRoute>
+                <FeePackage />
+              </PrivateRoute>
+            } />
+            <Route path="payment" element={
+              <PrivateRoute>
+                <Payment />
+              </PrivateRoute>
+            } />
+            <Route path="confirm" element={
+              <PrivateRoute>
+                <Confirm />
+              </PrivateRoute>
+            } />
             <Route path="subscription-history" element={
               <PrivateRoute>
                 <SubscriptionHistory />
               </PrivateRoute>
             } />
-            <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />  {/* Add this route */}
-            <Route path="forgot-password" element={<ForgotPassword />} />
-            <Route path="profile" element={<Profile />} />
+            <Route path="profile" element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } />
             <Route path="change-password" element={
               <PrivateRoute>
                 <ChangePassword />
               </PrivateRoute>
             } />
-            <Route path="reminder" element={<Reminder />} />  {/* Add this route */}
+            <Route path="reminder" element={
+              <PrivateRoute>
+                <Reminder />
+              </PrivateRoute>
+            } />
           </Route>
-          {/* Admin routes */}
+
+          {/* Admin routes - không thay đổi */}
           <Route path="/admin" element={
             <AdminRoute>
               <AdminLayout />
