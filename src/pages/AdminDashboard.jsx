@@ -1,17 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Statistic, Typography, Table, Progress } from 'antd';
 import { UserOutlined, FileTextOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
+import api from '../services/api';
+
+import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
 function AdminDashboard() {
-  // Sample statistics data
-  const stats = {
-    totalUsers: 2480,
-    premiumUsers: 860,
-    totalPosts: 156,
-    monthlyRevenue: 8500
-  };
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    premiumUsers: 0,
+    totalPosts: 0,
+    monthlyRevenue: 0
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const users = await api.user.getAllUsers();
+        const totalUsers = users.length;
+        const premiumUsers = users.filter(user => user.role === 'ADMIN').length;
+        
+        setStats({
+          totalUsers: totalUsers,
+          premiumUsers: premiumUsers,
+          totalPosts: 156, // Có thể thay bằng API call khác nếu có
+          monthlyRevenue: 8500 // Có thể thay bằng API call khác nếu có
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Sample recent users data
   const recentUsers = [
@@ -31,10 +55,9 @@ function AdminDashboard() {
     <div style={{ padding: '24px' }}>
       <Title level={2}>Admin Dashboard</Title>
 
-      {/* Statistics Overview */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/members')}>
             <Statistic 
               title="Total Users" 
               value={stats.totalUsers} 
@@ -43,7 +66,7 @@ function AdminDashboard() {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/members')}>
             <Statistic 
               title="Premium Users" 
               value={stats.premiumUsers} 
