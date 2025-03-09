@@ -14,44 +14,7 @@ function Profile() {
   const { user } = useAuth();
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
-  
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        if (!user) {
-          navigate('/login');
-          return;
-        }
-        
-        setLoading(true);
-        const profileData = await api.user.getProfile();
-        
-        if (profileData) {
-          const updatedUserData = {
-            id: profileData.id,
-            username: profileData.username,
-            email: profileData.email,
-            role: profileData.role,
-            fullName: profileData.fullName,
-            phoneNumber: profileData.phoneNumber,
-            avatar: profileData.avatar
-          };
-          console.log("Profile Data:", profileData);
-          setUserData(updatedUserData);
-        } else {
-          setUserData(user);
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        message.error('Failed to load profile data');
-        setUserData(user);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUserData();
-  }, [user, navigate]);
-  
+
   const handleEdit = () => {
     if (!userData) return;
     
@@ -63,7 +26,7 @@ function Profile() {
     setAvatarUrl(userData.avatar || '');
     setIsModalVisible(true);
   };
-  
+
   const avatarMenuItems = {
     items: [
       {
@@ -80,24 +43,50 @@ function Profile() {
       },
     ],
   };
-  
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        
+        if (!token || !storedUser) {
+          navigate('/login');
+          return;
+        }
+        
+        setLoading(true);
+        const profileData = await api.user.getProfile();
+        
+        if (profileData) {
+          setUserData(profileData);
+        } else {
+          setUserData(storedUser);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        message.error('Failed to load profile data');
+        navigate('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, [navigate]);
+
   const handleUpdate = async (values) => {
     try {
       setLoading(true);
       const updateData = {
-        userId: userData.id,
-        fullName: values.fullName,
-        phoneNumber: values.phoneNumber,
-        avatar: values.avatar
+        fullName: values.fullName?.trim(),
+        phoneNumber: values.phoneNumber?.trim(),
+        avatar: values.avatar?.trim()
       };
       
       const response = await api.user.updateProfile(updateData);
       
       if (response) {
-        setUserData(prev => ({
-          ...prev,
-          ...response
-        }));
+        setUserData(response);
         message.success('Profile updated successfully');
         setIsModalVisible(false);
       }

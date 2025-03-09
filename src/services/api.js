@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = "https://hare-causal-prawn.ngrok-free.app";
 
 const api = {
   auth: {
@@ -9,6 +9,8 @@ const api = {
           headers: {
             "Content-Type": "application/json",
           },
+          mode: "cors",
+          credentials: "include",
           body: JSON.stringify({
             email: credentials.email.trim(), // Giữ nguyên là email
             password: credentials.password,
@@ -233,6 +235,8 @@ const api = {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          mode: "cors",
+          credentials: "include",
         });
 
         if (!response.ok) {
@@ -257,7 +261,10 @@ const api = {
     updateProfile: async (data) => {
       try {
         const token = localStorage.getItem("token");
-        const userId = data.userId;
+        if (!token) throw new Error("No token found");
+
+        const tokenData = JSON.parse(atob(token.split(".")[1]));
+        const userId = tokenData.id;
 
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
           method: "PUT",
@@ -265,14 +272,28 @@ const api = {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data), // Gửi toàn bộ data bao gồm avatar
+          mode: "cors",
+          credentials: "include",
+          body: JSON.stringify({
+            fullName: data.fullName,
+            phoneNumber: data.phoneNumber,
+            avatar: data.avatar
+          }),
         });
 
+        const responseText = await response.text();
+        console.log("Update profile response:", responseText);
+
         if (!response.ok) {
-          throw new Error("Failed to update profile");
+          throw new Error(responseText || "Failed to update profile");
         }
 
-        return await response.json();
+        try {
+          return JSON.parse(responseText);
+        } catch (e) {
+          console.error("Failed to parse response:", e);
+          return data;
+        }
       } catch (error) {
         console.error("Update profile error:", error);
         throw error;
@@ -282,33 +303,38 @@ const api = {
   membership: {
     getAllPackages: async () => {
       try {
-        const token = localStorage.getItem("token");
-        console.log("Token:", token); // Thêm log để debug token
-
         const response = await fetch(
-          `${API_BASE_URL}/api/membership/packages`,  // Endpoint đúng
+          `${API_BASE_URL}/api/membership/packages`,
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
             },
           }
         );
 
         const responseText = await response.text();
-        console.log("Response text:", responseText); // Thêm log để debug response
+        console.log("Raw packages response:", responseText);
 
         if (!response.ok) {
-          throw new Error(responseText || "Failed to fetch packages");
+          throw new Error("Failed to fetch packages");
         }
 
-        const data = responseText ? JSON.parse(responseText) : [];
-        console.log("Parsed data:", data); // Thêm log để debug parsed data
-        return data;
+        // Kiểm tra response text trước khi parse
+        if (!responseText) {
+          return [];
+        }
+
+        try {
+          const data = JSON.parse(responseText);
+          return Array.isArray(data) ? data : [data];
+        } catch (parseError) {
+          console.error("Failed to parse packages response:", parseError);
+          return [];
+        }
       } catch (error) {
         console.error("Get membership packages error:", error);
-        throw error;
+        return []; // Return empty array instead of throwing
       }
     },
 
