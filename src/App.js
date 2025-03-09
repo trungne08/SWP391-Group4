@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";  // Remove Router import
 import Header from "./components/Header"; 
 import Layout from "./layouts/Layouts";
@@ -6,12 +7,11 @@ import "./App.css";
 import HomePage from "./pages/HomePage";
 import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
-import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";  
 import Login from "./pages/Login";  
 import ForgotPassword from "./pages/Forgot_password";  
-import ContactUs from "./pages/ContactUs";  //
+import ContactUs from "./pages/ContactUs";
 import AdminBlog from "./pages/AdminBlog";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMember from "./pages/AdminMember";
@@ -38,11 +38,13 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/" />;
   }
   
+
   return children;
 };
 
 function App() {
   return (
+
     <AuthProvider>
       <>
         <Routes>
@@ -104,6 +106,7 @@ function App() {
         </Routes>
       </>
     </AuthProvider>
+
   );
 }
 

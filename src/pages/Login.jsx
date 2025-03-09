@@ -57,6 +57,7 @@ const Login = () => {
   return (
     <Container component="main" maxWidth="xs">
       <Box sx={{ mt: 8, mb: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
             Welcome BabyCareCenter!<br />
@@ -70,19 +71,22 @@ const Login = () => {
           )}
           
           <form onSubmit={handleSubmit} noValidate>
+
             <TextField
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
+              id="username"
+              label="Username"
+              name="username"
+              autoComplete="username"
               autoFocus
+
               value={formData.email}
               onChange={handleChange}
               type="email"
               error={!!error}
+
             />
             <TextField
               margin="normal"
@@ -95,8 +99,15 @@ const Login = () => {
               autoComplete="current-password"
               value={formData.password}
               onChange={handleChange}
+
               error={!!error}
+
             />
+            {error && (
+              <Typography color="error" sx={{ mt: 1, textAlign: 'center' }}>
+                {error}
+              </Typography>
+            )}
             <Button
               type="submit"
               fullWidth
