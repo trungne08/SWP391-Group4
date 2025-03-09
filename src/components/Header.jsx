@@ -49,9 +49,6 @@ const Header = () => {
       <Menu.Item key="logout" onClick={handleLogout}>
         Logout
       </Menu.Item>
-      <Menu.Item key="logout">
-        <Link to="/logout">Đăng xuất</Link>
-      </Menu.Item>
     </Menu>
   );
 
