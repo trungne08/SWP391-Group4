@@ -11,45 +11,57 @@ function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalUsers: 0,
-    premiumUsers: 0,
-    totalPosts: 0,
-    monthlyRevenue: 0
+    adminUsers: 0,
+    memberUsers: 0,
+    activeUsers: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [recentUsers, setRecentUsers] = useState([]);
+
+  // Định nghĩa columns một lần duy nhất
+  const columns = [
+    { title: 'Username', dataIndex: 'name', key: 'name' },
+    { title: 'Full Name', dataIndex: 'fullName', key: 'fullName' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Role', dataIndex: 'role', key: 'role' },
+    { title: 'Join Date', dataIndex: 'joinDate', key: 'joinDate' },
+  ];
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setLoading(true);
         const users = await api.user.getAllUsers();
         const totalUsers = users.length;
-        const premiumUsers = users.filter(user => user.role === 'ADMIN').length;
+        const adminUsers = users.filter(user => user.role === 'ADMIN').length;
+        const memberUsers = users.filter(user => user.role === 'MEMBER').length;
         
+        // Format recent users data
+        const recent = users.slice(0, 5).map(user => ({
+          key: user.user_id,
+          name: user.username,
+          fullName: user.fullName || 'Not set',
+          email: user.email,
+          role: user.role,
+          joinDate: new Date(user.createdAt).toLocaleDateString()
+        }));
+
+        setRecentUsers(recent);
         setStats({
-          totalUsers: totalUsers,
-          premiumUsers: premiumUsers,
-          totalPosts: 156, // Có thể thay bằng API call khác nếu có
-          monthlyRevenue: 8500 // Có thể thay bằng API call khác nếu có
+          totalUsers,
+          adminUsers,
+          memberUsers,
+          activeUsers: totalUsers
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchStats();
   }, []);
-
-  // Sample recent users data
-  const recentUsers = [
-    { key: '1', name: 'Emma Davis', status: 'Premium', joinDate: '2024-01-15' },
-    { key: '2', name: 'Sarah Johnson', status: 'Regular', joinDate: '2024-01-14' },
-    { key: '3', name: 'Michael Brown', status: 'Premium', joinDate: '2024-01-14' },
-    { key: '4', name: 'Lisa Anderson', status: 'Regular', joinDate: '2024-01-13' },
-  ];
-
-  const columns = [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Status', dataIndex: 'status', key: 'status' },
-    { title: 'Join Date', dataIndex: 'joinDate', key: 'joinDate' },
-  ];
 
   return (
     <div style={{ padding: '24px' }}>
@@ -61,69 +73,50 @@ function AdminDashboard() {
             <Statistic 
               title="Total Users" 
               value={stats.totalUsers} 
-              prefix={<UserOutlined />} 
+              prefix={<UserOutlined />}
+              loading={loading}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/members')}>
             <Statistic 
-              title="Premium Users" 
-              value={stats.premiumUsers} 
-              prefix={<TeamOutlined />} 
+              title="Admin Users" 
+              value={stats.adminUsers} 
+              prefix={<TeamOutlined />}
+              loading={loading}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic 
-              title="Total Posts" 
-              value={stats.totalPosts} 
-              prefix={<FileTextOutlined />} 
+              title="Member Users" 
+              value={stats.memberUsers} 
+              prefix={<TeamOutlined />}
+              loading={loading}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic 
-              title="Monthly Revenue" 
-              value={stats.monthlyRevenue} 
-              prefix={<DollarOutlined />} 
-              precision={2}
+              title="Active Users" 
+              value={stats.activeUsers} 
+              prefix={<UserOutlined />}
+              loading={loading}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Performance Metrics */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} lg={12}>
-          <Card title="User Growth">
-            <Progress 
-              percent={75} 
-              status="active"
-              format={percent => `${percent}% of monthly target`}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card title="Premium Conversion Rate">
-            <Progress 
-              percent={34} 
-              status="active"
-              strokeColor="#52c41a"
-              format={percent => `${percent}% of users`}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Recent Users Table */}
+      {/* Recent Users Table with loading state */}
       <Card title="Recent Users">
         <Table 
           columns={columns} 
           dataSource={recentUsers} 
           pagination={{ pageSize: 5 }}
+          loading={loading}
         />
       </Card>
     </div>

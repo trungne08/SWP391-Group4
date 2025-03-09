@@ -142,15 +142,26 @@ const api = {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Accept: "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          mode: "cors",
+          credentials: "include"
         });
-
-        const data = await response.json();
+    
+        const responseText = await response.text();
+        console.log("Get all users response:", responseText);
+    
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch users");
+          throw new Error("Failed to fetch users");
         }
-        return data;
+    
+        try {
+          return responseText ? JSON.parse(responseText) : [];
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          return [];
+        }
       } catch (error) {
         console.error("Get all users error:", error);
         throw error;

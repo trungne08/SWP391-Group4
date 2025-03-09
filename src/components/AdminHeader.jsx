@@ -1,15 +1,30 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
 import "./AdminHeader.css";
 import { UserOutlined, DashboardOutlined, TeamOutlined, FileTextOutlined, LogoutOutlined, HomeOutlined } from "@ant-design/icons";
 import { Avatar, Menu, Dropdown } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../context/AuthContext";
+import api from '../services/api';
 
 const AdminHeader = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.user.getCurrentUser();
+        setUserData(response);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -63,7 +78,15 @@ const AdminHeader = () => {
 
       <Dropdown menu={profileMenu} placement="topRight" trigger={['click']}>
         <div className="admin-profile" style={{ cursor: 'pointer' }}>
-          <Avatar size={40} icon={<UserOutlined />} />
+          <Avatar 
+            size={40} 
+            src={userData?.avatar}
+            icon={!userData?.avatar && <UserOutlined />}
+            style={{
+              backgroundColor: '#1890ff',
+              verticalAlign: 'middle'
+            }}
+          />
           <span className="admin-name">Admin</span>
         </div>
       </Dropdown>
