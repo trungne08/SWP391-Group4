@@ -26,6 +26,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';  // Add this import
 import SubscriptionHistory from "./pages/SubscriptionHistory";
 import ChangePassword from "./pages/ChangePassword"; // Add this import
+import Post from './pages/Post';  // Add this import
 
 const AdminRoute = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
@@ -62,6 +63,11 @@ function App() {
             <Route path="comunity" element={
               <PrivateRoute>
                 <Comunity />
+              </PrivateRoute>
+            } />
+            <Route path="comunity/post/:postId" element={
+              <PrivateRoute>
+                <Post />
               </PrivateRoute>
             } />
             <Route path="blog" element={
