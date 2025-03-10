@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge } from 'antd';
+import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox } from 'antd';
 import { ClockCircleOutlined, MedicineBoxOutlined, FileSearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -9,6 +9,12 @@ const Reminder = () => {
   const [reminders, setReminders] = useState([]);
   const [form] = Form.useForm();
   const [editingReminder, setEditingReminder] = useState(null);
+
+  const handleToggleComplete = (id) => {
+    setReminders(reminders.map(reminder =>
+      reminder.id === id ? { ...reminder, completed: !reminder.completed } : reminder
+    ));
+  };
 
   const reminderTypes = [
     { value: 'pregnancy', label: 'Khám thai', icon: <MedicineBoxOutlined /> },
@@ -29,7 +35,7 @@ const Reminder = () => {
     if (editingReminder) {
       // Update existing reminder
       const updatedReminders = reminders.map(item => 
-        item.id === editingReminder.id ? { ...values, id: item.id } : item
+        item.id === editingReminder.id ? { ...values, id: item.id, completed: item.completed } : item
       );
       setReminders(updatedReminders);
       setEditingReminder(null);
@@ -38,7 +44,8 @@ const Reminder = () => {
       const newReminder = {
         ...values,
         id: Date.now(),
-        createdAt: new Date()
+        createdAt: new Date(),
+        completed: false
       };
       setReminders([...reminders, newReminder]);
     }
@@ -158,6 +165,12 @@ const Reminder = () => {
             renderItem={item => (
               <List.Item
                 actions={[
+                  <Checkbox
+                    checked={item.completed}
+                    onChange={() => handleToggleComplete(item.id)}
+                  >
+                    {item.completed ? 'Hoàn thành' : 'Chưa hoàn thành'}
+                  </Checkbox>,
                   <Button 
                     type="text" 
                     icon={<EditOutlined />} 
@@ -179,10 +192,16 @@ const Reminder = () => {
               >
                 <List.Item.Meta
                   avatar={reminderTypes.find(type => type.value === item.type)?.icon}
-                  title={item.title}
+                  title={
+                    <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                      {item.title}
+                    </span>
+                  }
                   description={
                     <div>
-                      <div>{item.description}</div>
+                      <div style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                        {item.description}
+                      </div>
                       <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
                     </div>
                   }
