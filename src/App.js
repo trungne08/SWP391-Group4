@@ -15,6 +15,7 @@ import ContactUs from "./pages/ContactUs";  //
 import AdminBlog from "./pages/AdminBlog";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMember from "./pages/AdminMember";
+import AdminMembership from "./pages/AdminMembership";  // Add this import at the top with other imports
 import FeePackage from "./pages/FeePackage";
 import Payment from "./pages/Payment";
 import Confirm from "./pages/Confirm";
@@ -116,7 +117,7 @@ function App() {
             } />
           </Route>
 
-          {/* Admin routes - không thay đổi */}
+          {/* Admin routes */}
           <Route path="/admin" element={
             <AdminRoute>
               <AdminLayout />
@@ -135,6 +136,11 @@ function App() {
             <Route path="members" element={
               <AdminRoute>
                 <AdminMember />
+              </AdminRoute>
+            } />
+            <Route path="membership" element={
+              <AdminRoute>
+                <AdminMembership />
               </AdminRoute>
             } />
             <Route path="blog" element={
