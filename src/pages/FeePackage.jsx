@@ -1,66 +1,150 @@
-import React, { useState } from 'react';
-import { Typography, Row, Col, Card, Button, Switch } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Typography, Row, Col, Card, Button, Spin, message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const { Title, Text } = Typography;
 
 function FeePackage() {
   const navigate = useNavigate();
-  const [billingType, setBillingType] = useState('monthly');
+  const { isAuthenticated, user } = useAuth();
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const packages = [
-    {
-      title: "Basic Package",
-      price: 500000,
-      features: [
-        "Basic pregnancy tracking",
-        "Weekly updates",
-        "Basic nutrition guide",
-        "Community access",
-        "Email support"
-      ]
-    },
-    {
-      title: "Premium Package",
-      price: 1000000,
-      features: [
-        "Advanced pregnancy tracking",
-        "Daily updates & tips",
-        "Personalized nutrition plan",
-        "Priority community access",
-        "24/7 support"
-      ]
-    },
-  ];
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoading(true);
+        console.log("Fetching packages...");
+        const data = await api.membership.getAllPackages();
+        console.log("Received packages:", data);
+        
+        // Kiểm tra và xử lý dữ liệu trước khi set state
+        if (Array.isArray(data) && data.length > 0) {
+          setPackages(data);
+        } else {
+          // Nếu không có dữ liệu, set default packages
+          setPackages([
+            {
+              id: 1,
+              name: "Basic Plan",
+              description: "Essential features for getting started",
+              price: 0,
+              features: ["Basic tracking features", "Limited storage", "Email support"]
+            },
+            {
+              id: 2,
+              name: "Premium Plan",
+              description: "Advanced features for power users",
+              price: 9.99,
+              features: ["All basic features", "Unlimited storage", "Priority support", "Advanced analytics"]
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+        message.error('Failed to load packages');
+        // Set default packages khi có lỗi
+        setPackages([
+          {
+            id: 1,
+            name: "Basic Plan",
+            description: "Essential features for getting started",
+            price: 0,
+            features: ["Basic tracking features", "Limited storage", "Email support"]
+          },
+          {
+            id: 2,
+            name: "Premium Plan",
+            description: "Advanced features for power users",
+            price: 9.99,
+            features: ["All basic features", "Unlimited storage", "Priority support", "Advanced analytics"]
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
+    fetchPackages();
+  }, []);
+  // Add state for modal
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedPackageData, setSelectedPackageData] = useState(null);
+  
+  const handlePackageSelect = async (selectedPackage) => {
+    if (!isAuthenticated) {
+      message.warning('Please login to subscribe to a package');
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      // Thêm xử lý lỗi và kiểm tra response
+      const response = await api.membership.getUserMembership();
+      console.log("User membership response:", response);
+      
+      // Kiểm tra nếu response là array
+      const currentSubscriptions = Array.isArray(response) ? response : [];
+      const activeSubscription = currentSubscriptions.find(sub => sub.status === 'Active');
+      
+      if (activeSubscription) {
+        if (activeSubscription.packageName === 'Premium Plan') {
+          message.info('You are already on Premium Plan');
+          return;
+        }
+    
+        if (selectedPackage.name === 'Basic Plan') {
+          message.info('Cannot downgrade from Premium to Basic Plan');
+          return;
+        }
+    
+        setSelectedPackageData({ 
+          subscription: activeSubscription,
+          package: selectedPackage 
+        });
+        setIsModalVisible(true);
+      } else {
+        const packageId = selectedPackage.id;
+        if (!packageId) {
+          throw new Error('Invalid package ID');
+        }
+        await api.membership.registerMembership(packageId);
+        message.success('Successfully registered for new membership package');
+        navigate('/subscription-history?upgraded=true');
+      }
+    } catch (error) {
+      console.error('Error managing subscription:', error);
+      message.error('Failed to manage subscription. Please try again later.');
+    }
   };
 
-  const handlePackageSelect = (selectedPackage) => {
-    navigate('/payment', { 
-      state: { 
-        packageDetails: selectedPackage,
-        packageType: billingType 
-      } 
-    });
+  const handleModalConfirm = async () => {
+    try {
+      await api.membership.upgradeSubscription(selectedPackageData.subscription.subscription_id);
+      message.success('Successfully upgraded to Premium');
+      navigate('/subscription-history?upgraded=true');
+    } catch (error) {
+      message.error(error.message || 'Failed to upgrade subscription');
+    } finally {
+      setIsModalVisible(false);
+      setSelectedPackageData(null);
+    }
   };
 
   return (
     <div style={{ padding: '40px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-        <Title level={1}>Sign up for premium now !</Title>
+        <Title level={1}>Sign up for premium now!</Title>
         <Text style={{ fontSize: '18px', color: '#666' }}>
-          keep track of your baby anytime, anywhere
+          Keep track of your baby anytime, anywhere
         </Text>
       </div>
 
       <Row gutter={[24, 24]} justify="center">
         {packages.map((pkg, index) => (
-          <Col xs={24} md={8} key={index}>
+          <Col xs={24} md={8} key={pkg.id}>
             <Card
               style={{
                 textAlign: 'center',
@@ -71,8 +155,11 @@ function FeePackage() {
               bodyStyle={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >
               <Title level={3} style={{ color: index === 1 ? 'white' : 'inherit' }}>
-                {pkg.title}
+                {pkg.name}
               </Title>
+              <Text style={{ color: index === 1 ? '#ccc' : '#666' }}>
+                {pkg.description}
+              </Text>
               <div style={{ margin: '24px 0' }}>
                 <Text style={{ 
                   fontSize: '28px', 
@@ -80,9 +167,9 @@ function FeePackage() {
                   color: index === 1 ? 'white' : 'inherit',
                   display: 'block'
                 }}>
-                  {formatCurrency(pkg.price)}
+                  {pkg.price} $
                 </Text>
-                <Text style={{ color: index === 1 ? 'white' : '#666' }}>/tháng</Text>
+                <Text style={{ color: index === 1 ? 'white' : '#666' }}>/month</Text>
               </div>
               <ul style={{ 
                 listStyle: 'none', 
@@ -91,7 +178,7 @@ function FeePackage() {
                 flex: 1,
                 textAlign: 'left' 
               }}>
-                {pkg.features.map((feature, idx) => (
+                {pkg.features?.map((feature, idx) => (
                   <li 
                     key={idx} 
                     style={{ 
@@ -119,6 +206,16 @@ function FeePackage() {
           </Col>
         ))}
       </Row>
+      
+      <Modal
+        title="Upgrade Confirmation"
+        open={isModalVisible}
+        onOk={handleModalConfirm}
+        onCancel={() => setIsModalVisible(false)}
+        centered
+      >
+        <p>Do you want to upgrade to Premium Plan?</p>
+      </Modal>
     </div>
   );
 }

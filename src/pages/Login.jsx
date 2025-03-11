@@ -1,69 +1,88 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Box, Container, TextField, Button, Typography, Paper } from '@mui/material';
+import { Box, Container, TextField, Button, Typography, Paper, Alert } from '@mui/material';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value.trim()
+    }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
     try {
-      const response = await fetch('https://97ce-118-69-182-144.ngrok-free.app/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Nếu backend yêu cầu
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const { token, user } = data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        navigate('/', { replace: true });
-        window.location.reload();
-      } else {
-        throw new Error(data.message || 'Login failed. Please try again.');
+      console.log('Attempting login...');
+      const response = await api.auth.login(formData);
+      
+      if (response) {
+        localStorage.setItem('token', response.token);
+        const userData = {
+          user_id: response.user_id,
+          username: response.username,
+          email: response.email,
+          fullName: response.fullName, // Thêm fullName, nếu không có thì dùng username
+          role: response.role
+        };
+        // Log để debug
+        console.log('User Data:', userData);
+        
+        localStorage.setItem('user', JSON.stringify(userData));
+        login(userData);
+        
+        if (response.role === 'MEMBER') {
+          navigate('/', { replace: true });
+        } else if (response.role === 'ADMIN') {
+          navigate('/admin', { replace: true });
+        }
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid email or password');
     }
   };
-
   return (
     <Container component="main" maxWidth="xs">
-      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+      <Box sx={{ mt: 8, mb: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
-            Welcome to Baby Care!<br />
+            Welcome BabyCareCenter!<br />
             Login to continue
           </Typography>
-          <form onSubmit={handleSubmit}>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          <form onSubmit={handleSubmit} noValidate>
             <TextField
               margin="normal"
               required
               fullWidth
-              id="username"
-              label="Username"
-              name="username"
-              autoComplete="username"
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
               autoFocus
-              value={formData.username}
+              value={formData.email}
               onChange={handleChange}
+              type="email"
+              error={!!error}
             />
             <TextField
               margin="normal"
@@ -76,12 +95,8 @@ const Login = () => {
               autoComplete="current-password"
               value={formData.password}
               onChange={handleChange}
+              error={!!error}
             />
-            {error && (
-              <Typography color="error" sx={{ mt: 1, textAlign: 'center' }}>
-                {error}
-              </Typography>
-            )}
             <Button
               type="submit"
               fullWidth
