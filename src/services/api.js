@@ -490,6 +490,67 @@ const api = {
         throw error;
       }
     },
+    // Add these new functions
+    updatePackage: async (packageId, packageData) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/membership/packages/${packageId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(packageData),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to update package');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Update package error:', error);
+        throw error;
+      }
+    },
+
+    updatePackagePrice: async (packageId, price) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/membership/packages/${packageId}/price`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+              price: parseFloat(price).toFixed(2) // Convert to format "xxx.00"
+            }),
+          }
+        );
+
+        const responseText = await response.text();
+        console.log('Update price response:', responseText);
+
+        if (!response.ok) {
+          throw new Error('Failed to update package price');
+        }
+
+        return responseText ? JSON.parse(responseText) : { success: true };
+      } catch (error) {
+        console.error('Update package price error:', error);
+        throw error;
+      }
+    },
   },
   pregnancy: {
     getOngoingPregnancy: async () => {

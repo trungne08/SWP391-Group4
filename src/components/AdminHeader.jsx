@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPersonBreastfeeding } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../context/AuthContext";
 import api from '../services/api';
+import { MoneyCollectOutlined } from "@ant-design/icons"; // Add this import at the top
 
 const AdminHeader = () => {
   const location = useLocation();
@@ -17,7 +18,12 @@ const AdminHeader = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.user.getCurrentUser();
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.log('No token found');
+          return;
+        }
+        const response = await api.user.getProfile(); // Thay đổi từ getCurrentUser sang getProfile
         setUserData(response);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -69,6 +75,11 @@ const AdminHeader = () => {
             label: <Link to="/admin/members">Members</Link>,
           },
           {
+            key: '/admin/membership',
+            icon: <MoneyCollectOutlined />,
+            label: <Link to="/admin/membership">Membership Packages</Link>,
+          },
+          {
             key: '/admin/blog',
             icon: <FileTextOutlined />,
             label: <Link to="/admin/blog">Blog</Link>,
@@ -87,7 +98,7 @@ const AdminHeader = () => {
               verticalAlign: 'middle'
             }}
           />
-          <span className="admin-name">Admin</span>
+          <span className="admin-name">{userData?.username || 'Admin'}</span>
         </div>
       </Dropdown>
     </div>

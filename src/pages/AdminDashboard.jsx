@@ -18,7 +18,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [recentUsers, setRecentUsers] = useState([]);
 
-  // Định nghĩa columns một lần duy nhất
+  // Define columns once
   const columns = [
     { title: 'Username', dataIndex: 'name', key: 'name' },
     { title: 'Full Name', dataIndex: 'fullName', key: 'fullName' },
@@ -32,18 +32,20 @@ function AdminDashboard() {
       try {
         setLoading(true);
         const users = await api.user.getAllUsers();
+        console.log('Raw users data:', users);
+
         const totalUsers = users.length;
         const adminUsers = users.filter(user => user.role === 'ADMIN').length;
         const memberUsers = users.filter(user => user.role === 'MEMBER').length;
         
         // Format recent users data
-        const recent = users.slice(0, 5).map(user => ({
-          key: user.user_id,
+        const recent = users.map(user => ({
+          key: user.id,
           name: user.username,
-          fullName: user.fullName || 'Not set',
+          fullName: user.fullName === null ? 'Not updated' : user.fullName,
           email: user.email,
           role: user.role,
-          joinDate: new Date(user.createdAt).toLocaleDateString()
+          joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US') : 'N/A'
         }));
 
         setRecentUsers(recent);
