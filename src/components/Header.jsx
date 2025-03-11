@@ -66,11 +66,15 @@ const Header = () => {
               <Link to="/" className={location.pathname === "/" ? "active" : ""}>Home</Link>
             </li>
             <li>
-              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>Comunity</Link>
+              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>Community</Link>
             </li>
             <li>
               <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
+
             </li> 
+
+      
+
             <li>
               <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
             </li>
