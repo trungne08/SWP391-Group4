@@ -491,6 +491,149 @@ const api = {
       }
     },
   },
+  pregnancy: {
+    getOngoingPregnancy: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        // Lấy userId từ token thay vì localStorage
+        let userId;
+        try {
+          const tokenData = JSON.parse(atob(token.split(".")[1]));
+          userId = tokenData.id || tokenData.user_id;
+          if (!userId) {
+            throw new Error("User ID not found in token");
+          }
+        } catch (err) {
+          console.error("Failed to extract user ID from token:", err);
+          throw new Error("Invalid token format");
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/ongoing/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            mode: "cors",
+            credentials: "include"
+          }
+        );
+
+        console.log("Response status:", response.status);
+        console.log("Response headers:", Object.fromEntries(response.headers));
+        
+        const responseText = await response.text();
+        console.log("Raw pregnancy response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to fetch pregnancy data");
+        }
+
+        if (!responseText || responseText.includes("<!DOCTYPE html>")) {
+          console.error("Received HTML instead of JSON");
+          return null;
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Failed to parse pregnancy data:", parseError);
+          return null;
+        }
+      } catch (error) {
+        console.error("Get pregnancy error:", error);
+        return null;
+      }
+    },
+
+    createPregnancy: async (pregnancyData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(`${API_BASE_URL}/api/pregnancies`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(pregnancyData)
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create pregnancy");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Create pregnancy error:", error);
+        throw error;
+      }
+    },
+
+    updatePregnancy: async (pregnancyId, updateData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/${pregnancyId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updateData)
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update pregnancy");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Update pregnancy error:", error);
+        throw error;
+      }
+    },
+
+    updatePregnancyStatus: async (pregnancyId, status) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ status })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update pregnancy status");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Update pregnancy status error:", error);
+        throw error;
+      }
+    }
+  },
 };
 
 export default api;
