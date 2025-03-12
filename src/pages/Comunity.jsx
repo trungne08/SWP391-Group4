@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio, Upload, Tag, Tooltip, message } from 'antd';
-import { UserOutlined, PictureOutlined, LikeOutlined, CommentOutlined } from '@ant-design/icons';
+import { UserOutlined, PictureOutlined, CommentOutlined } from '@ant-design/icons';
 import api from '../services/api';
 
 const { Title, Text, TextArea } = Typography;
@@ -19,16 +19,13 @@ function Comunity() {
     navigate(`/comunity/post/${postId}`);
   };
 
-  // Remove the static posts array and continue with the renderPostContent function
+  // Update renderPostContent function
   const renderPostContent = (post) => (
     <>
       <Title level={4}>{post.title}</Title>
       <Text>{post.content}</Text>
       <div style={{ marginTop: 16 }}>
         <Space size="large">
-          <Button type="text" icon={<LikeOutlined />}>
-            {post.likes}
-          </Button>
           <Button type="text" icon={<CommentOutlined />}>
             {post.comments}
           </Button>
@@ -306,9 +303,6 @@ function Comunity() {
               )}
               <div style={{ marginTop: 16 }}>
                 <Space size="large">
-                  <Button type="text" icon={<LikeOutlined />}>
-                    {post.mediaFiles?.length || 0}
-                  </Button>
                   <Button type="text" icon={<CommentOutlined />}>
                     {post.comments?.length || 0}
                   </Button>
