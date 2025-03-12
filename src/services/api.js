@@ -684,6 +684,188 @@ const api = {
       }
     },
 },
+  reminders: {
+    getAllReminders: async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          mode: 'cors',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error response:', errorText);
+          throw new Error(`Failed to fetch reminders: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw reminders response:', responseText);
+
+        if (!responseText.trim()) {
+          return [];
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
+        }
+      } catch (error) {
+        console.error('Get reminders error:', error);
+        throw error;
+      }
+    },
+
+    getReminderById: async (reminderId) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            mode: 'cors',
+            credentials: 'include'
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error response:', errorText);
+          throw new Error(`Failed to fetch reminders: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw reminders response:', responseText);
+
+        if (!responseText.trim()) {
+          return [];
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
+        }
+      } catch (error) {
+        console.error('Get reminders error:', error);
+        throw error;
+      }
+    },
+
+    createReminder: async (reminderData) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(reminderData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create reminder');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Create reminder error:', error);
+        throw error;
+      }
+    },
+
+    updateReminder: async (reminderId, reminderData) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(reminderData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update reminder');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Update reminder error:', error);
+        throw error;
+      }
+    },
+
+    deleteReminder: async (reminderId) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete reminder');
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Delete reminder error:', error);
+        throw error;
+      }
+    },
+
+    updateReminderStatus: async (reminderId, status) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update reminder status');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Update reminder status error:', error);
+        throw error;
+      }
+    }
+  }
 };
 
 export default api;
