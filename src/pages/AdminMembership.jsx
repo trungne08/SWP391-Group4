@@ -32,13 +32,40 @@ const AdminMembership = () => {
   // Cập nhật giá membership
   const handleUpdatePrice = async (values) => {
     try {
-      await api.membership.updatePackagePrice(selectedPackage.id, values.price);
+      console.log('Updating package:', selectedPackage, 'with price:', values.price);
+      
+      // Kiểm tra xem selectedPackage có id không
+      if (!selectedPackage) {
+        throw new Error('Không tìm thấy gói membership');
+      }
+      
+      // Sử dụng trực tiếp fetch API thay vì gọi qua service
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No token found");
+      
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL || 'https://hare-causal-prawn.ngrok-free.app'}/api/membership/packages/${selectedPackage.id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ price: parseInt(values.price) })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to update package price");
+      }
+      
       message.success('Cập nhật giá thành công');
       setIsModalVisible(false);
       fetchPackages();
     } catch (error) {
+      console.error('Update price error details:', error);
       message.error('Không thể cập nhật giá: ' + (error.message || 'Đã có lỗi xảy ra'));
-      console.error('Error:', error);
     }
   };
 

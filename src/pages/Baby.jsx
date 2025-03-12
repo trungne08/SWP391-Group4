@@ -98,28 +98,25 @@ function Baby() {
 
   const handleUpdateStatus = async (pregnancyId) => {
     try {
-      // Lấy thông tin hiện tại từ pregnancyData để gửi cùng
-      const updateData = {
-        status: "COMPLETED",
-        gestationalWeeks: pregnancyData?.gestationalWeeks || 0, // Giá trị mặc định nếu null
-        gestationalDays: pregnancyData?.gestationalDays || 0,   // Giá trị mặc định nếu null
-      };
+      // Gọi API để cập nhật trạng thái thai kỳ
+      await api.pregnancy.updatePregnancyStatus(pregnancyId, "COMPLETED");
 
-      await api.pregnancy.updatePregnancy(pregnancyId, updateData);
+      // Chỉ lấy lại lịch sử thai kỳ sau khi cập nhật
+      const historyResponse = await api.pregnancy.getUserPregnancies();
 
-      // Update the local state to reflect the new status
-      setPregnancyHistoryData((prevData) =>
-        prevData.map((pregnancy) =>
-          pregnancy.pregnancyId === pregnancyId
-            ? { ...pregnancy, status: "COMPLETED" }
-            : pregnancy
-        )
-      );
+      // Cập nhật state
+      setPregnancyData(null); // Reset pregnancy data vì đã kết thúc
+      setIsPregnancyActive(false);
+
+      if (historyResponse) {
+        setPregnancyHistoryData(Array.isArray(historyResponse) ? historyResponse : [historyResponse]);
+      }
 
       message.success("Thai kỳ đã được kết thúc thành công!");
+      setIsPregnancyListModalOpen(false);
     } catch (error) {
       console.error("Lỗi khi cập nhật trạng thái:", error);
-      message.error(`Không thể kết thúc thai kỳ: ${error.response?.data?.message || error.message}`);
+      message.error(`Không thể kết thúc thai kỳ: ${error.message}`);
     }
   };
 
@@ -848,40 +845,24 @@ function Baby() {
                       type="primary"
                       danger
                       onClick={() => {
-                        console.log("Button clicked for pregnancy:", pregnancy);
-                        console.log("Pregnancy ID:", pregnancy.pregnancyId);
-                        console.log("All pregnancy properties:", Object.keys(pregnancy));
-
-                        message.warning({
-                          content: "Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.",
-                          duration: 0,
-                          icon: <ExclamationCircleOutlined />,
-                          className: "custom-warning-message",
-                          btn: (
-                            <>
-                              <Button
-                                type="primary"
-                                danger
-                                onClick={async () => {
-                                  message.destroy();
-                                  try {
-                                    const pregnancyId = pregnancy.pregnancyId || pregnancy.id;
-                                    if (!pregnancyId) {
-                                      message.error("Không tìm thấy ID thai kỳ");
-                                      return;
-                                    }
-                                    await handleUpdateStatus(pregnancyId);
-                                  } catch (error) {
-                                    console.error("Lỗi khi cập nhật trạng thái:", error);
-                                    message.error(`Không thể kết thúc thai kỳ: ${error.response?.data?.message || error.message}`);
-                                  }
-                                }}
-                              >
-                                Xác nhận
-                              </Button>
-                              <Button onClick={() => message.destroy()}>Hủy</Button>
-                            </>
-                          ),
+                        Modal.confirm({
+                          title: 'Xác nhận kết thúc thai kỳ',
+                          content: 'Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.',
+                          okText: 'Xác nhận',
+                          cancelText: 'Hủy',
+                          onOk: async () => {
+                            try {
+                              const pregnancyId = pregnancy.pregnancyId;
+                              if (!pregnancyId) {
+                                message.error("Không tìm thấy ID thai kỳ");
+                                return;
+                              }
+                              await handleUpdateStatus(pregnancyId);
+                            } catch (error) {
+                              console.error("Lỗi khi cập nhật trạng thái:", error);
+                              message.error("Không thể kết thúc thai kỳ");
+                            }
+                          }
                         });
                       }}
                     >
