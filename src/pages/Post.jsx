@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Avatar, Space, List, Form, Input, Tag, Tooltip } from 'antd';
+import { Typography, Button, Avatar, Space, List, Form, Input, Tag, Tooltip, message } from 'antd';
 import { UserOutlined, LikeOutlined, CommentOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import api from '../services/api';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -11,92 +12,58 @@ function Post() {
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [commentForm] = Form.useForm();
 
-  // Add mock posts data
-  const mockPosts = [
-    {
-      id: 1,
-      author: "Sarah Chen",
-      avatar: "/avatars/sarah.jpg",
-      type: "question",
-      title: "Dealing with morning sickness during first trimester",
-      content: "I'm 8 weeks pregnant and experiencing severe morning sickness. Any tips on managing this? What worked for you?",
-      likes: 24,
-      comments: 15,
-      timestamp: "2 hours ago",
-      isVerified: true
-    },
-    {
-      id: 2,
-      author: "Anonymous",
-      type: "chart",
-      title: "Baby's growth progress - 6 months",
-      content: "My baby girl is 6 months old. Her weight is 7.5kg and height is 67cm. Doctor says she's growing well!",
-      chartData: {
-        weight: 7.5,
-        height: 67,
-        age: 6
-      },
-      likes: 18,
-      comments: 8,
-      timestamp: "5 hours ago"
-    }
-  ];
-
   useEffect(() => {
-    // Use mockPosts instead of posts
-    const foundPost = mockPosts.find(p => p.id === parseInt(postId));
-    setPost(foundPost);
-    setComments(mockComments);
+    fetchPostDetails();
   }, [postId]);
 
-  // Mock comments data (replace with actual API call)
-  const mockComments = [
-    {
-      id: 1,
-      author: "Jane Doe",
-      avatar: "/avatars/jane.jpg",
-      content: "Thank you for sharing! This is very helpful.",
-      timestamp: "1 hour ago",
-    },
-    {
-      id: 2,
-      author: "John Smith",
-      avatar: "/avatars/john.jpg",
-      content: "I had similar experience. Try ginger tea, it helps a lot!",
-      timestamp: "2 hours ago",
+  const fetchPostDetails = async () => {
+    try {
+      setLoading(true);
+      const postData = await api.community.getPostById(postId);
+      setPost(postData);
+      if (postData.comments) {
+        setComments(postData.comments);
+      }
+    } catch (error) {
+      message.error('Failed to fetch post details');
+      console.error('Error fetching post:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  useEffect(() => {
-    // Use mockPosts to find the post
-    const foundPost = mockPosts.find(p => p.id === parseInt(postId));
-    setPost(foundPost);
-    setComments(mockComments);
-  }, [postId]);
-
-  // Remove the duplicate useEffect that uses 'posts'
-
-  const handleSubmitComment = (values) => {
-    const newComment = {
-      id: comments.length + 1,
-      author: "Current User",
-      avatar: "/avatars/current-user.jpg",
-      content: values.comment,
-      timestamp: "Just now"
-    };
-    setComments([newComment, ...comments]);
-    commentForm.resetFields();
   };
 
-  if (!post) return <div>Loading...</div>;
+  const handleSubmitComment = async (values) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Please login to comment');
+        return;
+      }
+
+      await api.community.createComment(postId, { 
+        content: values.comment,
+        postId: postId
+      });
+      message.success('Comment posted successfully');
+      commentForm.resetFields();
+      fetchPostDetails();
+    } catch (error) {
+      message.error('Failed to post comment');
+      console.error('Error posting comment:', error);
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (!post) return <div>Post not found</div>;
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
       <Button 
         icon={<ArrowLeftOutlined />} 
-        onClick={() => navigate('/comunity')}  // Changed from '/community' to '/comunity'
+        onClick={() => navigate('/comunity')}
         style={{ marginBottom: "20px" }}
       >
         Back to Community
@@ -109,26 +76,48 @@ function Post() {
         marginBottom: "24px"
       }}>
         <Space align="start">
-          <Avatar src={post.avatar} icon={<UserOutlined />} size={48} />
+          <Avatar 
+            src={post.author?.userProfile?.avatar} 
+            icon={!post.author?.userProfile?.avatar && <UserOutlined />} 
+            size={48} 
+          />
           <div>
             <Space>
-              <Text strong>{post.author}</Text>
-              {post.isVerified && (
+              <Text strong>
+                {post.isAnonymous 
+                  ? "Anonymous" 
+                  : (post.author?.userProfile?.fullName || post.author?.usernameField || 'Unknown User')}
+              </Text>
+              {post.author?.enabled && (
                 <Tooltip title="Verified User">
                   <Tag color="blue">✓</Tag>
                 </Tooltip>
               )}
-              <Text type="secondary">{post.timestamp}</Text>
+              <Text type="secondary">
+                {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}
+              </Text>
             </Space>
             <Title level={3}>{post.title}</Title>
             <Text>{post.content}</Text>
+            {post.mediaFiles && post.mediaFiles.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                {post.mediaFiles.map((file, index) => (
+                  <img 
+                    key={file.mediaId}
+                    src={file.mediaUrl}
+                    alt={`Media ${index + 1}`}
+                    style={{ maxWidth: 200, marginRight: 8, marginBottom: 8 }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </Space>
       </div>
 
       {/* Comment Form */}
       <Form form={commentForm} onFinish={handleSubmitComment}>
-        <Form.Item name="comment">
+        <Form.Item name="comment" rules={[{ required: true, message: 'Please write your comment' }]}>
           <TextArea rows={4} placeholder="Write a comment..." />
         </Form.Item>
         <Form.Item>
@@ -145,12 +134,46 @@ function Post() {
         renderItem={comment => (
           <List.Item>
             <List.Item.Meta
-              avatar={<Avatar src={comment.avatar} icon={<UserOutlined />} />}
-              title={<Space>
-                <Text strong>{comment.author}</Text>
-                <Text type="secondary">{comment.timestamp}</Text>
-              </Space>}
-              description={comment.content}
+              avatar={
+                <Avatar 
+                  src={comment.author?.userProfile?.avatar} 
+                  icon={!comment.author?.userProfile?.avatar && <UserOutlined />} 
+                />
+              }
+              title={
+                <Space>
+                  <Text strong>
+                    {comment.isAnonymous 
+                      ? "Anonymous" 
+                      : (comment.author?.userProfile?.fullName || comment.author?.usernameField || 'Unknown User')}
+                  </Text>
+                  {comment.author?.enabled && (
+                    <Tooltip title="Verified User">
+                      <Tag color="blue">✓</Tag>
+                    </Tooltip>
+                  )}
+                  <Text type="secondary">
+                    {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}
+                  </Text>
+                </Space>
+              }
+              description={
+                <div>
+                  <Text>{comment.content}</Text>
+                  {comment.mediaFiles && comment.mediaFiles.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      {comment.mediaFiles.map((mediaUrl, index) => (
+                        <img 
+                          key={index}
+                          src={mediaUrl}
+                          alt={`Comment media ${index + 1}`}
+                          style={{ maxWidth: 150, marginRight: 8, marginBottom: 8 }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              }
             />
           </List.Item>
         )}

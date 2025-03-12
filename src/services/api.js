@@ -490,7 +490,200 @@ const api = {
         throw error;
       }
     },
+    
   },
+  community: {
+    createPost: async (postData) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found');
+        }
+
+        console.log('Sending post data:', postData); // Debug log
+
+        const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(postData)
+        });
+
+        const responseText = await response.text();
+        console.log('Server response:', responseText); // Debug log
+
+        if (!response.ok) {
+          const errorMessage = responseText || 'Failed to create post';
+          console.error('Server error:', response.status, errorMessage);
+          throw new Error(errorMessage);
+        }
+
+        return responseText ? JSON.parse(responseText) : { success: true };
+      } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+      }
+    },
+
+    getAllPosts: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          mode: "cors",
+          credentials: "include"  // Add this back as it might be needed for authentication
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error response:', errorText);
+          throw new Error(`Failed to fetch posts: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        // Check if response is empty
+        if (!responseText.trim()) {
+          return [];
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
+        }
+      } catch (error) {
+        console.error("Get posts error:", error);
+        throw error;
+      }
+    },
+
+    getPostById: async (postId) => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found');
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/community/posts/${postId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          mode: 'cors',
+          credentials: 'include'
+        });
+
+        const responseText = await response.text();
+        console.log('Post details response:', responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || 'Failed to fetch post');
+        }
+
+        if (!responseText.trim()) {
+          throw new Error('Empty response from server');
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
+        }
+      } catch (error) {
+        console.error('Get post error:', error);
+        throw error;
+      }
+    },
+
+    createComment: async (postId, commentData) => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/community/posts/${postId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(commentData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create comment');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Create comment error:', error);
+        throw error;
+      }
+    }, // Add comma here
+
+    deletePost: async (postId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/community/posts/${postId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete post");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Delete post error:", error);
+        throw error;
+      }
+    },
+
+    deleteComment: async (commentId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/community/comments/${commentId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete comment");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Delete comment error:", error);
+        throw error;
+      }
+    },
+},
 };
 
 export default api;

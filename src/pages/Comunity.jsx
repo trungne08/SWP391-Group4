@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio, Upload, Tag, Tooltip } from 'antd';
-import { UserOutlined, PaperClipOutlined, PictureOutlined, LikeOutlined, CommentOutlined } from '@ant-design/icons';
+import { Typography, Button, Avatar, List, Space, Modal, Form, Input, Radio, Upload, Tag, Tooltip, message } from 'antd';
+import { UserOutlined, PictureOutlined, LikeOutlined, CommentOutlined } from '@ant-design/icons';
+import api from '../services/api';
 
 const { Title, Text, TextArea } = Typography;
 
@@ -9,6 +10,8 @@ function Comunity() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [postType, setPostType] = useState('question');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
@@ -16,38 +19,7 @@ function Comunity() {
     navigate(`/comunity/post/${postId}`);
   };
 
-  // Trong phần posts, xóa thuộc tính tags của mỗi post
-  const posts = [
-    {
-      id: 1,
-      author: "Sarah Chen",
-      avatar: "/avatars/sarah.jpg",
-      type: "question",
-      title: "Dealing with morning sickness during first trimester",
-      content: "I'm 8 weeks pregnant and experiencing severe morning sickness. Any tips on managing this? What worked for you?",
-      likes: 24,
-      comments: 15,
-      timestamp: "2 hours ago",
-      isVerified: true
-    },
-    {
-      id: 2,
-      author: "Anonymous",
-      type: "chart",
-      title: "Baby's growth progress - 6 months",
-      content: "My baby girl is 6 months old. Her weight is 7.5kg and height is 67cm. Doctor says she's growing well!",
-      chartData: {
-        weight: 7.5,
-        height: 67,
-        age: 6
-      },
-      likes: 18,
-      comments: 8,
-      timestamp: "5 hours ago"
-    }
-  ];
-
-  // Trong hàm renderPostContent, xóa phần render tags
+  // Remove the static posts array and continue with the renderPostContent function
   const renderPostContent = (post) => (
     <>
       <Title level={4}>{post.title}</Title>
@@ -69,10 +41,59 @@ function Comunity() {
     setIsModalVisible(true);
   };
 
-  const handleSubmit = (values) => {
-    console.log({ ...values, isAnonymous });
-    setIsModalVisible(false);
-    form.resetFields();
+  // Add this useEffect to fetch posts when component mounts
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  // Add function to fetch posts
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching posts...'); // Debug log
+      const response = await api.community.getAllPosts();
+      console.log('Posts received:', response); // Debug log to see API response
+      setPosts(response);
+    } catch (error) {
+      message.error('Failed to fetch posts');
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update handleSubmit to use the API
+  const handleSubmit = async (values) => {
+    try {
+      const postData = {
+        title: values.title,
+        content: values.content,
+        mediaUrls: [], // Default empty array for question posts
+        isAnonymous: isAnonymous
+      };
+
+      // If it's a chart post, add the additional data
+      if (postType === 'chart') {
+        postData.babyName = values.babyName;
+        postData.age = values.age;
+        postData.weight = values.weight;
+        postData.height = values.height;
+        postData.description = values.description;
+        // Handle image uploads if any
+        if (values.photos) {
+          postData.mediaUrls = values.photos.map(photo => photo.url);
+        }
+      }
+
+      await api.community.createPost(postData);
+      message.success('Post created successfully');
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchPosts(); // Refresh the posts list
+    } catch (error) {
+      message.error('Failed to create post');
+      console.error('Error creating post:', error);
+    }
   };
 
   return (
@@ -224,31 +245,33 @@ function Comunity() {
       </Modal>
 
       {/* Post List */}
+      {/* Update the List component to use loading state */}
       <List
+        loading={loading}
         itemLayout="vertical"
         dataSource={posts}
         renderItem={(post) => (
           <List.Item
-            onClick={() => handlePostClick(post.id)}
+            key={post.postId}
+            onClick={() => handlePostClick(post.postId)}
             style={{
               padding: "24px",
               background: "#fff",
               marginBottom: "16px",
               borderRadius: "8px",
               border: "1px solid #f0f0f0",
-              cursor: "pointer", // Add cursor pointer
-              transition: "all 0.3s ease", // Add smooth transition
-              '&:hover': {
-                backgroundColor: "#f5f5f5", // Add hover effect
-                transform: "translateY(-2px)" // Slight lift effect on hover
-              }
+              cursor: "pointer",
+              transition: "all 0.3s ease",
             }}
           >
             <List.Item.Meta
               avatar={
                 <Space>
-                  <Avatar src={post.avatar} icon={<UserOutlined />} />
-                  {post.isVerified && (
+                  <Avatar 
+                    src={post.author?.userProfile?.avatar} 
+                    icon={!post.author?.userProfile?.avatar && <UserOutlined />} 
+                  />
+                  {post.author?.enabled && (
                     <Tooltip title="Verified User">
                       <Tag color="blue">✓</Tag>
                     </Tooltip>
@@ -256,11 +279,42 @@ function Comunity() {
                 </Space>
               }
               title={<Space>
-                <Text strong>{post.author}</Text>
-                <Text type="secondary">{post.timestamp}</Text>
+                <Text strong>
+                  {post.isAnonymous 
+                    ? "Anonymous" 
+                    : (post.author?.userProfile?.fullName || post.author?.usernameField || 'Unknown User')}
+                </Text>
+                <Text type="secondary">
+                  {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}
+                </Text>
               </Space>}
             />
-            {renderPostContent(post)}
+            <div>
+              <Title level={4}>{post.title}</Title>
+              <Text>{post.content}</Text>
+              {post.mediaFiles && post.mediaFiles.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  {post.mediaFiles.map((file, index) => (
+                    <img 
+                      key={file.mediaId} 
+                      src={file.mediaUrl} 
+                      alt={`Media ${index + 1}`}
+                      style={{ maxWidth: 200, marginRight: 8, marginBottom: 8 }}
+                    />
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 16 }}>
+                <Space size="large">
+                  <Button type="text" icon={<LikeOutlined />}>
+                    {post.mediaFiles?.length || 0}
+                  </Button>
+                  <Button type="text" icon={<CommentOutlined />}>
+                    {post.comments?.length || 0}
+                  </Button>
+                </Space>
+              </div>
+            </div>
           </List.Item>
         )}
       />
