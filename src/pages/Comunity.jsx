@@ -50,7 +50,11 @@ function Comunity() {
       console.log('Fetching posts...'); // Debug log
       const response = await api.community.getAllPosts();
       console.log('Posts received:', response); // Debug log to see API response
-      setPosts(response);
+      // Sort posts by createdAt in descending order
+      const sortedPosts = response.sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setPosts(sortedPosts);
     } catch (error) {
       message.error('Failed to fetch posts');
       console.error('Error fetching posts:', error);
@@ -265,10 +269,10 @@ function Comunity() {
               avatar={
                 <Space>
                   <Avatar 
-                    src={post.author?.userProfile?.avatar} 
-                    icon={!post.author?.userProfile?.avatar && <UserOutlined />} 
+                    icon={<UserOutlined />}
+                    src={!post.isAnonymous ? post.author?.userProfile?.avatar : null}
                   />
-                  {post.author?.enabled && (
+                  {post.author?.enabled && !post.isAnonymous && (
                     <Tooltip title="Verified User">
                       <Tag color="blue">✓</Tag>
                     </Tooltip>

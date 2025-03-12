@@ -77,8 +77,8 @@ function Post() {
       }}>
         <Space align="start">
           <Avatar 
-            src={post.author?.userProfile?.avatar} 
-            icon={!post.author?.userProfile?.avatar && <UserOutlined />} 
+            icon={<UserOutlined />}
+            src={!post.isAnonymous ? post.author?.userProfile?.avatar : null}
             size={48} 
           />
           <div>
@@ -88,7 +88,7 @@ function Post() {
                   ? "Anonymous" 
                   : (post.author?.userProfile?.fullName || post.author?.usernameField || 'Unknown User')}
               </Text>
-              {post.author?.enabled && (
+              {post.author?.enabled && !post.isAnonymous && (
                 <Tooltip title="Verified User">
                   <Tag color="blue">✓</Tag>
                 </Tooltip>
@@ -136,8 +136,8 @@ function Post() {
             <List.Item.Meta
               avatar={
                 <Avatar 
-                  src={comment.author?.userProfile?.avatar} 
-                  icon={!comment.author?.userProfile?.avatar && <UserOutlined />} 
+                  icon={<UserOutlined />}
+                  src={!comment.isAnonymous ? comment.author?.userProfile?.avatar : null}
                 />
               }
               title={
@@ -147,7 +147,7 @@ function Post() {
                       ? "Anonymous" 
                       : (comment.author?.userProfile?.fullName || comment.author?.usernameField || 'Unknown User')}
                   </Text>
-                  {comment.author?.enabled && (
+                  {comment.author?.enabled && !comment.isAnonymous && (
                     <Tooltip title="Verified User">
                       <Tag color="blue">✓</Tag>
                     </Tooltip>
