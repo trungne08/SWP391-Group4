@@ -20,8 +20,7 @@ const Reminder = () => {
 
   const reminderTypes = [
     { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai (APPOINTMENT)', icon: <MedicineBoxOutlined /> },
-    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế (MEDICAL_TASK)', icon: <MedicineBoxOutlined /> },
-    { value: 'HEALTH_ALERT', label: 'Cảnh báo sức khỏe (HEALTH_ALERT)', icon: <MedicineBoxOutlined /> }
+    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế (MEDICAL_TASK)', icon: <MedicineBoxOutlined /> }
   ];
 
   const handleEdit = (reminder) => {
@@ -155,8 +154,7 @@ const Reminder = () => {
             <Badge 
               status={
                 reminder.type === 'APPOINTMENT' ? 'processing' :
-                reminder.type === 'MEDICAL_TASK' ? 'warning' :
-                reminder.type === 'HEALTH_ALERT' ? 'error' : 'default'
+                reminder.type === 'MEDICAL_TASK' ? 'warning' : 'default'
               } 
               text={
                 <span style={{ fontSize: '11px' }}>
