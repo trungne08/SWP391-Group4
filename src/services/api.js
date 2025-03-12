@@ -134,7 +134,6 @@ const api = {
       }
     },
   },
-
   user: {
     getAllUsers: async () => {
       try {
@@ -635,8 +634,8 @@ const api = {
         console.error("Create comment error:", error);
         throw error;
       }
-    }, // Add comma here
-
+    },
+     // Add comma here
     deletePost: async (postId) => {
       try {
         const token = localStorage.getItem("token");
@@ -653,7 +652,8 @@ const api = {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to delete post");
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to delete post");
         }
 
         return true;
@@ -679,7 +679,8 @@ const api = {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to delete comment");
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to delete comment");
         }
 
         return true;
@@ -800,30 +801,30 @@ const api = {
         throw error;
       }
     },
+    // ... existing code ...
 
-    updatePregnancyStatus: async (pregnancyId, newStatus = "COMPLETED") => {
+    updatePregnancyStatus: async (fetusId, status) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        console.log(`Updating pregnancy ${pregnancyId} to status ${newStatus}`);
+        console.log(`Updating fetus ${fetusId} status to: ${status}`);
 
-        const updateResponse = await fetch(
-          `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${newStatus}`,
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/fetus/${fetusId}/status`,
           {
             method: "PATCH",
             headers: {
               Authorization: `Bearer ${token}`,
-              Accept: "*/*",
+              "Content-Type": "application/json",
             },
-            mode: "cors",
-            credentials: "include",
+            body: JSON.stringify({ status: status }),
           }
         );
 
-        if (!updateResponse.ok) {
-          const errorText = await updateResponse.text();
-          throw new Error(errorText || "Could not update pregnancy status");
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Could not update fetus status");
         }
 
         return true;
@@ -832,60 +833,62 @@ const api = {
         throw error;
       }
     },
-      // ... existing code ...
-  
-      updatePregnancy: async (pregnancyId, updateData) => {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) throw new Error("No token found");
-  
-          // Format the data according to the API requirements
-          const formattedData = {
-            gestationalWeeks: parseInt(updateData.gestationalWeeks) || 0,
-            gestationalDays: parseInt(updateData.gestationalDays) || 0,
-            examDate: updateData.examDate || new Date().toISOString().split("T")[0],
-            status: updateData.status || "ONGOING",
-            // Include any measurements if provided
-            weight: updateData.weight,
-            height: updateData.height,
-            circumference: updateData.circumference
-          };
-  
-          console.log("Sending formatted pregnancy data:", formattedData);
-  
-          const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/${pregnancyId}`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
-              mode: "cors",
-              credentials: "include",
-              body: JSON.stringify(formattedData),
-            }
-          );
-  
-          const responseText = await response.text();
-          console.log("Update pregnancy response:", responseText);
-  
-          if (!response.ok) {
-            throw new Error(responseText || "Failed to update pregnancy");
+    // ... rest of the code
+    // ... existing code ...
+
+    updatePregnancy: async (pregnancyId, updateData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        // Format the data according to the API requirements
+        const formattedData = {
+          gestationalWeeks: parseInt(updateData.gestationalWeeks) || 0,
+          gestationalDays: parseInt(updateData.gestationalDays) || 0,
+          examDate:
+            updateData.examDate || new Date().toISOString().split("T")[0],
+          status: updateData.status || "ONGOING",
+          // Include any measurements if provided
+          weight: updateData.weight,
+          height: updateData.height,
+          circumference: updateData.circumference,
+        };
+
+        console.log("Sending formatted pregnancy data:", formattedData);
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/${pregnancyId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            mode: "cors",
+            credentials: "include",
+            body: JSON.stringify(formattedData),
           }
-  
-          // Force a refresh of the pregnancy data after update
-          await api.pregnancy.getOngoingPregnancy();
-  
-          return responseText ? JSON.parse(responseText) : null;
-        } catch (error) {
-          console.error("Update pregnancy error:", error);
-          throw error;
+        );
+
+        const responseText = await response.text();
+        console.log("Update pregnancy response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to update pregnancy");
         }
-      },
-  
-      // ... rest of the code
+
+        // Force a refresh of the pregnancy data after update
+        await api.pregnancy.getOngoingPregnancy();
+
+        return responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.error("Update pregnancy error:", error);
+        throw error;
+      }
+    },
+
+    // ... rest of the code
 
     getUserPregnancies: async () => {
       try {
@@ -988,7 +991,6 @@ const api = {
       }
     },
   },
-
   fetus: {
     getFetusMeasurements: async (fetusId) => {
       try {
@@ -1081,6 +1083,139 @@ const api = {
       }
     },
   },
+  // ... existing code ...
+  blog: {
+    getAllBlogs: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/blogs`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          mode: "cors",
+          credentials: "include",
+        });
+
+        const responseText = await response.text();
+        console.log("Raw blogs response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blogs: ${response.status}`);
+        }
+
+        const data = JSON.parse(responseText);
+        return Array.isArray(data) ? data : [data];
+      } catch (error) {
+        console.error("Blog API Error:", error);
+        return [];
+      }
+    },
+
+    createBlog: async (blogData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        // Ensure imageUrls is always an array
+        const formattedData = {
+          title: blogData.title,
+          content: blogData.content,
+          imageUrls: Array.isArray(blogData.imageUrls)
+            ? blogData.imageUrls
+            : [],
+        };
+
+        console.log("Creating blog with data:", formattedData);
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          mode: "cors",
+          credentials: "include",
+          body: JSON.stringify(formattedData),
+        });
+
+        // ... rest of the code
+
+        const responseText = await response.text();
+        console.log("Create blog response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to create blog");
+        }
+
+        return JSON.parse(responseText);
+      } catch (error) {
+        console.error("Create blog error:", error);
+        throw error;
+      }
+    },
+
+    updateBlog: async (blogId, blogData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const formattedData = {
+          title: blogData.title,
+          content: blogData.content,
+          imageUrls: blogData.imageUrls, // Changed from images to imageUrls
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedData),
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to update blog");
+        }
+
+        return responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.error("Update blog error:", error);
+        throw error;
+      }
+    },
+    // ... deleteBlog remains the same ...
+
+    deleteBlog: async (blogId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to delete blog");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Delete blog error:", error);
+        throw error;
+      }
+    },
+  },
+  // ... rest of the code
 };
 
 export default api;

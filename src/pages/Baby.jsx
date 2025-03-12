@@ -98,14 +98,14 @@ function Baby() {
 
   const handleUpdateStatus = async (pregnancyId) => {
     try {
-      // Gọi API để cập nhật trạng thái thai kỳ
+      // Update to use the correct API endpoint for fetus status update
       await api.pregnancy.updatePregnancyStatus(pregnancyId, "COMPLETED");
-
-      // Chỉ lấy lại lịch sử thai kỳ sau khi cập nhật
+      
+      // Fetch updated pregnancy history
       const historyResponse = await api.pregnancy.getUserPregnancies();
 
-      // Cập nhật state
-      setPregnancyData(null); // Reset pregnancy data vì đã kết thúc
+      // Update states
+      setPregnancyData(null);
       setIsPregnancyActive(false);
 
       if (historyResponse) {
@@ -124,7 +124,6 @@ function Baby() {
     if (pregnancyData?.pregnancyId) {
       await handleUpdateStatus(pregnancyData.pregnancyId);
     }
-    setIsPregnancyActive(false);
     setIsEndPregnancyModalOpen(false);
   };
 
