@@ -44,8 +44,6 @@ import {
 } from "chart.js";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { PREGNANCY_ENDPOINTS } from "../data/config";
-import axios from "axios";
 import api from "../services/api";
 // Import các thư viện và components cần thiết
 ChartJS.register(
@@ -58,9 +56,7 @@ ChartJS.register(
   Legend
 );
 
-
 const { Title } = Typography;
-axios.defaults.withCredentials = true;
 
 
 function Baby() {
@@ -90,6 +86,7 @@ function Baby() {
   const [fetusMeasurements, setFetusMeasurements] = useState([]);
   const [form] = Form.useForm();
 
+
   useEffect(() => {
     const fetchPregnancyData = async () => {
       try {
@@ -99,10 +96,11 @@ function Baby() {
           navigate("/login", { state: { from: "/baby" } });
           return;
         }
-  
+
+        // Use the API service instead of direct fetch
         const response = await api.pregnancy.getOngoingPregnancy();
         console.log("Fetched pregnancy data:", response);
-        
+       
         if (response) {
           setPregnancyData(response);
           setSelectedWeek(response.gestationalWeeks);
@@ -114,33 +112,26 @@ function Baby() {
             setNumberOfFetuses(response.fetuses.length);
             setFetuses(response.fetuses);
             setCurrentAvatar(0);
-            
-            // Fetch measurements for the first fetus
+           
             if (response.fetuses[0].id) {
               await fetchFetusMeasurements(response.fetuses[0].id);
             }
           }
         }
       } catch (error) {
-        console.error("Fetch error details:", error);
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          message.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại");
-          localStorage.clear();
-          navigate("/login", { state: { from: "/baby" } });
-        } else if (error.message?.includes("No ongoing pregnancy found")) {
-          setPregnancyData(null);
-          setIsPregnancyActive(false);
-        } else {
-          setError("Không thể lấy dữ liệu thai kỳ");
-          message.error("Có lỗi xảy ra khi tải dữ liệu thai kỳ");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchPregnancyData();
-  }, [navigate]);
+        // ... rest of error handling code ...
+      console.error("Fetch error details:", error);
+      message.error("Không thể tải dữ liệu thai kỳ: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPregnancyData();
+}, [navigate]);
+
+// Xóa useEffect thứ hai để tránh gọi API trùng lặp
+
 
   const fetchPregnancyDataByUserId = async () => {
     try {
@@ -150,21 +141,21 @@ function Baby() {
         navigate('/login', { state: { from: '/baby' } });
         return;
       }
-  
+ 
       const response = await api.pregnancy.getPregnancyByUserId(userId);
-      
+     
       if (response) {
         setPregnancyData(response);
         setSelectedWeek(response.gestationalWeeks);
         setSelectedDay(response.gestationalDays);
         setIsPregnancyActive(response.status !== "COMPLETED");
-        
+       
         // Handle fetuses data if available
         if (response.fetuses && response.fetuses.length > 0) {
           setNumberOfFetuses(response.fetuses.length);
           setFetuses(response.fetuses);
           setCurrentAvatar(0);
-          
+         
           // Fetch measurements for the first fetus
           if (response.fetuses[0].id) {
             await fetchFetusMeasurements(response.fetuses[0].id);
@@ -185,51 +176,73 @@ function Baby() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
   fetchPregnancyDataByUserId();
 }, []);
 
 
-// const handleFormSubmit = async () => {
-//   try {
-//     if (!pregnancyData?.pregnancyId) {
-//       throw new Error('Không tìm thấy ID thai kỳ');
-//     }
 
-//     const updateData = {
-//       gestationalWeeks: parseInt(selectedWeek),
-//       gestationalDays: parseInt(selectedDay),
-//       examDate: formData.checkupDate || moment().format("YYYY-MM-DD"),
-//       weight: parseFloat(formData.weight) || 0,
-//       height: parseFloat(formData.height) || 0,
-//       circumference: parseFloat(formData.circumference) || 0,
-//       status: "ONGOING"
-//     };
+  console.log("Current pregnancyData state:", pregnancyData);
 
-//     message.loading({ content: "Đang cập nhật...", key: "updatePregnancy" });
 
-//     await api.pregnancy.updatePregnancy(pregnancyData.pregnancyId, updateData);
+  // Add this useEffect to fetch pregnancy history
+  useEffect(() => {
+    const fetchPregnancyHistory = async () => {
+      try {
+        const history = await api.pregnancy.getPregnancyHistory(); // Fix: use api.pregnancy.getPregnancyHistory instead of api.getPregnancyHistory
+        console.log("Fetched pregnancy history:", history); // Add this debug log
+        setPregnancyHistory(history);
+      } catch (error) {
+        console.error("Failed to fetch pregnancy history:", error);
+        message.error("Không thể tải lịch sử thai kỳ");
+      }
+    };
 
-//     // Refresh pregnancy data after update
-//     const updatedPregnancy = await api.pregnancy.getOngoingPregnancy();
-//     if (updatedPregnancy) {
-//       setPregnancyData(updatedPregnancy);
-//     }
 
-//     setIsModalOpen(false);
-//     message.success({ 
-//       content: "Cập nhật thông tin thai kỳ thành công", 
-//       key: "updatePregnancy" 
-//     });
-//   } catch (error) {
-//     console.error("Update error:", error);
-//     message.error({ 
-//       content: "Không thể cập nhật thông tin thai kỳ: " + (error.message || "Vui lòng thử lại"), 
-//       key: "updatePregnancy" 
-//     });
-//   }
-// };
+    fetchPregnancyHistory();
+  }, []);
+
+
+ 
+
+  // Update the useEffect to use the current fetus ID
+  useEffect(() => {
+    const currentFetus = pregnancyData?.fetuses?.[currentAvatar];
+    if (currentFetus?.id) {
+      fetchFetusMeasurements(currentFetus.id);
+    }
+  }, [pregnancyData?.fetuses, currentAvatar]);
+
+ 
+  // Add this state for the form data
+  const [fetusFormData, setFetusFormData] = useState({
+    week: 0,
+    fetalWeight: 0,
+    crownHeelLength: 0,
+    headCircumference: 0,
+  });
+
+
+  // Xử lý khi hủy form
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setFormData({ weight: "", height: "", circumference: "" });
+    setSelectedWeek("");
+    setSelectedDay("");
+  };
+
+
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+  const scrollToChart = (ref) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+
 
 
     const updateData = {
@@ -284,9 +297,7 @@ function Baby() {
     try {
       if (!pregnancyData?.pregnancyId) {
         message.error("Không tìm thấy ID thai kỳ");
-        return;
-      }
-
+        return;}
       Modal.confirm({
         title: "Xác nhận kết thúc thai kỳ",
         content: "Bạn có chắc chắn muốn kết thúc thai kỳ này không?",
@@ -496,32 +507,9 @@ const handleAddFetusRecord = async () => {
       onClick: handlePregnancyListClick,
     },
   ];
-  // Add this state for the form data
-  const [fetusFormData, setFetusFormData] = useState({
-    week: 0,
-    fetalWeight: 0,
-    crownHeelLength: 0,
-    headCircumference: 0,
-  });
 
-  // Xử lý khi hủy form
-  const handleCancel = () => {
-    setIsModalOpen(false);
-    setFormData({ weight: "", height: "", circumference: "" });
-    setSelectedWeek("");
-    setSelectedDay("");
-  };
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-  const scrollToChart = (ref) => {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
+  
   return (
     <div>
       <Row
@@ -1173,6 +1161,208 @@ const handleAddFetusRecord = async () => {
       </Tooltip>
 
       <Modal
+        title={`Nhập chỉ số thai nhi ${currentAvatar + 1}`}
+        open={isAddFetusRecordModalOpen}
+        onOk={handleAddFetusRecord}
+        onCancel={() => {
+          setIsAddFetusRecordModalOpen(false);
+          setFetusFormData({
+            week: 0,
+            fetalWeight: 0,
+            crownHeelLength: 0,
+            headCircumference: 0,
+          });
+        }}
+        okText="Lưu"
+        cancelText="Hủy"
+      >
+        <Form layout="vertical">
+          <Form.Item label="Tuần thai">
+            <InputNumber
+              min={1}
+              max={42}
+              value={fetusFormData.week}
+              onChange={(value) =>
+                setFetusFormData((prev) => ({ ...prev, week: value }))
+              }
+              placeholder="Nhập tuần thai"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item label="Cân nặng thai nhi (g)">
+            <InputNumber
+              min={0}
+              max={10000}
+              value={fetusFormData.fetalWeight}
+              onChange={(value) =>
+                setFetusFormData((prev) => ({ ...prev, fetalWeight: value }))
+              }
+              placeholder="Nhập cân nặng"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item label="Chiều dài đầu mông (mm)">
+            <InputNumber
+              min={0}
+              max={1000}
+              value={fetusFormData.crownHeelLength}
+              onChange={(value) =>
+                setFetusFormData((prev) => ({ ...prev, crownHeelLength: value }))
+              }
+              placeholder="Nhập chiều dài"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+          <Form.Item label="Chu vi vòng đầu (mm)">
+            <InputNumber
+              min={0}
+              max={1000}
+              value={fetusFormData.headCircumference}
+              onChange={(value) =>
+                setFetusFormData((prev) => ({ ...prev, headCircumference: value }))
+              }
+              placeholder="Nhập chu vi"
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+
+      {fetusMeasurements && fetusMeasurements.length > 0 && (
+        <Card title="Lịch sử chỉ số thai nhi" style={{ marginTop: 20 }}>
+          <Table
+            dataSource={fetusMeasurements}
+            columns={[
+              { title: "Tuần thai", dataIndex: "week", key: "week" },
+              { title: "Cân nặng (g)", dataIndex: "fetalWeight", key: "fetalWeight" },
+              { title: "Chiều dài (mm)", dataIndex: "crownHeelLength", key: "crownHeelLength" },
+              { title: "Chu vi đầu (mm)", dataIndex: "headCircumference", key: "headCircumference" },
+              {
+                title: "Ngày ghi nhận",
+                dataIndex: "createdAt",
+                key: "createdAt",
+                render: (date) => moment(date).format("DD/MM/YYYY"),
+              },
+            ]}
+            pagination={false}
+          />
+        </Card>
+      )}
+
+
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
+      </Col>
+
+
+      <Col span={20} offset={2} style={{ textAlign: "center" }} ref={weightRef}>
+        <Title level={4}>Weight Chart</Title>
+        {/* Giả định có Line chart, bạn cần import và truyền data */}
+        {/* <Line data={weightData} /> */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "20px",
+            marginTop: "10px",
+          }}
+        >
+          <p style={{ color: "red", fontWeight: "bold" }}>
+            Em bé trên mức tiêu chuẩn
+          </p>
+          <p style={{ color: "green", fontWeight: "bold" }}>
+            Em bé đang trong mức tiêu chuẩn
+          </p>
+          <p style={{ color: "blue", fontWeight: "bold" }}>
+            Em bé dưới mức tiêu chuẩn
+          </p>
+        </div>
+      </Col>
+
+
+      <Col span={20} offset={2} style={{ textAlign: "center" }} ref={heightRef}>
+        <Title level={4}>Height Chart</Title>
+        {/* <Line data={heightData} /> */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "20px",
+            marginTop: "10px",
+          }}
+        >
+          <p style={{ color: "red", fontWeight: "bold" }}>
+            Em bé trên mức tiêu chuẩn
+          </p>
+          <p style={{ color: "green", fontWeight: "bold" }}>
+            Em bé đang trong mức tiêu chuẩn
+          </p>
+          <p style={{ color: "blue", fontWeight: "bold" }}>
+            Em bé dưới mức tiêu chuẩn
+          </p>
+        </div>
+      </Col>
+
+
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
+      </Col>
+
+
+      <Col span={20} offset={2} style={{ textAlign: "center" }} ref={circumferenceRef}>
+        <Title level={4}>Head Circumference Chart</Title>
+        {/* <Line data={circumferenceData} /> */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "20px",
+            marginTop: "10px",
+          }}
+        >
+          <p style={{ color: "red", fontWeight: "bold" }}>
+            Em bé trên mức tiêu chuẩn
+          </p>
+          <p style={{ color: "green", fontWeight: "bold" }}>
+            Em bé đang trong mức tiêu chuẩn
+          </p>
+          <p style={{ color: "blue", fontWeight: "bold" }}>
+            Em bé dưới mức tiêu chuẩn
+          </p>
+        </div>
+      </Col>
+
+
+      <Col span={24}>
+        <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
+      </Col>
+
+
+      <Tooltip title="Quay về đầu trang" placement="top">
+        <Button
+          type="primary"
+          style={{
+            position: "fixed",
+            bottom: "50px",
+            right: "50px",
+            borderRadius: "50%",
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "20px",
+            zIndex: 1000,
+          }}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          ↑
+        </Button>
+      </Tooltip>
+
+
+      <Modal
         title="Lịch sử thai kỳ"
         open={isPregnancyListModalOpen}
         onCancel={() => setIsPregnancyListModalOpen(false)}
@@ -1338,6 +1528,12 @@ const handleAddFetusRecord = async () => {
 }
 
 export default Baby;
+
+
+
+
+
+
 
 
 

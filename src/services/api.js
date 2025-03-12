@@ -134,7 +134,6 @@ const api = {
       }
     },
   },
-
   user: {
     getAllUsers: async () => {
       try {
@@ -851,3 +850,4 @@ fetus:{
 };
 
 export default api;
+
