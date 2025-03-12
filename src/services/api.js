@@ -12,7 +12,7 @@ const api = {
           mode: "cors",
           credentials: "include",
           body: JSON.stringify({
-            email: credentials.email.trim(),
+            email: credentials.email.trim(), // Giữ nguyên là email
             password: credentials.password,
           }),
         });
@@ -24,17 +24,11 @@ const api = {
           throw new Error(data.message || "Login failed");
         }
 
-        // Store token in localStorage
-        localStorage.setItem('token', data.token);
-
-        // Decode and store user data
+        // Kiểm tra và trích xuất thông tin từ token
         let tokenData = {};
         try {
           tokenData = JSON.parse(atob(data.token.split(".")[1]));
           console.log("Token data:", tokenData);
-
-          // Store user ID
-          localStorage.setItem('userId', tokenData.id || tokenData.user_id);
         } catch (err) {
           console.error("Invalid token format", err);
           throw new Error("Invalid token received");
@@ -54,12 +48,9 @@ const api = {
     },
 
     logout: () => {
-      // Clear all auth-related items
       localStorage.removeItem("token");
-      localStorage.removeItem("userId");
       localStorage.removeItem("user");
     },
-    // ... rest of the code
 
     register: async (userData) => {
       try {
@@ -143,6 +134,7 @@ const api = {
       }
     },
   },
+
   user: {
     getAllUsers: async () => {
       try {
@@ -156,14 +148,14 @@ const api = {
           mode: "cors",
           credentials: "include"
         });
-
+    
         const responseText = await response.text();
         console.log("Get all users response:", responseText);
-
+    
         if (!response.ok) {
           throw new Error("Failed to fetch users");
         }
-
+    
         try {
           return responseText ? JSON.parse(responseText) : [];
         } catch (parseError) {
@@ -323,7 +315,7 @@ const api = {
     getAllPackages: async () => {
       try {
         const token = localStorage.getItem('token');
-
+        
         const response = await fetch(
           `${API_BASE_URL}/api/membership/packages`,  // Sửa lại endpoint đúng theo API docs
           {
@@ -337,19 +329,19 @@ const api = {
             credentials: "include"
           }
         );
-
+    
         console.log("Response status:", response.status);
         const responseText = await response.text();
         console.log("Raw response:", responseText);
-
+    
         if (!response.ok) {
           throw new Error(`Failed to fetch packages: ${response.status}`);
         }
-
+    
         if (!responseText) {
           return [];
         }
-
+    
         const data = JSON.parse(responseText);
         console.log("Parsed data:", data);
         return Array.isArray(data) ? data : [data];
@@ -442,7 +434,7 @@ const api = {
         if (!token) {
           throw new Error("No token found");
         }
-
+        
         const response = await fetch(
           `${API_BASE_URL}/api/subscriptions/cancel/${subscriptionId}`,
           {
@@ -453,12 +445,12 @@ const api = {
             },
           }
         );
-
+        
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(errorText || "Failed to cancel subscription");
         }
-
+        
         return true;
       } catch (error) {
         console.error("Cancel subscription error:", error);
@@ -498,399 +490,200 @@ const api = {
         throw error;
       }
     },
+    
   },
-  pregnancy: {
-    getOngoingPregnancy: async () => {
+  community: {
+    createPost: async (postData) => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         if (!token) {
-          throw new Error("No token found");
+          throw new Error('No token found');
         }
 
-        // Lấy userId từ token thay vì localStorage
-        let userId;
-        try {
-          const tokenData = JSON.parse(atob(token.split(".")[1]));
-          userId = tokenData.id || tokenData.user_id;
-          if (!userId) {
-            throw new Error("User ID not found in token");
-          }
-        } catch (err) {
-          console.error("Failed to extract user ID from token:", err);
-          throw new Error("Invalid token format");
-        }
+        console.log('Sending post data:', postData); // Debug log
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/ongoing/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            mode: "cors",
-            credentials: "include"
-          }
-        );
-
-        console.log("Response status:", response.status);
-        console.log("Response headers:", Object.fromEntries(response.headers));
+        const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(postData)
+        });
 
         const responseText = await response.text();
-        console.log("Raw pregnancy response:", responseText);
+        console.log('Server response:', responseText); // Debug log
 
         if (!response.ok) {
-          throw new Error(responseText || "Failed to fetch pregnancy data");
+          const errorMessage = responseText || 'Failed to create post';
+          console.error('Server error:', response.status, errorMessage);
+          throw new Error(errorMessage);
         }
 
-        if (!responseText || responseText.includes("<!DOCTYPE html>")) {
-          console.error("Received HTML instead of JSON");
-          return null;
+        return responseText ? JSON.parse(responseText) : { success: true };
+      } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+      }
+    },
+
+    getAllPosts: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          mode: "cors",
+          credentials: "include"  // Add this back as it might be needed for authentication
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error response:', errorText);
+          throw new Error(`Failed to fetch posts: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        // Check if response is empty
+        if (!responseText.trim()) {
+          return [];
         }
 
         try {
           return JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Failed to parse pregnancy data:", parseError);
-          return null;
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
         }
       } catch (error) {
-        console.error("Get pregnancy error:", error);
-        return null;
+        console.error("Get posts error:", error);
+        throw error;
       }
     },
 
-    createPregnancy: async (pregnancyData) => {
+    getPostById: async (postId) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        // Extract user ID from token
-        const tokenData = JSON.parse(atob(token.split(".")[1]));
-        const userId = tokenData.id || tokenData.user_id;
-        if (!userId) {
-          throw new Error("User ID not found in token");
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found');
         }
 
-        // Add userId to pregnancy data
-        const pregnancyDataWithUserId = {
-          ...pregnancyData,
-          userId: userId
-        };
-
-        const response = await fetch(`${API_BASE_URL}/api/pregnancies`, {
-          method: "POST",
+        const response = await fetch(`${API_BASE_URL}/api/community/posts/${postId}`, {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
-          mode: "cors",
-          credentials: "include",
-          body: JSON.stringify(pregnancyDataWithUserId)
+          mode: 'cors',
+          credentials: 'include'
         });
 
         const responseText = await response.text();
-        console.log("Create pregnancy response:", responseText);
+        console.log('Post details response:', responseText);
 
         if (!response.ok) {
-          const errorMessage = responseText || "Failed to create pregnancy";
-          throw new Error(errorMessage);
+          throw new Error(responseText || 'Failed to fetch post');
+        }
+
+        if (!responseText.trim()) {
+          throw new Error('Empty response from server');
         }
 
         try {
-          return responseText ? JSON.parse(responseText) : null;
+          return JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Failed to parse response:", parseError);
-          return null;
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
         }
       } catch (error) {
-        console.error("Create pregnancy error:", error);
+        console.error('Get post error:', error);
         throw error;
       }
     },
 
-    updatePregnancyStatus: async (pregnancyId, newStatus = "COMPLETED") => {
+    createComment: async (postId, commentData) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-    
-        console.log(`Attempting to update pregnancy ${pregnancyId} to status ${newStatus}`);
-    
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status`,
-          {
-            method: "PATCH", // Changed from PUT to PATCH to match the API
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            mode: "cors",
-            credentials: "include",
-            body: JSON.stringify({ status: newStatus }) // Matches the required 'status' parameter
-          }
-        );
-    
-        console.log('Status code:', response.status); // 200 means success
-        const responseText = await response.text();
-        
-        if (response.ok) {
-          console.log('✅ Successfully updated pregnancy status:', responseText);
-        } else {
-          console.error('❌ Failed to update pregnancy status:', responseText);
-        }
-    
-        if (!response.ok) {
-          throw new Error(responseText || "Failed to update pregnancy status");
-        }
-    
-        return responseText ? JSON.parse(responseText) : null;
-      } catch (error) {
-        console.error("❌ Update pregnancy status error:", error);
-        throw error;
-      }
-    },
-
-    updatePregnancy: async (pregnancyId, updateData) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        // Format the data according to the API requirements
-        const formattedData = {
-          gestationalWeeks: parseInt(updateData.week) || updateData.gestationalWeeks,
-          gestationalDays: parseInt(updateData.day) || updateData.gestationalDays,
-          examDate: updateData.examDate || new Date().toISOString().split('T')[0],
-          status: updateData.status || "ONGOING"
-        };
-
-        console.log('Sending formatted pregnancy data:', formattedData);
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/${pregnancyId}`,
-          {
-            method: "PUT",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            mode: "cors",
-            credentials: "include",
-            body: JSON.stringify(formattedData)
-          }
-        );
-
-        const responseText = await response.text();
-        console.log('Update pregnancy response:', responseText);
-
-        if (!response.ok) {
-          throw new Error(responseText || "Failed to update pregnancy");
-        }
-
-        return responseText ? JSON.parse(responseText) : null;
-      } catch (error) {
-        console.error("Update pregnancy error:", error);
-        throw error;
-      }
-    },
-
-    getUserPregnancies: async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        let userId;
-        try {
-          const tokenData = JSON.parse(atob(token.split(".")[1]));
-          userId = tokenData.id || tokenData.user_id;
-          if (!userId) {
-            throw new Error("User ID not found in token");
-          }
-        } catch (err) {
-          console.error("Failed to extract user ID from token:", err);
-          throw new Error("Invalid token format");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/user/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            mode: "cors",
-            credentials: "include"
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("User pregnancies response:", responseText);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch user pregnancies");
-        }
-
-        try {
-          return responseText ? JSON.parse(responseText) : [];
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
-      } catch (error) {
-        console.error("Get user pregnancies error:", error);
-        return [];
-      }
-    },
-
-    getPregnancyHistory: async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const tokenData = JSON.parse(atob(token.split(".")[1]));
-        const userId = tokenData.id || tokenData.user_id;
-        if (!userId) {
-          throw new Error("User ID not found in token");
-        }
-
-        // Using the correct endpoint that works
-        const response = await fetch(`${API_BASE_URL}/api/pregnancies/ongoing/${userId}`, {
-          method: "GET",
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/community/posts/${postId}/comments`, {
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
-          mode: "cors",
-          credentials: "include"
+          body: JSON.stringify(commentData)
         });
 
-        const responseText = await response.text();
-        console.log("Pregnancy history response:", responseText);
-
         if (!response.ok) {
-          throw new Error("Failed to fetch pregnancy history");
+          throw new Error('Failed to create comment');
         }
 
-        try {
-          const data = responseText ? JSON.parse(responseText) : null;
-          // Convert single pregnancy object to array if needed
-          return data ? [data] : [];
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
+        return await response.json();
       } catch (error) {
-        console.error("Get pregnancy history error:", error);
-        return [];
-      }
-    }
-  },
-
-  fetus: {
-    getFetusMeasurements: async (fetusId) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/fetus-records/${fetusId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            mode: "cors",
-            credentials: "include"
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("Fetus measurements response:", responseText);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch fetus measurements");
-        }
-
-        try {
-          return responseText ? JSON.parse(responseText) : [];
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
-      } catch (error) {
-        console.error("Get fetus measurements error:", error);
-        return [];
-      }
-    },
-    createFetusRecord: async (fetusId, recordData) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        // Format the data according to the API requirements
-        const formattedData = {
-          fetusId: fetusId,
-          week: parseInt(recordData.week),
-          fetalWeight: parseInt(recordData.fetalWeight),
-          crownHeelLength: parseInt(recordData.crownHeelLength),
-          headCircumference: parseInt(recordData.headCircumference),
-          examDate: new Date().toISOString().split('T')[0]
-        };
-
-        console.log('Sending formatted data:', formattedData);
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/fetus-records/${fetusId}`, // Changed back to include fetusId in URL
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            mode: "cors",
-            credentials: "include",
-            body: JSON.stringify(formattedData)
-          }
-        );
-
-        // Log the full response for debugging
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers));
-
-        const responseText = await response.text();
-        console.log('Server response text:', responseText);
-
-        if (!response.ok) {
-          throw new Error(responseText || "Failed to create fetus record");
-        }
-
-        return responseText ? JSON.parse(responseText) : null;
-
-      } catch (error) {
-        console.error("Create fetus record error:", error);
+        console.error('Create comment error:', error);
         throw error;
       }
-    }
+    }, // Add comma here
 
-  }
+    deletePost: async (postId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/community/posts/${postId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete post");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Delete post error:", error);
+        throw error;
+      }
+    },
+
+    deleteComment: async (commentId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/community/comments/${commentId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete comment");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Delete comment error:", error);
+        throw error;
+      }
+    },
+},
 };
 
 export default api;
-
