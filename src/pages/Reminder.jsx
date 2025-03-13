@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox } from 'antd';
+import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox, message } from 'antd';
 import { ClockCircleOutlined, MedicineBoxOutlined, FileSearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+// Remove one of these duplicate imports
 import api from '../services/api';
 
 const { Option } = Select;
@@ -9,6 +10,8 @@ const { Option } = Select;
 const Reminder = () => {
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [pregnancyId, setPregnancyId] = useState(null);
   const [form] = Form.useForm();
   const [editingReminder, setEditingReminder] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
@@ -40,8 +43,47 @@ const Reminder = () => {
   };
 
   useEffect(() => {
-    fetchReminders();
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        
+        const userData = await api.user.getProfile();
+        if (!userData?.id) {
+          message.error('User ID not found in response');
+          return;
+        }
+
+        setUserId(userData.id);
+
+        try {
+          const pregnancyData = await api.pregnancy.getCurrentPregnancy();
+          if (pregnancyData?.pregnancyId) {  // Changed from id to pregnancyId
+            setPregnancyId(pregnancyData.pregnancyId);  // Use pregnancyId directly
+          } else {
+            message.warning('No active pregnancy found');
+          }
+        } catch (pregnancyError) {
+          console.error('Pregnancy fetch error:', pregnancyError);
+          message.warning('Unable to fetch pregnancy data');
+        }
+
+      } catch (error) {
+        console.error('API Error Details:', error);
+        message.error('Failed to load user data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
   }, []);
+
+  // Separate useEffect for fetching reminders
+  useEffect(() => {
+    if (userId && pregnancyId) {
+      fetchReminders();
+    }
+  }, [userId, pregnancyId]);
 
   const fetchReminders = async () => {
     try {
@@ -67,35 +109,51 @@ const Reminder = () => {
     }
   };
 
-  // Update onFinish to use the API
-  // Update onFinish function
   const onFinish = async (values) => {
     try {
-      // Set default title based on reminder type if title is empty
-      const reminderTitle = values.title || reminderTypes.find(type => type.value === values.type)?.label || values.type;
-      
-      if (editingReminder) {
-        const updatedReminders = reminders.map(item => 
-          item.id === editingReminder.id ? { ...values, title: reminderTitle, id: item.id, completed: item.completed } : item
-        );
-        setReminders(updatedReminders);
-        setEditingReminder(null);
-      } else {
-        const newReminder = {
-          ...values,
-          title: reminderTitle,
-          id: Date.now(),
-          createdAt: new Date(),
-          completed: false
-        };
-        setReminders([...reminders, newReminder]);
+      if (!userId || !pregnancyId) {
+        message.error('User ID or Pregnancy ID not available');
+        return;
       }
+
+      const reminderData = {
+        userId: userId,
+        pregnancyId: pregnancyId,
+        type: values.type,
+        reminderDate: values.date.format('YYYY-MM-DD'),
+        reminderTime: values.time.format('HH:mm'),
+        status: 'PENDING',
+        tasks: []
+      };
+
+      if (values.type === 'MEDICAL_TASK' && values.taskType) {
+        reminderData.tasks = [{
+          taskType: values.taskType,
+          taskName: values.title || values.taskType,
+          notes: values.description || '',
+          status: 'PENDING'
+        }];
+      }
+
+      if (editingReminder) {
+        await api.reminders.updateReminder(editingReminder.id, reminderData);
+        message.success('Reminder updated successfully');
+      } else {
+        await api.reminders.createReminder(reminderData);
+        message.success('Reminder created successfully');
+      }
+
       form.resetFields();
+      setEditingReminder(null);
+      setSelectedType(null);
       await fetchReminders();
     } catch (error) {
       console.error('Failed to save reminder:', error);
+      message.error('Failed to save reminder. Please try again.');
     }
   };
+
+
 
   const handleDelete = async (id) => {
     try {
@@ -105,7 +163,7 @@ const Reminder = () => {
       console.error('Failed to delete reminder:', error);
     }
   };
-
+  
   const getRemindersForDate = (date) => {
     return reminders.filter(reminder => 
       dayjs(reminder.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
@@ -175,30 +233,30 @@ const Reminder = () => {
               </Form.Item>
 
               {selectedType === 'MEDICAL_TASK' && (
-                <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
-                  <Select placeholder="Chọn loại nhiệm vụ">
-                    {taskTypes.map(type => (
-                      <Option key={type.value} value={type.value}>
-                        {type.label}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
+                <>
+                  <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
+                    <Select placeholder="Chọn loại nhiệm vụ">
+                      {taskTypes.map(type => (
+                        <Option key={type.value} value={type.value}>
+                          {type.label}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
+                    <Input placeholder="Nhập tiêu đề nhắc nhở" />
+                  </Form.Item>
+                  <Form.Item name="description" label="Mô tả">
+                    <Input.TextArea placeholder="Nhập mô tả chi tiết" />
+                  </Form.Item>
+                </>
               )}
-              <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
-                <Input placeholder="Nhập tiêu đề nhắc nhở" />
-              </Form.Item>
-
               <Form.Item name="date" label="Ngày" rules={[{ required: true }]}>
                 <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
               </Form.Item>
 
               <Form.Item name="time" label="Thời gian" rules={[{ required: true }]}>
                 <TimePicker format="HH:mm" style={{ width: '100%' }} />
-              </Form.Item>
-
-              <Form.Item name="description" label="Mô tả">
-                <Input.TextArea placeholder="Nhập mô tả chi tiết" />
               </Form.Item>
 
               <Form.Item>
