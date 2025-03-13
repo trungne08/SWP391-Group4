@@ -46,8 +46,6 @@ function Comunity() {
       setImageUrls((prev) => [...prev, input.trim()]);
       form.setFieldValue("mediaUrls", "");
     }
-
-    // Rest of your component code...
   };
   const showPostModal = (type) => {
     setPostType(type);
