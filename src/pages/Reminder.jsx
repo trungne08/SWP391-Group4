@@ -50,12 +50,15 @@ const Reminder = () => {
       const response = await api.reminders.getAllReminders();
       const formattedReminders = response.map(reminder => ({
         id: reminder.reminderId,
-        type: reminder.type.toLowerCase(),
-        title: `Reminder ${reminder.reminderId}`,
+        type: reminder.type,
+        // Use the type from API for the title
+        title: reminderTypes.find(t => t.value === reminder.type)?.label || reminder.type,
         date: dayjs(reminder.reminderDate),
         completed: reminder.status === 'COMPLETED',
         createdAt: dayjs(reminder.createdAt),
-        pregnancyId: reminder.pregnancyId
+        pregnancyId: reminder.pregnancyId,
+        // Add tasks if they exist
+        tasks: reminder.tasks || []
       }));
       setReminders(formattedReminders);
     } catch (error) {
@@ -66,19 +69,22 @@ const Reminder = () => {
   };
 
   // Update onFinish to use the API
+  // Update onFinish function
   const onFinish = async (values) => {
     try {
+      // Set default title based on reminder type if title is empty
+      const reminderTitle = values.title || reminderTypes.find(type => type.value === values.type)?.label || values.type;
+      
       if (editingReminder) {
-        // Update existing reminder logic will be added later
         const updatedReminders = reminders.map(item => 
-          item.id === editingReminder.id ? { ...values, id: item.id, completed: item.completed } : item
+          item.id === editingReminder.id ? { ...values, title: reminderTitle, id: item.id, completed: item.completed } : item
         );
         setReminders(updatedReminders);
         setEditingReminder(null);
       } else {
-        // Create new reminder logic will be added later
         const newReminder = {
           ...values,
+          title: reminderTitle,
           id: Date.now(),
           createdAt: new Date(),
           completed: false
@@ -86,7 +92,7 @@ const Reminder = () => {
         setReminders([...reminders, newReminder]);
       }
       form.resetFields();
-      await fetchReminders(); // Refresh the list after changes
+      await fetchReminders();
     } catch (error) {
       console.error('Failed to save reminder:', error);
     }
