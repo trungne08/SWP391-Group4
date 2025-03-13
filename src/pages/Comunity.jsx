@@ -14,6 +14,7 @@ function Comunity() {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [fileList, setFileList] = useState([]);
 
   const handlePostClick = (postId) => {
     navigate(`/comunity/post/${postId}`);
@@ -260,11 +261,8 @@ function Comunity() {
                 <Input.TextArea rows={4} />
               </Form.Item>
 
-              <Form.Item
-                name="mediaUrls"
-                label="Image URL"
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
+              <Form.Item name="mediaUrls" label="Image URL">
+                <Space direction="vertical" style={{ width: "100%" }}>
                   <Space>
                     <Input placeholder="Enter image URL" />
                     <Button onClick={handleAddImageUrl}>Add Image</Button>
@@ -272,16 +270,27 @@ function Comunity() {
                   {imageUrls.length > 0 && (
                     <div style={{ marginTop: 8 }}>
                       {imageUrls.map((url, index) => (
-                        <div key={index} style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                          <img 
-                            src={url} 
-                            alt={`Preview ${index}`} 
-                            style={{ maxWidth: 100, marginRight: 8 }} 
+                        <div
+                          key={index}
+                          style={{
+                            marginBottom: 8,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Preview ${index}`}
+                            style={{ maxWidth: 100, marginRight: 8 }}
                           />
-                          <Button 
-                            type="text" 
+                          <Button
+                            type="text"
                             danger
-                            onClick={() => setImageUrls(prev => prev.filter((_, i) => i !== index))}
+                            onClick={() =>
+                              setImageUrls((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              )
+                            }
                           >
                             Remove
                           </Button>

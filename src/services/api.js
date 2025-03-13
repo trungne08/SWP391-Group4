@@ -871,7 +871,138 @@ const api = {
         throw error;
       }
     }
-  }
+  },
+  blog: {
+    getAllBlogs: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/blogs`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          mode: "cors",
+          credentials: "include",
+        });
+
+        const responseText = await response.text();
+        console.log("Raw blogs response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blogs: ${response.status}`);
+        }
+
+        const data = JSON.parse(responseText);
+        return Array.isArray(data) ? data : [data];
+      } catch (error) {
+        console.error("Blog API Error:", error);
+        return [];
+      }
+    },
+
+    createBlog: async (blogData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        // Ensure imageUrls is always an array
+        const formattedData = {
+          title: blogData.title,
+          content: blogData.content,
+          imageUrls: Array.isArray(blogData.imageUrls)
+            ? blogData.imageUrls
+            : [],
+        };
+
+        console.log("Creating blog with data:", formattedData);
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          mode: "cors",
+          credentials: "include",
+          body: JSON.stringify(formattedData),
+        });
+
+        // ... rest of the code
+
+        const responseText = await response.text();
+        console.log("Create blog response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to create blog");
+        }
+
+        return JSON.parse(responseText);
+      } catch (error) {
+        console.error("Create blog error:", error);
+        throw error;
+      }
+    },
+
+    updateBlog: async (blogId, blogData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const formattedData = {
+          title: blogData.title,
+          content: blogData.content,
+          imageUrls: blogData.imageUrls, // Changed from images to imageUrls
+        };
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedData),
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to update blog");
+        }
+
+        return responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.error("Update blog error:", error);
+        throw error;
+      }
+    },
+    // ... deleteBlog remains the same ...
+
+    deleteBlog: async (blogId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to delete blog");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Delete blog error:", error);
+        throw error;
+      }
+    },
+  },
 };
 
 export default api;
