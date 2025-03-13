@@ -17,6 +17,7 @@ import {
   Tag,
   Statistic,
   Result,
+  Space,
 } from "antd";
 
 import { UserOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
@@ -74,7 +75,8 @@ function Baby() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPregnancyActive, setIsPregnancyActive] = useState(true);
-  const [isPregnancyListModalOpen, setIsPregnancyListModalOpen] = useState(false);
+  const [isPregnancyListModalOpen, setIsPregnancyListModalOpen] =
+    useState(false);
   const [pregnancyHistoryData, setPregnancyHistoryData] = useState([]);
   const [currentAvatar, setCurrentAvatar] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,28 +98,53 @@ function Baby() {
     setIsPregnancyListModalOpen(true);
   };
 
-  const handleUpdateStatus = async (pregnancyId) => {
+  const handleUpdateStatus = async (pregnancyId, fetusId = null) => {
     try {
-      // Update to use the correct API endpoint for fetus status update
-      await api.pregnancy.updatePregnancyStatus(pregnancyId, "COMPLETED");
-      
-      // Fetch updated pregnancy history
-      const historyResponse = await api.pregnancy.getUserPregnancies();
-
-      // Update states
-      setPregnancyData(null);
-      setIsPregnancyActive(false);
-
-      if (historyResponse) {
-        setPregnancyHistoryData(Array.isArray(historyResponse) ? historyResponse : [historyResponse]);
+      // Update single fetus - change to CANCEL for miscarriage
+      if (fetusId) {
+        const response = await api.pregnancy.updatePregnancyStatus(
+          pregnancyId,
+          fetusId,
+          "CANCEL" // Changed from ISSUE to CANCEL
+        );
+        if (response) {
+          // Refresh data to show updated status
+          const updatedPregnancy = await api.pregnancy.getOngoingPregnancy();
+          if (updatedPregnancy) {
+            setPregnancyData(updatedPregnancy);
+            setIsPregnancyActive(true);
+          }
+        }
+      }
+      // Update entire pregnancy to COMPLETED
+      else if (pregnancyId) {
+        const response = await api.pregnancy.updatePregnancyStatus(
+          pregnancyId,
+          null,
+          "COMPLETED"
+        );
+        if (response) {
+          setIsPregnancyActive(false);
+        }
       }
 
-      message.success("Thai kỳ đã được kết thúc thành công!");
-      setIsPregnancyListModalOpen(false);
+      // Refresh pregnancy history
+      const historyResponse = await api.pregnancy.getUserPregnancies();
+      if (Array.isArray(historyResponse)) {
+        setPregnancyHistoryData(historyResponse);
+      }
     } catch (error) {
       console.error("Lỗi khi cập nhật trạng thái:", error);
-      message.error(`Không thể kết thúc thai kỳ: ${error.message}`);
+      throw error; // Throw the error so it can be caught by the calling function
     }
+  };
+
+  const allFetusesCompleted = (pregnancies, pregnancyId) => {
+    const pregnancy = pregnancies.find((p) => p.pregnancyId === pregnancyId);
+    return (
+      pregnancy?.fetuses?.every((fetus) => fetus.status === "COMPLETED") ??
+      false
+    );
   };
 
   const confirmEndPregnancy = async () => {
@@ -142,6 +169,38 @@ function Baby() {
     return { pregnancyStart, dueDate };
   };
 
+  const fetchPregnancyData = async () => {
+    try {
+      const response = await api.pregnancy.getOngoingPregnancy();
+      if (response) {
+        setPregnancyData(response);
+        setSelectedWeek(response.gestationalWeeks || "");
+        setSelectedDay(response.gestationalDays || "");
+        setIsPregnancyActive(response.status !== "COMPLETED");
+        if (response.fetuses && response.fetuses.length > 0) {
+          setNumberOfFetuses(response.fetuses.length);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching pregnancy data:", error);
+      message.error("Không thể lấy dữ liệu thai kỳ");
+    }
+  };
+  
+  const fetchPregnancyHistory = async () => {
+    try {
+      const response = await api.pregnancy.getUserPregnancies();
+      if (Array.isArray(response)) {
+        setPregnancyHistoryData(response);
+      } else if (response) {
+        setPregnancyHistoryData([response]);
+      }
+    } catch (error) {
+      console.error("Error fetching pregnancy history:", error);
+      message.error("Không thể lấy lịch sử thai kỳ");
+    }
+  };
+
   const handleFormSubmit = async () => {
     try {
       if (!pregnancyData?.pregnancyId) {
@@ -157,7 +216,10 @@ function Baby() {
         circumference: formData.circumference,
       };
 
-      await api.pregnancy.updatePregnancy(pregnancyData.pregnancyId, updateData);
+      await api.pregnancy.updatePregnancy(
+        pregnancyData.pregnancyId,
+        updateData
+      );
 
       const dates = calculateDates(selectedWeek, selectedDay);
       setPregnancyStartDate(dates.pregnancyStart);
@@ -193,38 +255,57 @@ function Baby() {
     { icon: faCircleNotch, label: "Chu vi vòng đầu", ref: circumferenceRef },
     { icon: faNewspaper, label: "Tin tức" },
     { icon: faCalendarDays, label: "Lịch tiêm", ref: vaccinationRef },
-    { icon: faList, label: "Danh sách thai kì", onClick: handlePregnancyListClick },
+    {
+      icon: faList,
+      label: "Danh sách thai kì",
+      onClick: handlePregnancyListClick,
+    },
   ];
 
   useEffect(() => {
     const fetchPregnancyData = async () => {
       try {
         const token = localStorage.getItem("token");
-
         if (!token) {
           message.warning("Vui lòng đăng nhập để xem thông tin thai kỳ");
           navigate("/login", { state: { from: "/baby" } });
           return;
         }
 
+        // First fetch pregnancy data
         const response = await api.pregnancy.getOngoingPregnancy();
-        console.log("API Response:", response);
+        console.log("Ongoing pregnancy response:", response);
 
         if (response) {
           setPregnancyData(response);
           setSelectedWeek(response.gestationalWeeks || "");
           setSelectedDay(response.gestationalDays || "");
           setIsPregnancyActive(response.status !== "COMPLETED");
+
+          // If there are fetuses, update the number of fetuses
+          if (response.fetuses && response.fetuses.length > 0) {
+            setNumberOfFetuses(response.fetuses.length);
+          }
+        }
+
+        // Then fetch pregnancy history
+        const historyResponse = await api.pregnancy.getUserPregnancies();
+        console.log("Pregnancy history response:", historyResponse);
+
+        if (Array.isArray(historyResponse)) {
+          setPregnancyHistoryData(historyResponse);
+        } else if (historyResponse) {
+          setPregnancyHistoryData([historyResponse]);
         }
       } catch (error) {
         console.error("Error fetching pregnancy data:", error);
-
         if (error.response?.status === 401 || error.response?.status === 403) {
           message.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại");
           localStorage.clear();
           navigate("/login", { state: { from: "/baby" } });
         } else {
           setError("Không thể lấy dữ liệu thai kỳ");
+          message.error("Không thể lấy dữ liệu thai kỳ");
         }
       } finally {
         setLoading(false);
@@ -419,28 +500,103 @@ function Baby() {
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Avatar
-                    size={100}
+                  <div
                     style={{
-                      cursor: "pointer",
-                      border:
-                        currentAvatar === index ? "2px solid #1890ff" : "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "8px",
                     }}
-                    onClick={() => setCurrentAvatar(index)}
                   >
-                    {String.fromCharCode(65 + index)}
-                  </Avatar>
-                  <div style={{ textAlign: "center", marginTop: "8px" }}>
-                    <Title
-                      level={5}
+                    <Avatar
+                      size={100}
                       style={{
-                        margin: 0,
-                        alignContent: "center",
-                        fontSize: "12px",
+                        cursor: "pointer",
+                        border:
+                          currentAvatar === index
+                            ? "2px solid #1890ff"
+                            : "none",
                       }}
+                      onClick={() => setCurrentAvatar(index)}
                     >
-                      Tên của bé
-                    </Title>
+                      {String.fromCharCode(65 + index)}
+                    </Avatar>
+                    <div style={{ textAlign: "center", marginTop: "8px" }}>
+                      <Title
+                        level={5}
+                        style={{
+                          margin: 0,
+                          alignContent: "center",
+                          fontSize: "12px",
+                        }}
+                      >
+                        Thai nhi {String.fromCharCode(65 + index)}
+                      </Title>
+                    </div>
+                    {pregnancyData?.fetuses && pregnancyData.fetuses[index] && (
+                      <Space direction="vertical" size="small">
+                        {numberOfFetuses > 1 &&
+                          pregnancyData.status === "ONGOING" &&
+                          pregnancyData.fetuses[index].status === "ACTIVE" && (
+                            <Button
+                              type="primary"
+                              danger
+                              size="small"
+                              onClick={() => {
+                                Modal.confirm({
+                                  title: `Xác nhận kết thúc thai nhi ${String.fromCharCode(
+                                    65 + index
+                                  )}`,
+                                  content:
+                                    "Bạn có chắc chắn muốn kết thúc thai nhi này không? Hành động này không thể hoàn tác.",
+                                  okText: "Xác nhận",
+                                  cancelText: "Hủy",
+                                  onOk: async () => {
+                                    try {
+                                      await handleUpdateStatus(
+                                        pregnancyData.pregnancyId,
+                                        pregnancyData.fetuses[index].fetusId
+                                      );
+                                      message.success(
+                                        `Đã kết thúc thai nhi ${String.fromCharCode(
+                                          65 + index
+                                        )} thành công`
+                                      );
+                                    } catch (error) {
+                                      message.error(
+                                        "Không thể kết thúc thai nhi"
+                                      );
+                                    }
+                                  },
+                                });
+                              }}
+                            >
+                              Kết thúc thai {String.fromCharCode(65 + index)}
+                            </Button>
+                          )}
+                        <Tag
+                          color={
+                            pregnancyData.fetuses[index].status === "ISSUE"
+                              ? "error"
+                              : pregnancyData.fetuses[index].status === "CANCEL"
+                              ? "default"
+                              : pregnancyData.fetuses[index].status ===
+                                "COMPLETED"
+                              ? "success"
+                              : "processing"
+                          }
+                        >
+                          {pregnancyData.fetuses[index].status === "ISSUE"
+                            ? "Có vấn đề"
+                            : pregnancyData.fetuses[index].status === "CANCEL"
+                            ? "Đã sảy thai"
+                            : pregnancyData.fetuses[index].status ===
+                              "COMPLETED"
+                            ? "Đã hoàn thành"
+                            : "Đang phát triển"}
+                        </Tag>
+                      </Space>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -840,33 +996,45 @@ function Baby() {
                 style={{ marginBottom: 16 }}
                 extra={
                   pregnancy.status === "ONGOING" && (
-                    <Button
-                      type="primary"
-                      danger
-                      onClick={() => {
-                        Modal.confirm({
-                          title: 'Xác nhận kết thúc thai kỳ',
-                          content: 'Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.',
-                          okText: 'Xác nhận',
-                          cancelText: 'Hủy',
-                          onOk: async () => {
-                            try {
-                              const pregnancyId = pregnancy.pregnancyId;
-                              if (!pregnancyId) {
-                                message.error("Không tìm thấy ID thai kỳ");
-                                return;
-                              }
-                              await handleUpdateStatus(pregnancyId);
-                            } catch (error) {
-                              console.error("Lỗi khi cập nhật trạng thái:", error);
-                              message.error("Không thể kết thúc thai kỳ");
-                            }
-                          }
-                        });
-                      }}
-                    >
-                      Kết thúc thai kỳ
-                    </Button>
+                    <Space>
+                      {pregnancy.fetuses?.length > 1 ? (
+                        <Button
+                          type="primary"
+                          danger
+                          onClick={() => {
+                            Modal.confirm({
+                              title: "Xác nhận kết thúc toàn bộ thai kỳ",
+                              content:
+                                "Bạn có chắc chắn muốn kết thúc toàn bộ thai kỳ này không? Hành động này không thể hoàn tác.",
+                              okText: "Xác nhận",
+                              cancelText: "Hủy",
+                              onOk: () =>
+                                handleUpdateStatus(pregnancy.pregnancyId),
+                            });
+                          }}
+                        >
+                          Kết thúc toàn bộ thai kỳ
+                        </Button>
+                      ) : (
+                        <Button
+                          type="primary"
+                          danger
+                          onClick={() => {
+                            Modal.confirm({
+                              title: "Xác nhận kết thúc thai kỳ",
+                              content:
+                                "Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.",
+                              okText: "Xác nhận",
+                              cancelText: "Hủy",
+                              onOk: () =>
+                                handleUpdateStatus(pregnancy.pregnancyId),
+                            });
+                          }}
+                        >
+                          Kết thúc thai kỳ
+                        </Button>
+                      )}
+                    </Space>
                   )
                 }
               >
@@ -875,19 +1043,25 @@ function Baby() {
                     <p>
                       <strong>Ngày bắt đầu:</strong>{" "}
                       {pregnancy.startDate
-                        ? new Date(pregnancy.startDate).toLocaleDateString("vi-VN")
+                        ? new Date(pregnancy.startDate).toLocaleDateString(
+                            "vi-VN"
+                          )
                         : "Chưa có"}
                     </p>
                     <p>
                       <strong>Ngày dự sinh:</strong>{" "}
                       {pregnancy.dueDate
-                        ? new Date(pregnancy.dueDate).toLocaleDateString("vi-VN")
+                        ? new Date(pregnancy.dueDate).toLocaleDateString(
+                            "vi-VN"
+                          )
                         : "Chưa có"}
                     </p>
                     <p>
                       <strong>Ngày khám gần nhất:</strong>{" "}
                       {pregnancy.examDate
-                        ? new Date(pregnancy.examDate).toLocaleDateString("vi-VN")
+                        ? new Date(pregnancy.examDate).toLocaleDateString(
+                            "vi-VN"
+                          )
                         : "Chưa có"}
                     </p>
                   </Col>
@@ -904,15 +1078,23 @@ function Baby() {
                       <strong>Trạng thái:</strong>{" "}
                       <Tag
                         color={
-                          pregnancy.status === "ONGOING" ? "processing" : "success"
+                          pregnancy.status === "ONGOING"
+                            ? "processing"
+                            : pregnancy.status === "COMPLETED"
+                            ? "success"
+                            : "default"
                         }
                       >
-                        {pregnancy.status === "ONGOING" ? "Đang mang thai" : "Đã kết thúc"}
+                        {pregnancy.status === "ONGOING"
+                          ? "Đang mang thai"
+                          : pregnancy.status === "COMPLETED"
+                          ? "Đã hoàn thành"
+                          : "Đã kết thúc"}
                       </Tag>
                     </p>
                   </Col>
                 </Row>
-                {pregnancy.fetuses && pregnancy.fetuses.length > 0 && (
+                {pregnancy?.fetuses && pregnancy.fetuses.length > 0 && (
                   <>
                     <Divider>Thông tin thai nhi</Divider>
                     <Row gutter={[16, 16]}>
@@ -921,8 +1103,81 @@ function Baby() {
                           <Card
                             type="inner"
                             title={`Thai nhi ${String.fromCharCode(65 + idx)}`}
+                            extra={
+                              pregnancy.status === "ONGOING" &&
+                              fetus.status === "ACTIVE" && (
+                                // ... existing code ...
+                                <Button
+                                  type="primary"
+                                  danger
+                                  size="small"
+                                  onClick={() => {
+                                    Modal.confirm({
+                                      title: `Xác nhận kết thúc thai nhi ${String.fromCharCode(
+                                        65 + idx
+                                      )}`,
+                                      content:
+                                        "Bạn có chắc chắn muốn kết thúc thai nhi này không? Hành động này không thể hoàn tác.",
+                                      okText: "Xác nhận",
+                                      cancelText: "Hủy",
+                                      onOk: async () => {
+                                        try {
+                                          // Pass both pregnancyId and fetusId to the API
+                                          await api.pregnancy.updatePregnancyStatus(
+                                            pregnancy.pregnancyId,
+                                            fetus.fetusId,
+                                            "CANCEL" // Add the status parameter
+                                          );
+                                          message.success(
+                                            `Đã kết thúc thai nhi ${String.fromCharCode(
+                                              65 + idx
+                                            )}`
+                                          );
+                                          // Refresh the pregnancy data after update
+                                          await fetchPregnancyData();
+                                          await fetchPregnancyHistory();
+                                        } catch (error) {
+                                          console.error(
+                                            "Error updating fetus status:",
+                                            error
+                                          );
+                                          message.error(
+                                            "Không thể kết thúc thai nhi"
+                                          );
+                                        }
+                                      },
+                                    });
+                                  }}
+                                >
+                                  Kết thúc thai nhi{" "}
+                                  {String.fromCharCode(65 + idx)}
+                                </Button>
+                                // ... existing code ...
+                              )
+                            }
                           >
                             <Row gutter={[16, 8]}>
+                              <Col span={24} style={{ marginBottom: 16 }}>
+                                <Tag
+                                  color={
+                                    fetus.status === "ISSUE"
+                                      ? "error"
+                                      : fetus.status === "CANCEL"
+                                      ? "default"
+                                      : fetus.status === "COMPLETED"
+                                      ? "success"
+                                      : "processing"
+                                  }
+                                >
+                                  {fetus.status === "ISSUE"
+                                    ? "Có vấn đề"
+                                    : fetus.status === "CANCEL"
+                                    ? "Đã sảy thai"
+                                    : fetus.status === "COMPLETED"
+                                    ? "Đã hoàn thành"
+                                    : "Đang phát triển"}
+                                </Tag>
+                              </Col>
                               <Col span={8}>
                                 <Statistic
                                   title="Cân nặng"
@@ -974,7 +1229,10 @@ function Baby() {
         okText="Xác nhận"
         cancelText="Hủy"
       >
-        <p>Bạn có chắc chắn muốn kết thúc thai kỳ hiện tại không? Hành động này không thể hoàn tác.</p>
+        <p>
+          Bạn có chắc chắn muốn kết thúc thai kỳ hiện tại không? Hành động này
+          không thể hoàn tác.
+        </p>
       </Modal>
     </div>
   );
