@@ -86,41 +86,22 @@ function Comunity() {
       setLoading(false);
     }
   };
-
-  // Sửa lại hàm handleSubmit
   const handleSubmit = async (values) => {
     try {
       const postData = {
         title: values.title,
         content: values.content,
-        mediaUrls: [],
-        isAnonymous: isAnonymous,
+
+        mediaUrls: imageUrls, // Sử dụng mảng imageUrls
+        isAnonymous: isAnonymous
       };
-
-      if (postType === "chart") {
-        postData.babyName = values.babyName;
-        postData.age = values.age;
-        postData.weight = values.weight;
-        postData.height = values.height;
-        postData.description = values.description;
-
-        // Xử lý upload ảnh
-        if (fileList.length > 0) {
-          const uploadPromises = fileList.map(async (file) => {
-            const formData = new FormData();
-            formData.append("file", file.originFileObj);
-            const response = await api.upload.uploadFile(formData);
-            return response.url;
-          });
-          postData.mediaUrls = await Promise.all(uploadPromises);
-        }
-      }
-
+  
+      console.log('Submitting post data:', postData);
       await api.community.createPost(postData);
       message.success("Post created successfully");
       setIsModalVisible(false);
       form.resetFields();
-      setFileList([]); // Reset fileList sau khi post
+      setImageUrls([]); // Reset image URLs
       fetchPosts();
     } catch (error) {
       message.error("Failed to create post");
@@ -163,6 +144,7 @@ function Comunity() {
     }
   };
 
+  // Cập nhật phần render form cho phần nhập URL ảnh
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
       {/* Header Section */}
@@ -311,6 +293,38 @@ function Comunity() {
                 rules={[{ required: true, message: "Please input content!" }]}
               >
                 <Input.TextArea rows={4} />
+              </Form.Item>
+
+              <Form.Item
+                name="mediaUrls"
+                label="Image URL"
+              >
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space>
+                    <Input placeholder="Enter image URL" />
+                    <Button onClick={handleAddImageUrl}>Add Image</Button>
+                  </Space>
+                  {imageUrls.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      {imageUrls.map((url, index) => (
+                        <div key={index} style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                          <img 
+                            src={url} 
+                            alt={`Preview ${index}`} 
+                            style={{ maxWidth: 100, marginRight: 8 }} 
+                          />
+                          <Button 
+                            type="text" 
+                            danger
+                            onClick={() => setImageUrls(prev => prev.filter((_, i) => i !== index))}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Space>
               </Form.Item>
             </>
           )}

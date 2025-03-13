@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox } from 'antd';
 import { ClockCircleOutlined, MedicineBoxOutlined, FileSearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import api from '../services/api';
 
 const { Option } = Select;
 
 const Reminder = () => {
   const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [editingReminder, setEditingReminder] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+
+  const taskTypes = [
+    { value: 'CHECK_UP', label: 'Khám định kỳ (CHECK_UP)' },
+    { value: 'VACCINATION', label: 'Tiêm phòng (VACCINATION)' },
+    { value: 'TEST', label: 'Xét nghiệm (TEST)' }
+  ];
 
   const handleToggleComplete = (id) => {
     setReminders(reminders.map(reminder =>
@@ -17,9 +26,8 @@ const Reminder = () => {
   };
 
   const reminderTypes = [
-    { value: 'pregnancy', label: 'Khám thai', icon: <MedicineBoxOutlined /> },
-    { value: 'vaccination', label: 'Tiêm phòng', icon: <FileSearchOutlined /> },
-    { value: 'personal', label: 'Nhắc nhở cá nhân', icon: <ClockCircleOutlined /> }
+    { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai (APPOINTMENT)', icon: <MedicineBoxOutlined /> },
+    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế (MEDICAL_TASK)', icon: <MedicineBoxOutlined /> }
   ];
 
   const handleEdit = (reminder) => {
@@ -31,28 +39,111 @@ const Reminder = () => {
     });
   };
 
-  const onFinish = (values) => {
-    if (editingReminder) {
-      // Update existing reminder
-      const updatedReminders = reminders.map(item => 
-        item.id === editingReminder.id ? { ...values, id: item.id, completed: item.completed } : item
-      );
-      setReminders(updatedReminders);
-      setEditingReminder(null);
-    } else {
-      // Create new reminder
-      const newReminder = {
-        ...values,
-        id: Date.now(),
-        createdAt: new Date(),
-        completed: false
-      };
-      setReminders([...reminders, newReminder]);
+  // Add useEffect to fetch reminders when component mounts
+  useEffect(() => {
+    fetchReminders();
+  }, []);
+
+  const fetchReminders = async () => {
+    try {
+      setLoading(true);
+      const response = await api.reminders.getAllReminders();
+      const formattedReminders = response.map(reminder => ({
+        id: reminder.reminderId,
+        type: reminder.type.toLowerCase(),
+        title: `Reminder ${reminder.reminderId}`,
+        date: dayjs(reminder.reminderDate),
+        completed: reminder.status === 'COMPLETED',
+        createdAt: dayjs(reminder.createdAt),
+        pregnancyId: reminder.pregnancyId
+      }));
+      setReminders(formattedReminders);
+    } catch (error) {
+      console.error('Failed to fetch reminders:', error);
+    } finally {
+      setLoading(false);
     }
-    form.resetFields();
   };
 
-  // Add this function to get reminders for a specific date
+  // Update onFinish to use the API
+  const onFinish = async (values) => {
+    try {
+      if (editingReminder) {
+        // Update existing reminder logic will be added later
+        const updatedReminders = reminders.map(item => 
+          item.id === editingReminder.id ? { ...values, id: item.id, completed: item.completed } : item
+        );
+        setReminders(updatedReminders);
+        setEditingReminder(null);
+      } else {
+        // Create new reminder logic will be added later
+        const newReminder = {
+          ...values,
+          id: Date.now(),
+          createdAt: new Date(),
+          completed: false
+        };
+        setReminders([...reminders, newReminder]);
+      }
+      form.resetFields();
+      await fetchReminders(); // Refresh the list after changes
+    } catch (error) {
+      console.error('Failed to save reminder:', error);
+    }
+  };
+
+  // Update List component to show loading state
+  <List
+    loading={loading}
+    dataSource={reminders}
+    renderItem={item => (
+      <List.Item
+        actions={[
+          <Checkbox
+            checked={item.completed}
+            onChange={() => handleToggleComplete(item.id)}
+          >
+            {item.completed ? 'Hoàn thành' : 'Chưa hoàn thành'}
+          </Checkbox>,
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(item)}
+          >
+            Chỉnh sửa
+          </Button>,
+          <Button 
+            type="text" 
+            danger 
+            icon={<DeleteOutlined />} 
+            onClick={() => {
+              setReminders(reminders.filter(r => r.id !== item.id));
+            }}
+          >
+            Xóa
+          </Button>
+        ]}
+      >
+        <List.Item.Meta
+          avatar={reminderTypes.find(type => type.value === item.type)?.icon}
+          title={
+            <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+              {item.title}
+            </span>
+          }
+          description={
+            <div>
+              <div style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                {item.description}
+              </div>
+              <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
+            </div>
+          }
+        />
+        <div>{item.time?.format('HH:mm')}</div>
+      </List.Item>
+    )}
+  />
   const getRemindersForDate = (date) => {
     return reminders.filter(reminder => 
       dayjs(reminder.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
@@ -69,8 +160,8 @@ const Reminder = () => {
           <li key={reminder.id}>
             <Badge 
               status={
-                reminder.type === 'pregnancy' ? 'processing' :
-                reminder.type === 'vaccination' ? 'warning' : 'success'
+                reminder.type === 'APPOINTMENT' ? 'processing' :
+                reminder.type === 'MEDICAL_TASK' ? 'warning' : 'default'
               } 
               text={
                 <span style={{ fontSize: '11px' }}>
@@ -109,7 +200,10 @@ const Reminder = () => {
               layout="vertical"
             >
               <Form.Item name="type" label="Loại nhắc nhở" rules={[{ required: true }]}>
-                <Select placeholder="Chọn loại nhắc nhở">
+                <Select 
+                  placeholder="Chọn loại nhắc nhở"
+                  onChange={(value) => setSelectedType(value)}
+                >
                   {reminderTypes.map(type => (
                     <Option key={type.value} value={type.value}>
                       {type.icon} {type.label}
@@ -118,6 +212,17 @@ const Reminder = () => {
                 </Select>
               </Form.Item>
 
+              {selectedType === 'MEDICAL_TASK' && (
+                <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
+                  <Select placeholder="Chọn loại nhiệm vụ">
+                    {taskTypes.map(type => (
+                      <Option key={type.value} value={type.value}>
+                        {type.label}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              )}
               <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
                 <Input placeholder="Nhập tiêu đề nhắc nhở" />
               </Form.Item>
