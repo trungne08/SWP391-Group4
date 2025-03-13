@@ -11,6 +11,13 @@ const Reminder = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [editingReminder, setEditingReminder] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+
+  const taskTypes = [
+    { value: 'CHECK_UP', label: 'Khám định kỳ (CHECK_UP)' },
+    { value: 'VACCINATION', label: 'Tiêm phòng (VACCINATION)' },
+    { value: 'TEST', label: 'Xét nghiệm (TEST)' }
+  ];
 
   const handleToggleComplete = (id) => {
     setReminders(reminders.map(reminder =>
@@ -193,7 +200,10 @@ const Reminder = () => {
               layout="vertical"
             >
               <Form.Item name="type" label="Loại nhắc nhở" rules={[{ required: true }]}>
-                <Select placeholder="Chọn loại nhắc nhở">
+                <Select 
+                  placeholder="Chọn loại nhắc nhở"
+                  onChange={(value) => setSelectedType(value)}
+                >
                   {reminderTypes.map(type => (
                     <Option key={type.value} value={type.value}>
                       {type.icon} {type.label}
@@ -202,6 +212,17 @@ const Reminder = () => {
                 </Select>
               </Form.Item>
 
+              {selectedType === 'MEDICAL_TASK' && (
+                <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
+                  <Select placeholder="Chọn loại nhiệm vụ">
+                    {taskTypes.map(type => (
+                      <Option key={type.value} value={type.value}>
+                        {type.label}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              )}
               <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
                 <Input placeholder="Nhập tiêu đề nhắc nhở" />
               </Form.Item>
