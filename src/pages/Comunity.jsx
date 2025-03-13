@@ -34,11 +34,21 @@ function Comunity() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [fileList, setFileList] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);
 
   const handlePostClick = (postId) => {
     navigate(`/comunity/post/${postId}`);
   };
 
+  const handleAddImageUrl = () => {
+    const input = form.getFieldValue("mediaUrls");
+    if (input && input.trim()) {
+      setImageUrls((prev) => [...prev, input.trim()]);
+      form.setFieldValue("mediaUrls", "");
+    }
+
+    // Rest of your component code...
+  };
   const showPostModal = (type) => {
     setPostType(type);
     setIsModalVisible(true);
@@ -93,10 +103,10 @@ function Comunity() {
         content: values.content,
 
         mediaUrls: imageUrls, // Sử dụng mảng imageUrls
-        isAnonymous: isAnonymous
+        isAnonymous: isAnonymous,
       };
-  
-      console.log('Submitting post data:', postData);
+
+      console.log("Submitting post data:", postData);
       await api.community.createPost(postData);
       message.success("Post created successfully");
       setIsModalVisible(false);
@@ -251,7 +261,7 @@ function Comunity() {
                   <Input type="number" step="0.1" />
                 </Form.Item>
               </Space>
-              
+
               <Form.Item name="description" label="Description">
                 <Input.TextArea
                   rows={4}
@@ -269,8 +279,18 @@ function Comunity() {
                     >
                       {fileList.length >= 4 ? null : (
                         <div style={{ padding: 4 }}>
-                          <PictureOutlined style={{ fontSize: 20, color: '#666' }} />
-                          <div style={{ marginTop: 4, fontSize: '12px', color: '#666' }}>Photo</div>
+                          <PictureOutlined
+                            style={{ fontSize: 20, color: "#666" }}
+                          />
+                          <div
+                            style={{
+                              marginTop: 4,
+                              fontSize: "12px",
+                              color: "#666",
+                            }}
+                          >
+                            Photo
+                          </div>
                         </div>
                       )}
                     </Upload>
@@ -295,11 +315,8 @@ function Comunity() {
                 <Input.TextArea rows={4} />
               </Form.Item>
 
-              <Form.Item
-                name="mediaUrls"
-                label="Image URL"
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
+              <Form.Item name="mediaUrls" label="Image URL">
+                <Space direction="vertical" style={{ width: "100%" }}>
                   <Space>
                     <Input placeholder="Enter image URL" />
                     <Button onClick={handleAddImageUrl}>Add Image</Button>
@@ -307,16 +324,27 @@ function Comunity() {
                   {imageUrls.length > 0 && (
                     <div style={{ marginTop: 8 }}>
                       {imageUrls.map((url, index) => (
-                        <div key={index} style={{ marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                          <img 
-                            src={url} 
-                            alt={`Preview ${index}`} 
-                            style={{ maxWidth: 100, marginRight: 8 }} 
+                        <div
+                          key={index}
+                          style={{
+                            marginBottom: 8,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Preview ${index}`}
+                            style={{ maxWidth: 100, marginRight: 8 }}
                           />
-                          <Button 
-                            type="text" 
+                          <Button
+                            type="text"
                             danger
-                            onClick={() => setImageUrls(prev => prev.filter((_, i) => i !== index))}
+                            onClick={() =>
+                              setImageUrls((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              )
+                            }
                           >
                             Remove
                           </Button>
