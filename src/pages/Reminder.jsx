@@ -39,7 +39,6 @@ const Reminder = () => {
     });
   };
 
-  // Add useEffect to fetch reminders when component mounts
   useEffect(() => {
     fetchReminders();
   }, []);
@@ -98,58 +97,15 @@ const Reminder = () => {
     }
   };
 
-  // Update List component to show loading state
-  <List
-    loading={loading}
-    dataSource={reminders}
-    renderItem={item => (
-      <List.Item
-        actions={[
-          <Checkbox
-            checked={item.completed}
-            onChange={() => handleToggleComplete(item.id)}
-          >
-            {item.completed ? 'Hoàn thành' : 'Chưa hoàn thành'}
-          </Checkbox>,
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(item)}
-          >
-            Chỉnh sửa
-          </Button>,
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />} 
-            onClick={() => {
-              setReminders(reminders.filter(r => r.id !== item.id));
-            }}
-          >
-            Xóa
-          </Button>
-        ]}
-      >
-        <List.Item.Meta
-          avatar={reminderTypes.find(type => type.value === item.type)?.icon}
-          title={
-            <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
-              {item.title}
-            </span>
-          }
-          description={
-            <div>
-              <div style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
-                {item.description}
-              </div>
-              <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
-            </div>
-          }
-        />
-        <div>{item.time?.format('HH:mm')}</div>
-      </List.Item>
-    )}
-  />
+  const handleDelete = async (id) => {
+    try {
+      await api.reminders.deleteReminder(id);
+      await fetchReminders(); // Now fetchReminders is accessible
+    } catch (error) {
+      console.error('Failed to delete reminder:', error);
+    }
+  };
+
   const getRemindersForDate = (date) => {
     return reminders.filter(reminder => 
       dayjs(reminder.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
@@ -293,9 +249,7 @@ const Reminder = () => {
                     type="text" 
                     danger 
                     icon={<DeleteOutlined />} 
-                    onClick={() => {
-                      setReminders(reminders.filter(r => r.id !== item.id));
-                    }}
+                    onClick={() => handleDelete(item.id)}
                   >
                     Xóa
                   </Button>
