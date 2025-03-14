@@ -7,6 +7,8 @@ const { Title, Text, Paragraph } = Typography;
 const { Meta } = Card;
 
 function Blog() {
+  // Add new state for tracking expanded state
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [blogs, setBlogs] = useState([]);
@@ -38,7 +40,7 @@ function Blog() {
     <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto", background: "#fff" }}>
       {/* Initial Blog Cards */}
       <Row gutter={[24, 24]}>
-        {blogs.slice(0, 6).map((blog, index) => (
+        {(isExpanded ? blogs : blogs.slice(0, 6)).map((blog, index) => (
           <Col xs={24} sm={8} key={blog.blogId || index}>
             <Card
               hoverable
@@ -87,6 +89,8 @@ function Blog() {
         ))}
       </Row>
 
+      {/* Remove the "More Blog Posts" section since we'll show all posts in the main section */}
+
       {/* Blog Detail Modal */}
       <Modal
         title={selectedBlog?.title}
@@ -113,79 +117,34 @@ function Blog() {
             <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
               {new Date(selectedBlog.createdAt).toLocaleDateString()}
             </Text>
-            <Paragraph style={{ fontSize: '16px', lineHeight: '1.8' }}>
+            <Paragraph style={{ 
+              fontSize: '16px', 
+              lineHeight: '1.8',
+              whiteSpace: 'pre-line' 
+            }}>
               {selectedBlog.content}
             </Paragraph>
           </div>
         )}
       </Modal>
 
-      {/* More Blog Posts Section */}
-      <div id="more-posts" style={{ marginTop: "40px", display: "none" }}>
-        <Title level={3} style={{ textAlign: "center", marginBottom: "30px" }}>More Blog Posts</Title>
-        <Row gutter={[24, 24]}>
-          {blogs.slice(6).map((blog, index) => (
-            <Col xs={24} sm={12} md={8} key={blog.blogId || `more-${index}`}>
-              <Card
-                hoverable
-                onClick={() => handleBlogClick(blog)}
-                cover={
-                  blog.images && blog.images[0]?.imageUrl ? (
-                    <img
-                      alt={blog.title}
-                      src={blog.images[0].imageUrl}
-                      style={{
-                        height: "160px",
-                        objectFit: "cover",
-                        borderRadius: "8px 8px 0 0"
-                      }}
-                    />
-                  ) : (
-                    <div style={{ 
-                      height: "160px", 
-                      background: "#f5f5f5",
-                      borderRadius: "8px 8px 0 0"
-                    }}></div>
-                  )
-                }
-                style={{ borderRadius: "8px" }}
-              >
-                <Meta
-                  title={blog.title}
-                  description={
-                    <div>
-                      <Text type="secondary">
-                        {new Date(blog.createdAt).toLocaleDateString()}
-                      </Text>
-                    </div>
-                  }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </div>
-
-      {/* Read More Button */}
-      <div style={{ textAlign: "center", margin: "40px 0" }}>
-        <a 
-          onClick={() => {
-            const morePostsSection = document.getElementById('more-posts');
-            if (morePostsSection) {
-              morePostsSection.style.display = morePostsSection.style.display === 'none' ? 'block' : 'none';
-            }
-          }}
-          style={{ 
-            color: "#1890ff", 
-            fontSize: "16px",
-            textDecoration: "none",
-            fontWeight: "500",
-            cursor: "pointer"
-          }}
-        >
-          Read more
-        </a>
-      </div>
+      {/* Toggle Button */}
+      {blogs.length > 6 && (
+        <div style={{ textAlign: "center", margin: "40px 0" }}>
+          <a 
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ 
+              color: "#1890ff", 
+              fontSize: "16px",
+              textDecoration: "none",
+              fontWeight: "500",
+              cursor: "pointer"
+            }}
+          >
+            {isExpanded ? "Show less" : "Show more"}
+          </a>
+        </div>
+      )}
     </div>
   );
 }
