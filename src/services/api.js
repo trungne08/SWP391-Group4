@@ -877,20 +877,25 @@ const api = {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No token found');
 
+        console.log('Updating status:', { reminderId, status }); // Debug log
+
         const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}/status`, {
           method: 'PATCH',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ status })
+          body: JSON.stringify(status)
         });
+
+        const responseText = await response.text();
+        console.log('Status update response:', responseText);
 
         if (!response.ok) {
           throw new Error('Failed to update reminder status');
         }
 
-        return await response.json();
+        return responseText ? JSON.parse(responseText) : { success: true };
       } catch (error) {
         console.error('Update reminder status error:', error);
         throw error;

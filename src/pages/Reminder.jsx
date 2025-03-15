@@ -102,13 +102,13 @@ const Reminder = () => {
       const formattedReminders = response.map(reminder => ({
         id: reminder.reminderId,
         type: reminder.type,
-        // Use the type from API for the title
-        title: reminderTypes.find(t => t.value === reminder.type)?.label || reminder.type,
+        title: reminder.type === 'MEDICAL_TASK' && reminder.tasks[0] 
+          ? reminder.tasks[0].taskName 
+          : reminderTypes.find(t => t.value === reminder.type)?.label || reminder.type,
         date: dayjs(reminder.reminderDate),
-        completed: reminder.status === 'COMPLETED',
+        status: reminder.status,  // Use reminder.status, not reminder.tasks.status
         createdAt: dayjs(reminder.createdAt),
         pregnancyId: reminder.pregnancyId,
-        // Add tasks if they exist
         tasks: reminder.tasks || []
       }));
       setReminders(formattedReminders);
@@ -312,7 +312,10 @@ const Reminder = () => {
                   <Button 
                     type="text" 
                     icon={<EditOutlined />} 
-                    onClick={() => handleEdit(item)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from opening
+                      handleEdit(item);
+                    }}
                   >
                     Chỉnh sửa
                   </Button>,
@@ -345,7 +348,41 @@ const Reminder = () => {
         title="Chi tiết nhắc nhở"
         open={selectedReminder !== null}
         onCancel={handleModalClose}
-        footer={null}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <Select
+              value={selectedReminder?.tempStatus || selectedReminder?.status || 'NOT_YET'}
+              style={{ width: 120 }}
+              onChange={(value) => {
+                setSelectedReminder({ ...selectedReminder, tempStatus: value });
+              }}
+            >
+              <Option value="NOT_YET">Chưa hoàn thành</Option>
+              <Option value="DONE">Hoàn thành</Option>
+              <Option value="SKIP">Bỏ qua</Option>
+            </Select>
+            <Button 
+              type="primary"
+              onClick={async () => {
+                if (!selectedReminder?.id || !selectedReminder?.tempStatus) return;
+                try {
+                  await api.reminders.updateReminderStatus(selectedReminder.id, {
+                    status: selectedReminder.tempStatus
+                  });
+                  handleModalClose();
+                  await fetchReminders();
+                  message.success('Cập nhật trạng thái thành công');
+                } catch (error) {
+                  console.error('Failed to update status:', error);
+                  message.error('Không thể cập nhật trạng thái');
+                }
+              }}
+            >
+              Xác nhận
+            </Button>
+            <Button onClick={handleModalClose}>Đóng</Button>
+          </div>
+        }
         width={600}
       >
         {selectedReminder && (
@@ -354,7 +391,11 @@ const Reminder = () => {
             <div style={{ marginBottom: '16px' }}>
               <p><strong>Loại nhắc nhở:</strong> {reminderTypes.find(t => t.value === selectedReminder.type)?.label}</p>
               <p><strong>Ngày:</strong> {selectedReminder.date?.format('DD/MM/YYYY')}</p>
-              <p><strong>Trạng thái:</strong> {selectedReminder.completed ? 'Hoàn thành' : 'Chưa hoàn thành'}</p>
+              <p><strong>Trạng thái:</strong> {
+                selectedReminder.status === 'NOT_YET' ? 'Chưa hoàn thành' :
+                selectedReminder.status === 'DONE' ? 'Hoàn thành' :
+                selectedReminder.status === 'SKIP' ? 'Bỏ qua' : 'Không xác định'
+              }</p>
               
               {selectedReminder.type === 'MEDICAL_TASK' && selectedReminder.tasks && selectedReminder.tasks.length > 0 && (
                 <div style={{ marginTop: '16px' }}>
@@ -366,9 +407,7 @@ const Reminder = () => {
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <Button onClick={handleModalClose}>Đóng</Button>
-            </div>
+            {/* Removed the extra close button div here */}
           </div>
         )}
       </Modal>
