@@ -37,7 +37,7 @@ function FeePackage() {
               id: 2,
               name: "Premium Plan",
               description: "Advanced features for power users",
-              price: 9.99,
+              price: 250000,  // Changed to VND
               features: ["All basic features", "Unlimited storage", "Priority support", "Advanced analytics"]
             }
           ]);
@@ -50,15 +50,15 @@ function FeePackage() {
           {
             id: 1,
             name: "Basic Plan",
-            description: "Essential features for getting started",
-            price: 0,
+            description: "Basic plan for new users",
+            price: 150000,
             features: ["Basic tracking features", "Limited storage", "Email support"]
           },
           {
             id: 2,
             name: "Premium Plan",
-            description: "Advanced features for power users",
-            price: 9.99,
+            description: "Premium plan with more features",
+            price: 300000,
             features: ["All basic features", "Unlimited storage", "Priority support", "Advanced analytics"]
           }
         ]);
@@ -167,9 +167,9 @@ function FeePackage() {
                   color: index === 1 ? 'white' : 'inherit',
                   display: 'block'
                 }}>
-                  {pkg.price} $
+                  {pkg.price.toLocaleString('vi-VN')} VNĐ
                 </Text>
-                <Text style={{ color: index === 1 ? 'white' : '#666' }}>/month</Text>
+                <Text style={{ color: index === 1 ? 'white' : '#666' }}>/tháng</Text>
               </div>
               <ul style={{ 
                 listStyle: 'none', 

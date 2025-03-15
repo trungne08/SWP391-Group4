@@ -456,6 +456,7 @@ const api = {
         throw error;
       }
     },
+    
     upgradeSubscription: async () => {
       try {
         const token = localStorage.getItem("token");
