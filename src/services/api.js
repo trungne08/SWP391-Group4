@@ -859,10 +859,10 @@ const api = {
 
     updateReminderStatus: async (reminderId, status) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
-        console.log('Updating status:', { reminderId, status }); // Debug log
+        console.log('Updating status:', { reminderId, status });
 
         const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}/status`, {
           method: 'PATCH',
@@ -873,19 +873,18 @@ const api = {
           body: JSON.stringify(status)
         });
 
-        const responseText = await response.text();
-        console.log('Status update response:', responseText);
-
         if (!response.ok) {
-          throw new Error("Failed to update reminder status");
+          const errorText = await response.text();
+          throw new Error(errorText || 'Failed to update reminder status');
         }
 
-        return await response.json();
+        const data = await response.json();
+        return data;
       } catch (error) {
-        console.error("Update reminder status error:", error);
+        console.error('Update reminder status error:', error);
         throw error;
       }
-    },
+    }
   },
   blog: {
     getAllBlogs: async () => {
