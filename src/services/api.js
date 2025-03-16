@@ -1,4 +1,7 @@
+import { message } from 'antd';
+
 const API_BASE_URL = "https://hare-causal-prawn.ngrok-free.app";
+
 
 const api = {
   auth: {
@@ -537,25 +540,41 @@ const api = {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
           mode: "cors",
-          credentials: "include", // Add this back as it might be needed for authentication
+          credentials: "include", // Giữ lại để hỗ trợ xác thực nếu cần
         });
-
+    
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Server error response:", errorText);
           throw new Error(`Failed to fetch posts: ${response.status}`);
         }
-
+    
         const responseText = await response.text();
         console.log("Raw response:", responseText);
-
-        // Check if response is empty
+    
+        // Kiểm tra nếu response rỗng
         if (!responseText.trim()) {
+          console.warn("No posts found, returning empty array");
           return [];
         }
-
+    
         try {
-          return JSON.parse(responseText);
+          const posts = JSON.parse(responseText);
+          
+          // Xử lý dữ liệu để đảm bảo chartData được parse đúng
+          const processedPosts = posts.map(post => {
+            if (post.postType === "GROWTH_CHART" && typeof post.chartData === "string") {
+              try {
+                post.chartData = JSON.parse(post.chartData);
+              } catch (e) {
+                console.warn(`Failed to parse chartData for post ${post.postId}:`, e);
+                post.chartData = {}; // Gán giá trị mặc định nếu parse thất bại
+              }
+            }
+            return post;
+          });
+    
+          return processedPosts;
         } catch (parseError) {
           console.error("Parse error:", parseError);
           console.error("Response that failed to parse:", responseText);
@@ -1405,9 +1424,10 @@ const api = {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
+          message.error("No token found");
           throw new Error("No token found");
         }
-
+    
         const response = await fetch(
           `${API_BASE_URL}/api/fetus-records/${fetusId}/growth-data`,
           {
@@ -1416,48 +1436,74 @@ const api = {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
               Accept: "application/json",
-            }
+            },
+            mode: "cors",
+            credentials: "include",
           }
         );
-
-        const responseText = await response.text();
-        console.log("Raw growth data response:", responseText);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch fetus growth data: ${responseText}`);
+    
+        // Handle membership restriction
+        if (response.status === 403) {
+          message.error("This feature requires Basic or Premium membership");
+          throw new Error("Membership required");
         }
-
+    
+        // Handle server errors
+        if (response.status === 500) {
+          message.error("Internal server error occurred");
+          throw new Error("Internal server error");
+        }
+    
+        const responseText = await response.text();
+        console.log("Raw fetus records response:", responseText);
+    
+        if (!response.ok) {
+          message.error("Failed to fetch fetus records");
+          throw new Error(`Failed to fetch fetus records: ${responseText}`);
+        }
+    
+        if (!responseText.trim()) {
+          return [];
+        }
+    
         try {
           const data = JSON.parse(responseText);
-          console.log("Parsed growth data:", data);
-
-          // Transform the data into table format
-          const transformedData = [];
-
-          // Check if data is an array
-          if (Array.isArray(data)) {
-            data.forEach((record) => {
-              transformedData.push({
-                key: record.week,
-                week: record.week,
-                fetalWeight: record.fetalWeight,
-                femurLength: record.femurLength,
-                headCircumference: record.headCircumference
-              });
-            });
+          console.log("Parsed fetus records:", data);
+    
+          // Transform data into required format
+          if (!Array.isArray(data)) {
+            console.error("Expected array but got:", typeof data);
+            return [];
           }
-
-          console.log("Transformed data:", transformedData);
+    
+          const transformedData = data.map(record => ({
+            key: record.id || `${record.fetusId}-${record.week}`,
+            week: record.week,
+            fetalWeight: record.fetalWeight || 0,
+            femurLength: record.femurLength || 0,
+            headCircumference: record.headCircumference || 0,
+            createdAt: record.createdAt
+          }));
+    
+          console.log("Transformed fetus records:", transformedData);
           return transformedData;
+    
         } catch (parseError) {
           console.error("Parse error:", parseError);
+          console.error("Response that failed to parse:", responseText);
+          message.error("Invalid data format received from server");
           return [];
         }
       } catch (error) {
-        console.error("Get fetus growth data error:", error);
+        console.error("Get fetus records error:", error);
+        if (!error.message.includes("Membership required")) {
+          message.error(error.message || "Failed to fetch fetus records");
+        }
         return [];
       }
     },
+
+   
   },
   standards: {
     getPregnancyStandards: async (fetusNumber) => {
@@ -1520,7 +1566,120 @@ const api = {
       }
     }
   },
+  growth: {
+    shareChart: async (fetusId, chartData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
 
+        // Format data with selected chart types
+        const formattedData = {
+          chartTypes: chartData.chartTypes, // Array of selected chart types (WEIGHT, HEAD_CIRCUMFERENCE, LENGTH)
+          title: chartData.title,
+          content: chartData.content,
+          type: "GROWTH_CHART",
+          isAnonymous: chartData.isAnonymous || false
+        };
+
+        console.log("Sharing chart data:", formattedData);
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/growth-charts/share/${fetusId}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formattedData)
+          }
+        );
+
+        const responseText = await response.text();
+        console.log("Share chart response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to share chart");
+        }
+
+        try {
+          return responseText ? JSON.parse(responseText) : { success: true };
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          console.error("Response that failed to parse:", responseText);
+          throw new Error("Invalid response format from server");
+        }
+      } catch (error) {
+        console.error("Share chart error:", error);
+        throw error;
+      }
+    },
+
+ getGrowthChart : async (postId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found. Please log in again.");
+    
+        const response = await fetch(
+          `${API_BASE_URL}/api/growth-charts/post/${postId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json"
+            }
+          }
+        );
+    
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to fetch growth chart data");
+        }
+    
+        const data = await response.json();
+        console.log("Raw growth chart data:", data);
+    
+        // Kiểm tra xem data.chartData có tồn tại không
+        const chartData = data.chartData || {};
+        
+        // Chuyển đổi dữ liệu
+        const transformedData = {
+          chartData: {
+            headCircumference: chartData.headCircumference || [],
+            fetalWeight: chartData.fetalWeight || [],
+            femurLength: chartData.femurLength || [],
+          },
+          predictionLine: {
+            weightPrediction: chartData.predictionLine?.weightPrediction || [],
+            lengthPrediction: chartData.predictionLine?.lengthPrediction || [],
+            headPrediction: chartData.predictionLine?.headPrediction || [],
+          },
+          standardLines: {
+            weight: data.standardLines?.weight || [],
+            length: data.standardLines?.length || [],
+            headCircumference: data.standardLines?.headCircumference || [],
+          },
+          post: {
+            title: data.post?.title || "No title",
+            content: data.post?.content || "No content",
+            authorId: data.post?.authorId || null,
+            createdAt: data.post?.createdAt || null,
+          }
+        };
+    
+        console.log("Transformed chart data:", transformedData);
+        return transformedData;
+    
+      } catch (error) {
+        console.error("Get growth chart error:", error.message);
+        throw error;
+      }
+    
+    
+
+  },
+  }
 };
-
 export default api;
+

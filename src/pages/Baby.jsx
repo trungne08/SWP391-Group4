@@ -740,51 +740,23 @@ function Baby() {
               gap: "10px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Title level={5} style={{ margin: 0 }}>
-                Mang thai lần thứ
-              </Title>
-              <Input
-                type="number"
-                min={1}
-                value={pregnancyNumber}
-                onChange={(e) =>
-                  setPregnancyNumber(Math.max(1, parseInt(e.target.value) || 1))
-                }
-                style={{ width: "60px", textAlign: "center" }}
-              />
-            </div>
-            <div style={{ position: "relative" }}>
-              <Avatar
-                size={100}
-                icon={<UserOutlined />}
-                style={{
-                  backgroundColor: "#1890ff",
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                }}
-                onClick={() => setIsModalOpen(true)}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: -10,
-                  right: -10,
-                  background: "#f56a00",
-                  color: "#fff",
-                  borderRadius: "50%",
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                }}
-              >
-                {pregnancyNumber}
-              </div>
-            </div>
+         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+  <Title level={5} style={{ margin: 0 }}>
+    Mang thai lần thứ
+  </Title>
+  <div
+    style={{
+      width: "60px",
+      textAlign: "center",
+      padding: "4px 11px",
+      border: "1px solid #d9d9d9",
+      borderRadius: "2px",
+      backgroundColor: "#f5f5f5"
+    }}
+  >
+    {pregnancyHistoryData?.findIndex(p => p.pregnancyId === pregnancyData?.pregnancyId) + 1 || pregnancyNumber}
+  </div>
+</div>
           </div>
         </Col>
 
@@ -836,10 +808,10 @@ function Baby() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Title level={4} style={{ margin: 0, fontSize: "12px" }}>
+              <Title level={4} style={{ margin: 0, fontSize: "13px" }}>
                 Bạn đang mang thai
               </Title>
-              <div style={{ width: 120 }}>
+              <div style={{ width: 100 }}>
                 {pregnancyData?.totalFetuses === 1
                   ? "Đơn thai"
                   : pregnancyData?.totalFetuses === 2
