@@ -51,7 +51,32 @@ const api = {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     },
+    getCurrentUser: async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
+        const tokenData = JSON.parse(atob(token.split('.')[1]));
+        const userId = tokenData.id;
+
+        const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch current user');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Get current user error:', error);
+        throw error;
+      }
+    },
     register: async (userData) => {
       try {
         console.log("Sending registration data:", userData);
@@ -456,7 +481,6 @@ const api = {
         throw error;
       }
     },
-    
     upgradeSubscription: async () => {
       try {
         const token = localStorage.getItem("token");
@@ -636,7 +660,7 @@ const api = {
         throw error;
       }
     },
-    // Add comma here
+     // Add comma here
     deletePost: async (postId) => {
       try {
         const token = localStorage.getItem("token");
@@ -690,32 +714,32 @@ const api = {
         throw error;
       }
     },
-  },
+},
   reminders: {
     getAllReminders: async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
-          mode: "cors",
-          credentials: "include",
+          mode: 'cors',
+          credentials: 'include'
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("Server error response:", errorText);
+          console.error('Server error response:', errorText);
           throw new Error(`Failed to fetch reminders: ${response.status}`);
         }
 
         const responseText = await response.text();
-        console.log("Raw reminders response:", responseText);
+        console.log('Raw reminders response:', responseText);
 
         if (!responseText.trim()) {
           return [];
@@ -724,42 +748,39 @@ const api = {
         try {
           return JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Parse error:", parseError);
-          console.error("Response that failed to parse:", responseText);
-          throw new Error("Invalid JSON response from server");
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
         }
       } catch (error) {
-        console.error("Get reminders error:", error);
+        console.error('Get reminders error:', error);
         throw error;
       }
     },
 
     getReminderById: async (reminderId) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/reminders/${reminderId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-              mode: "cors",
-              credentials: "include",
-            },
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            mode: 'cors',
+            credentials: 'include'
           }
-        );
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("Server error response:", errorText);
+          console.error('Server error response:', errorText);
           throw new Error(`Failed to fetch reminders: ${response.status}`);
         }
 
         const responseText = await response.text();
-        console.log("Raw reminders response:", responseText);
+        console.log('Raw reminders response:', responseText);
 
         if (!responseText.trim()) {
           return [];
@@ -768,122 +789,118 @@ const api = {
         try {
           return JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Parse error:", parseError);
-          console.error("Response that failed to parse:", responseText);
-          throw new Error("Invalid JSON response from server");
+          console.error('Parse error:', parseError);
+          console.error('Response that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from server');
         }
       } catch (error) {
-        console.error("Get reminders error:", error);
+        console.error('Get reminders error:', error);
         throw error;
       }
     },
 
     createReminder: async (reminderData) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(reminderData),
+          body: JSON.stringify(reminderData)
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create reminder");
+          throw new Error('Failed to create reminder');
         }
 
         return await response.json();
       } catch (error) {
-        console.error("Create reminder error:", error);
+        console.error('Create reminder error:', error);
         throw error;
       }
     },
 
     updateReminder: async (reminderId, reminderData) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/reminders/${reminderId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(reminderData),
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(reminderData)
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to update reminder");
+          throw new Error('Failed to update reminder');
         }
 
         return await response.json();
       } catch (error) {
-        console.error("Update reminder error:", error);
+        console.error('Update reminder error:', error);
         throw error;
       }
     },
 
     deleteReminder: async (reminderId) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/reminders/${reminderId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
-        );
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to delete reminder");
+          throw new Error('Failed to delete reminder');
         }
 
         return true;
       } catch (error) {
-        console.error("Delete reminder error:", error);
+        console.error('Delete reminder error:', error);
         throw error;
       }
     },
 
     updateReminderStatus: async (reminderId, status) => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/reminders/${reminderId}/status`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ status }),
-          }
-        );
+        console.log('Updating status:', { reminderId, status }); // Debug log
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(status)
+        });
+
+        const responseText = await response.text();
+        console.log('Status update response:', responseText);
 
         if (!response.ok) {
-          throw new Error("Failed to update reminder status");
+          throw new Error('Failed to update reminder status');
         }
 
-        return await response.json();
+        return responseText ? JSON.parse(responseText) : { success: true };
       } catch (error) {
-        console.error("Update reminder status error:", error);
+        console.error('Update reminder status error:', error);
         throw error;
       }
-    },
+    }
   },
   blog: {
     getAllBlogs: async () => {
@@ -1017,510 +1034,55 @@ const api = {
     },
   },
   pregnancy: {
-    getOngoingPregnancy: async () => {
+    getCurrentPregnancy: async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
 
-        // Lấy userId từ token thay vì localStorage
-        let userId;
-        try {
-          const tokenData = JSON.parse(atob(token.split(".")[1]));
-          userId = tokenData.id || tokenData.user_id;
-          if (!userId) {
-            throw new Error("User ID not found in token");
-          }
-        } catch (err) {
-          console.error("Failed to extract user ID from token:", err);
-          throw new Error("Invalid token format");
-        }
+        const tokenData = JSON.parse(atob(token.split('.')[1]));
+        const userId = tokenData.id;
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/ongoing/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            mode: "cors",
-            credentials: "include",
-          }
-        );
-
-        console.log("Response status:", response.status);
-        console.log("Response headers:", Object.fromEntries(response.headers));
-
-        const responseText = await response.text();
-        console.log("Raw pregnancy response:", responseText);
-
-        if (!response.ok) {
-          throw new Error(responseText || "Failed to fetch pregnancy data");
-        }
-
-        if (!responseText || responseText.includes("<!DOCTYPE html>")) {
-          console.error("Received HTML instead of JSON");
-          return null;
-        }
-
-        try {
-          return JSON.parse(responseText);
-        } catch (parseError) {
-          console.error("Failed to parse pregnancy data:", parseError);
-          return null;
-        }
-      } catch (error) {
-        console.error("Get pregnancy error:", error);
-        return null;
-      }
-    },
-    createPregnancy: async (pregnancyData) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        const tokenData = JSON.parse(atob(token.split(".")[1]));
-        const userId = tokenData.id || tokenData.user_id;
-        if (!userId) {
-          throw new Error("User ID not found in token");
-        }
-
-        // Đảm bảo dữ liệu đúng định dạng
-        const formattedData = {
-          userId: userId,
-          gestationalWeeks: parseInt(pregnancyData.gestationalWeeks),
-          gestationalDays: parseInt(pregnancyData.gestationalDays),
-          examDate: pregnancyData.examDate,
-          totalFetuses: parseInt(pregnancyData.totalFetuses),
-          status: "ONGOING",
-          startDate: new Date().toISOString().split('T')[0] // Thêm ngày bắt đầu
-        };
-
-        console.log("Sending pregnancy data:", formattedData);
-
-        const response = await fetch(`${API_BASE_URL}/api/pregnancies`, {
-          method: "POST",
+        const response = await fetch(`${API_BASE_URL}/api/pregnancies/ongoing/${userId}`, {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json"
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          body: JSON.stringify(formattedData),
-          mode: "cors",
-          credentials: "include"
+          mode: 'cors',  // Add CORS mode
+          credentials: 'include'  // Include credentials
         });
 
+        // First check if response is HTML
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          console.error('Received HTML instead of JSON. API endpoint might be unavailable.');
+          return null;
+        }
+
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to create pregnancy");
+          throw new Error(`Failed to fetch pregnancy data: ${response.status}`);
         }
-
-        const result = await response.json();
-        return result;
-      } catch (error) {
-        console.error("Create pregnancy error:", error);
-        throw error;
-      }
-    },
-
-    updatePregnancyStatus: async (pregnancyId, fetusId, status) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        // Case 1: Update specific fetus status
-        if (fetusId) {
-          const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/fetus/${fetusId}/status?status=CANCEL`,
-            {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              }
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Could not update fetus status");
-          }
-          return true;
-        }
-
-        // Case 2: Update entire pregnancy status
-        if (pregnancyId) {
-          const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${status || "COMPLETED"}`,
-            {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              }
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Could not update pregnancy status");
-          }
-          return true;
-        }
-
-        throw new Error("Either pregnancyId or fetusId must be provided");
-      } catch (error) {
-        console.error(`Update status error:`, error);
-        throw error;
-      }
-    },
-    updatePregnancy: async (pregnancyId, updateData) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        // Format data according to API spec
-        const formattedData = {
-          userId: updateData.userId,
-          examDate: updateData.examDate, // Changed from checkupDate to examDate
-          gestationalWeeks: parseInt(updateData.gestationalWeeks),
-          gestationalDays: parseInt(updateData.gestationalDays),
-          totalFetuses: parseInt(updateData.totalFetuses || 0)
-        };
-
-        console.log("Sending update data:", formattedData); // Debug log
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/${pregnancyId}`,
-          {
-            method: "PUT",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify(formattedData),
-            mode: "cors",
-            credentials: "include",
-          }
-        );
 
         const responseText = await response.text();
-        console.log("Update pregnancy response:", responseText);
+        console.log('Pregnancy API response:', responseText);
 
-        if (!response.ok) {
-          throw new Error(responseText || "Failed to update pregnancy");
-        }
-
-        return responseText ? JSON.parse(responseText) : null;
-      } catch (error) {
-        console.error("Update pregnancy error:", error);
-        throw error;
-      }
-    },
-    getUserPregnancies: async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        let userId;
-        try {
-          const tokenData = JSON.parse(atob(token.split(".")[1]));
-          userId = tokenData.id || tokenData.user_id;
-          if (!userId) {
-            throw new Error("User ID not found in token");
-          }
-        } catch (err) {
-          console.error("Failed to extract user ID from token:", err);
-          throw new Error("Invalid token format");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/user/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            mode: "cors",
-            credentials: "include",
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("User pregnancies response:", responseText);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch user pregnancies");
+        if (!responseText.trim()) {
+          return null;
         }
 
         try {
-          return responseText ? JSON.parse(responseText) : [];
+          const pregnancyData = JSON.parse(responseText);
+          return pregnancyData;
         } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
+          console.error('Failed to parse pregnancy data:', parseError);
+          return null;
         }
       } catch (error) {
-        console.error("Get user pregnancies error:", error);
-        return [];
-      }
-    },
-    getPregnancyHistory: async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const tokenData = JSON.parse(atob(token.split(".")[1]));
-        const userId = tokenData.id || tokenData.user_id;
-        if (!userId) {
-          throw new Error("User ID not found in token");
-        }
-
-        // Using the correct endpoint that works
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/ongoing/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            mode: "cors",
-            credentials: "include",
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("Pregnancy history response:", responseText);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch pregnancy history");
-        }
-
-        try {
-          const data = responseText ? JSON.parse(responseText) : null;
-          // Convert single pregnancy object to array if needed
-          return data ? [data] : [];
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
-      } catch (error) {
-        console.error("Get pregnancy history error:", error);
-        return [];
-      }
-    },
-  },
-  fetus: {
-    getFetusMeasurements: async (fetusId) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/fetus-records/${fetusId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            mode: "cors",
-            credentials: "include",
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("Fetus measurements response:", responseText);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch fetus measurements");
-        }
-
-        try {
-          return responseText ? JSON.parse(responseText) : [];
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
-      } catch (error) {
-        console.error("Get fetus measurements error:", error);
-        return [];
-      }
-    },
-
-    createFetusRecord: async (fetusId, measurements) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const formattedData = {
-          fetalWeight: measurements.fetalWeight?.toString() || "0",
-          femurLength: measurements.femurLength?.toString() || "0",
-          headCircumference: measurements.headCircumference?.toString() || "0"
-        };
-        console.log('Sending data:', { fetusId, formattedData });
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/fetus-records/${fetusId}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(formattedData)
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to create fetus record");
-        }
-
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error("Create fetus record error:", error);
-        throw error;
-      }
-    },
-
-    getFetusRecords: async (fetusId) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/fetus-records/${fetusId}/growth-data`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            }
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("Raw growth data response:", responseText);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch fetus growth data: ${responseText}`);
-        }
-
-        try {
-          const data = JSON.parse(responseText);
-          console.log("Parsed growth data:", data);
-
-          // Transform the data into table format
-          const transformedData = [];
-
-          // Check if data is an array
-          if (Array.isArray(data)) {
-            data.forEach((record) => {
-              transformedData.push({
-                key: record.week,
-                week: record.week,
-                fetalWeight: record.fetalWeight,
-                femurLength: record.femurLength,
-                headCircumference: record.headCircumference
-              });
-            });
-          }
-
-          console.log("Transformed data:", transformedData);
-          return transformedData;
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
-      } catch (error) {
-        console.error("Get fetus growth data error:", error);
-        return [];
-      }
-    },
-  },
-  standards: {
-    getPregnancyStandards: async (fetusNumber) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/standards/pregnancy/fetus/${fetusNumber}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            mode: "cors",
-            credentials: "include"
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("Raw standards response:", responseText);
-
-        if (!response.ok) {
-          console.error("Standards API error:", response.status, responseText);
-          throw new Error(`Failed to fetch standards: ${response.status}`);
-        }
-
-        try {
-          const data = JSON.parse(responseText);
-          console.log("Parsed standards data:", data);
-
-          // Transform data to include min/max values
-          const transformedData = data.map(standard => ({
-            week: standard.week,
-            avgWeight: standard.avgWeight,
-            minWeight: standard.minWeight,
-            maxWeight: standard.maxWeight,
-            avgLength: standard.avgLength,
-            minLength: standard.minLength,
-            maxLength: standard.maxLength,
-            avgHeadCircumference: standard.avgHeadCircumference,
-            minHeadCircumference: standard.minHeadCircumference,
-            maxHeadCircumference: standard.maxHeadCircumference
-          }));
-
-          console.log("Transformed standards with min/max:", transformedData);
-          return transformedData;
-        } catch (parseError) {
-          console.error("Standards parse error:", parseError);
-          console.error("Response that failed to parse:", responseText);
-          return [];
-        }
-      } catch (error) {
-        console.error("Get standards error:", error);
-        return [];
+        console.error('Get pregnancy error:', error);
+        return null;  // Return null instead of throwing
       }
     }
-  },
-
+},
 };
-
 export default api;
