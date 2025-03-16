@@ -862,17 +862,19 @@ const api = {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/reminders/${reminderId}/status`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ status }),
-          }
-        );
+        console.log('Updating status:', { reminderId, status }); // Debug log
+
+        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(status)
+        });
+
+        const responseText = await response.text();
+        console.log('Status update response:', responseText);
 
         if (!response.ok) {
           throw new Error("Failed to update reminder status");
@@ -1017,6 +1019,55 @@ const api = {
     },
   },
   pregnancy: {
+    getCurrentPregnancy: async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No token found');
+
+        const tokenData = JSON.parse(atob(token.split('.')[1]));
+        const userId = tokenData.id;
+
+        const response = await fetch(`${API_BASE_URL}/api/pregnancies/ongoing/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          mode: 'cors',  // Add CORS mode
+          credentials: 'include'  // Include credentials
+        });
+
+        // First check if response is HTML
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          console.error('Received HTML instead of JSON. API endpoint might be unavailable.');
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pregnancy data: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Pregnancy API response:', responseText);
+
+        if (!responseText.trim()) {
+          return null;
+        }
+
+        try {
+          const pregnancyData = JSON.parse(responseText);
+          return pregnancyData;
+        } catch (parseError) {
+          console.error('Failed to parse pregnancy data:', parseError);
+          return null;
+        }
+      } catch (error) {
+        console.error('Get pregnancy error:', error);
+        return null;  // Return null instead of throwing
+      }
+    },
     getOngoingPregnancy: async () => {
       try {
         const token = localStorage.getItem("token");
