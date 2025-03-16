@@ -1,7 +1,8 @@
 import React from 'react';
-import { Typography, Card, Form, Input, Button, Row, Col, Space } from 'antd';
+import { Typography, Card, Button, Row, message } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import api from '../services/api';
 
 const { Title, Text } = Typography;
 
@@ -9,16 +10,50 @@ function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
   const { packageDetails } = location.state || {};
-  const [form] = Form.useForm();
 
-  const onFinish = (values) => {
-    // After successful form submission, navigate to confirm page
-    navigate('/confirm', { 
-      state: { 
-        packageDetails,
-        paymentDetails: values
-      } 
-    });
+  const handlePayment = async () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      if (!userData?.user_id) {
+        message.error('User information not found');
+        return;
+      }
+
+      // Kiểm tra packageDetails
+      if (!packageDetails || !packageDetails.id) {
+        message.error('Package information is invalid');
+        console.error('Package details:', packageDetails);
+        return;
+      }
+
+      // Thêm returnUrl cho VNPay callback
+      const returnUrl = `${window.location.origin}/payment-return`;
+      
+      console.log('Creating payment with:', {
+        userId: userData.user_id,
+        packageId: packageDetails.id,
+        returnUrl
+      });
+
+      // Gọi API tạo thanh toán với returnUrl
+      const response = await api.payment.createPayment(
+        userData.user_id,
+        packageDetails.id,
+        returnUrl
+      );
+
+      console.log('Payment response:', response);
+
+      if (response && response.paymentUrl) {
+        window.location.href = response.paymentUrl;
+      } else {
+        message.error('Invalid payment response from server');
+        console.error('Payment response:', response);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      message.error(error.message || 'Payment failed');
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -54,57 +89,27 @@ function Payment() {
       </div>
 
       <Card>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-        >
-          <Form.Item
-            label="Card Number"
-            name="cardNumber"
-            rules={[{ required: true, message: 'Please enter your card number' }]}
+        <div style={{ textAlign: 'center' }}>
+          <Title level={4}>Payment Method</Title>
+          <img 
+            src="/vnpay-logo.png" 
+            alt="VNPay" 
+            style={{ height: '50px', marginBottom: '20px' }}
+          />
+          <Button 
+            type="primary" 
+            size="large" 
+            block 
+            onClick={handlePayment}
           >
-            <Input placeholder="1234 5678 9012 3456" maxLength={19} />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Expiry Date"
-                name="expiryDate"
-                rules={[{ required: true, message: 'Please enter expiry date' }]}
-              >
-                <Input placeholder="MM/YY" maxLength={5} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="CVV"
-                name="cvv"
-                rules={[{ required: true, message: 'Please enter CVV' }]}
-              >
-                <Input placeholder="123" maxLength={3} type="password" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label="Cardholder Name"
-            name="cardholderName"
-            rules={[{ required: true, message: 'Please enter cardholder name' }]}
-          >
-            <Input placeholder="John Doe" />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" block size="large">
-            Pay Now
+            Pay with VNPay
           </Button>
-        </Form>
+        </div>
       </Card>
 
       <div style={{ marginTop: '24px', textAlign: 'center' }}>
         <Text type="secondary">
-          Your payment information is secure and encrypted
+          You will be redirected to VNPay to complete your payment
         </Text>
       </div>
     </div>

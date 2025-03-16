@@ -64,7 +64,6 @@ const api = {
             username: userData.username,
             email: userData.email,
             password: userData.password,
-            role: "MEMBER",
           }),
         });
 
@@ -456,7 +455,7 @@ const api = {
         throw error;
       }
     },
-    
+
     upgradeSubscription: async () => {
       try {
         const token = localStorage.getItem("token");
@@ -862,19 +861,22 @@ const api = {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        console.log('Updating status:', { reminderId, status }); // Debug log
+        console.log("Updating status:", { reminderId, status }); // Debug log
 
-        const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(status)
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/reminders/${reminderId}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(status),
+          }
+        );
 
         const responseText = await response.text();
-        console.log('Status update response:', responseText);
+        console.log("Status update response:", responseText);
 
         if (!response.ok) {
           throw new Error("Failed to update reminder status");
@@ -1021,27 +1023,32 @@ const api = {
   pregnancy: {
     getCurrentPregnancy: async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No token found');
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
 
-        const tokenData = JSON.parse(atob(token.split('.')[1]));
+        const tokenData = JSON.parse(atob(token.split(".")[1]));
         const userId = tokenData.id;
 
-        const response = await fetch(`${API_BASE_URL}/api/pregnancies/ongoing/${userId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          mode: 'cors',  // Add CORS mode
-          credentials: 'include'  // Include credentials
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/ongoing/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            mode: "cors", // Add CORS mode
+            credentials: "include", // Include credentials
+          }
+        );
 
         // First check if response is HTML
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          console.error('Received HTML instead of JSON. API endpoint might be unavailable.');
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          console.error(
+            "Received HTML instead of JSON. API endpoint might be unavailable."
+          );
           return null;
         }
 
@@ -1050,7 +1057,7 @@ const api = {
         }
 
         const responseText = await response.text();
-        console.log('Pregnancy API response:', responseText);
+        console.log("Pregnancy API response:", responseText);
 
         if (!responseText.trim()) {
           return null;
@@ -1060,12 +1067,12 @@ const api = {
           const pregnancyData = JSON.parse(responseText);
           return pregnancyData;
         } catch (parseError) {
-          console.error('Failed to parse pregnancy data:', parseError);
+          console.error("Failed to parse pregnancy data:", parseError);
           return null;
         }
       } catch (error) {
-        console.error('Get pregnancy error:', error);
-        return null;  // Return null instead of throwing
+        console.error("Get pregnancy error:", error);
+        return null; // Return null instead of throwing
       }
     },
     getOngoingPregnancy: async () => {
@@ -1147,7 +1154,7 @@ const api = {
           examDate: pregnancyData.examDate,
           totalFetuses: parseInt(pregnancyData.totalFetuses),
           status: "ONGOING",
-          startDate: new Date().toISOString().split('T')[0] // Thêm ngày bắt đầu
+          startDate: new Date().toISOString().split("T")[0], // Thêm ngày bắt đầu
         };
 
         console.log("Sending pregnancy data:", formattedData);
@@ -1157,11 +1164,11 @@ const api = {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            Accept: "application/json"
+            Accept: "application/json",
           },
           body: JSON.stringify(formattedData),
           mode: "cors",
-          credentials: "include"
+          credentials: "include",
         });
 
         if (!response.ok) {
@@ -1191,7 +1198,7 @@ const api = {
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
-              }
+              },
             }
           );
 
@@ -1205,13 +1212,15 @@ const api = {
         // Case 2: Update entire pregnancy status
         if (pregnancyId) {
           const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${status || "COMPLETED"}`,
+            `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${
+              status || "COMPLETED"
+            }`,
             {
               method: "PATCH",
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
-              }
+              },
             }
           );
 
@@ -1239,7 +1248,7 @@ const api = {
           examDate: updateData.examDate, // Changed from checkupDate to examDate
           gestationalWeeks: parseInt(updateData.gestationalWeeks),
           gestationalDays: parseInt(updateData.gestationalDays),
-          totalFetuses: parseInt(updateData.totalFetuses || 0)
+          totalFetuses: parseInt(updateData.totalFetuses || 0),
         };
 
         console.log("Sending update data:", formattedData); // Debug log
@@ -1423,9 +1432,9 @@ const api = {
         const formattedData = {
           fetalWeight: measurements.fetalWeight?.toString() || "0",
           femurLength: measurements.femurLength?.toString() || "0",
-          headCircumference: measurements.headCircumference?.toString() || "0"
+          headCircumference: measurements.headCircumference?.toString() || "0",
         };
-        console.log('Sending data:', { fetusId, formattedData });
+        console.log("Sending data:", { fetusId, formattedData });
 
         const response = await fetch(
           `${API_BASE_URL}/api/fetus-records/${fetusId}`,
@@ -1433,9 +1442,9 @@ const api = {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify(formattedData)
+            body: JSON.stringify(formattedData),
           }
         );
 
@@ -1467,7 +1476,7 @@ const api = {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
               Accept: "application/json",
-            }
+            },
           }
         );
 
@@ -1493,7 +1502,7 @@ const api = {
                 week: record.week,
                 fetalWeight: record.fetalWeight,
                 femurLength: record.femurLength,
-                headCircumference: record.headCircumference
+                headCircumference: record.headCircumference,
               });
             });
           }
@@ -1528,7 +1537,7 @@ const api = {
               Accept: "application/json",
             },
             mode: "cors",
-            credentials: "include"
+            credentials: "include",
           }
         );
 
@@ -1545,7 +1554,7 @@ const api = {
           console.log("Parsed standards data:", data);
 
           // Transform data to include min/max values
-          const transformedData = data.map(standard => ({
+          const transformedData = data.map((standard) => ({
             week: standard.week,
             avgWeight: standard.avgWeight,
             minWeight: standard.minWeight,
@@ -1555,7 +1564,7 @@ const api = {
             maxLength: standard.maxLength,
             avgHeadCircumference: standard.avgHeadCircumference,
             minHeadCircumference: standard.minHeadCircumference,
-            maxHeadCircumference: standard.maxHeadCircumference
+            maxHeadCircumference: standard.maxHeadCircumference,
           }));
 
           console.log("Transformed standards with min/max:", transformedData);
@@ -1569,9 +1578,68 @@ const api = {
         console.error("Get standards error:", error);
         return [];
       }
-    }
+    },
   },
 
+  payment: {
+    createPayment: async (userId, packageId, returnUrl) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/payment/create/${userId}/${packageId}?returnUrl=${encodeURIComponent(
+            returnUrl
+          )}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to create payment");
+        }
+
+        return responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.error("Create payment error:", error);
+        throw error;
+      }
+    },
+
+    handleVNPayReturn: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/payment/vnpay-return`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to process payment return");
+        }
+
+        return responseText ? JSON.parse(responseText) : null;
+      } catch (error) {
+        console.error("VNPay return error:", error);
+        throw error;
+      }
+    },
+  },
 };
 
 export default api;
