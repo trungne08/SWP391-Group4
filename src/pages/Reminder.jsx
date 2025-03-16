@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox, message, Modal } from 'antd';
+import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox } from 'antd';
 import { ClockCircleOutlined, MedicineBoxOutlined, FileSearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-// Remove one of these duplicate imports
 import api from '../services/api';
 
 const { Option } = Select;
@@ -10,21 +9,9 @@ const { Option } = Select;
 const Reminder = () => {
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [pregnancyId, setPregnancyId] = useState(null);
   const [form] = Form.useForm();
   const [editingReminder, setEditingReminder] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
-  const [selectedReminder, setSelectedReminder] = useState(null);  // Add this line
-
-  // Add these functions
-  const handleReminderClick = (reminder) => {
-    setSelectedReminder(reminder);
-  };
-
-  const handleModalClose = () => {
-    setSelectedReminder(null);
-  };
 
   const taskTypes = [
     { value: 'CHECK_UP', label: 'Khám định kỳ (CHECK_UP)' },
@@ -52,48 +39,10 @@ const Reminder = () => {
     });
   };
 
+  // Add useEffect to fetch reminders when component mounts
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        
-        const userData = await api.user.getProfile();
-        if (!userData?.id) {
-          message.error('User ID not found in response');
-          return;
-        }
-
-        setUserId(userData.id);
-
-        try {
-          const pregnancyData = await api.pregnancy.getCurrentPregnancy();
-          if (pregnancyData?.pregnancyId) {  // Changed from id to pregnancyId
-            setPregnancyId(pregnancyData.pregnancyId);  // Use pregnancyId directly
-          } else {
-            message.warning('No active pregnancy found');
-          }
-        } catch (pregnancyError) {
-          console.error('Pregnancy fetch error:', pregnancyError);
-          message.warning('Unable to fetch pregnancy data');
-        }
-
-      } catch (error) {
-        console.error('API Error Details:', error);
-        message.error('Failed to load user data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialData();
+    fetchReminders();
   }, []);
-
-  // Separate useEffect for fetching reminders
-  useEffect(() => {
-    if (userId && pregnancyId) {
-      fetchReminders();
-    }
-  }, [userId, pregnancyId]);
 
   const fetchReminders = async () => {
     try {
@@ -101,15 +50,12 @@ const Reminder = () => {
       const response = await api.reminders.getAllReminders();
       const formattedReminders = response.map(reminder => ({
         id: reminder.reminderId,
-        type: reminder.type,
-        title: reminder.type === 'MEDICAL_TASK' && reminder.tasks[0] 
-          ? reminder.tasks[0].taskName 
-          : reminderTypes.find(t => t.value === reminder.type)?.label || reminder.type,
+        type: reminder.type.toLowerCase(),
+        title: `Reminder ${reminder.reminderId}`,
         date: dayjs(reminder.reminderDate),
-        status: reminder.status,  // Use reminder.status, not reminder.tasks.status
+        completed: reminder.status === 'COMPLETED',
         createdAt: dayjs(reminder.createdAt),
-        pregnancyId: reminder.pregnancyId,
-        tasks: reminder.tasks || []
+        pregnancyId: reminder.pregnancyId
       }));
       setReminders(formattedReminders);
     } catch (error) {
@@ -119,61 +65,85 @@ const Reminder = () => {
     }
   };
 
+  // Update onFinish to use the API
   const onFinish = async (values) => {
     try {
-      if (!userId || !pregnancyId) {
-        message.error('User ID or Pregnancy ID not available');
-        return;
-      }
-
-      const reminderData = {
-        userId: userId,
-        pregnancyId: pregnancyId,
-        type: values.type,
-        reminderDate: values.date.format('YYYY-MM-DD'),
-        tasks: []
-      };
-
-      if (values.type === 'MEDICAL_TASK' && values.taskType) {
-        reminderData.tasks = [{
-          week: values.week || 12, // Add week field to your form if needed
-          taskType: values.taskType,
-          taskName: values.title || values.taskType,
-          notes: values.description || ''
-        }];
-      }
-
       if (editingReminder) {
-        await api.reminders.updateReminder(editingReminder.id, reminderData);
-        message.success('Reminder updated successfully');
+        // Update existing reminder logic will be added later
+        const updatedReminders = reminders.map(item => 
+          item.id === editingReminder.id ? { ...values, id: item.id, completed: item.completed } : item
+        );
+        setReminders(updatedReminders);
+        setEditingReminder(null);
       } else {
-        await api.reminders.createReminder(reminderData);
-        message.success('Reminder created successfully');
+        // Create new reminder logic will be added later
+        const newReminder = {
+          ...values,
+          id: Date.now(),
+          createdAt: new Date(),
+          completed: false
+        };
+        setReminders([...reminders, newReminder]);
       }
-
       form.resetFields();
-      setEditingReminder(null);
-      setSelectedType(null);
-      await fetchReminders();
+      await fetchReminders(); // Refresh the list after changes
     } catch (error) {
       console.error('Failed to save reminder:', error);
-      message.error('Failed to save reminder. Please try again.');
     }
   };
 
-
-
-  const handleDelete = async (reminder) => {
-    try {
-      await api.reminders.deleteReminder(reminder.id);
-      message.success('Xóa nhắc nhở thành công');
-      await fetchReminders();
-    } catch (error) {
-      console.error('Failed to delete reminder:', error);
-      message.error('Không thể xóa nhắc nhở. Vui lòng thử lại.');
-    }
-  };
-  
+  // Update List component to show loading state
+  <List
+    loading={loading}
+    dataSource={reminders}
+    renderItem={item => (
+      <List.Item
+        actions={[
+          <Checkbox
+            checked={item.completed}
+            onChange={() => handleToggleComplete(item.id)}
+          >
+            {item.completed ? 'Hoàn thành' : 'Chưa hoàn thành'}
+          </Checkbox>,
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(item)}
+          >
+            Chỉnh sửa
+          </Button>,
+          <Button 
+            type="text" 
+            danger 
+            icon={<DeleteOutlined />} 
+            onClick={() => {
+              setReminders(reminders.filter(r => r.id !== item.id));
+            }}
+          >
+            Xóa
+          </Button>
+        ]}
+      >
+        <List.Item.Meta
+          avatar={reminderTypes.find(type => type.value === item.type)?.icon}
+          title={
+            <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+              {item.title}
+            </span>
+          }
+          description={
+            <div>
+              <div style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                {item.description}
+              </div>
+              <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
+            </div>
+          }
+        />
+        <div>{item.time?.format('HH:mm')}</div>
+      </List.Item>
+    )}
+  />
   const getRemindersForDate = (date) => {
     return reminders.filter(reminder => 
       dayjs(reminder.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
@@ -243,37 +213,30 @@ const Reminder = () => {
               </Form.Item>
 
               {selectedType === 'MEDICAL_TASK' && (
-                <>
-                  <Form.Item name="week" label="Tuần thai" rules={[
-                    { 
-                      validator: async (_, value) => {
-                        if (value && (value <= 0)) {
-                          throw new Error('Tuần thai phải lớn hơn 0');
-                        }
-                      }
-                    }
-                  ]}>
-                    <Input type="number" placeholder="Nhập tuần thai" />
-                  </Form.Item>
-                  <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
-                    <Select placeholder="Chọn loại nhiệm vụ">
-                      {taskTypes.map(type => (
-                        <Option key={type.value} value={type.value}>
-                          {type.label}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                  <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
-                    <Input placeholder="Nhập tiêu đề nhắc nhở" />
-                  </Form.Item>
-                  <Form.Item name="description" label="Mô tả">
-                    <Input.TextArea placeholder="Nhập mô tả chi tiết" />
-                  </Form.Item>
-                </>
+                <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
+                  <Select placeholder="Chọn loại nhiệm vụ">
+                    {taskTypes.map(type => (
+                      <Option key={type.value} value={type.value}>
+                        {type.label}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
               )}
+              <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
+                <Input placeholder="Nhập tiêu đề nhắc nhở" />
+              </Form.Item>
+
               <Form.Item name="date" label="Ngày" rules={[{ required: true }]}>
                 <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
+              </Form.Item>
+
+              <Form.Item name="time" label="Thời gian" rules={[{ required: true }]}>
+                <TimePicker format="HH:mm" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item name="description" label="Mô tả">
+                <Input.TextArea placeholder="Nhập mô tả chi tiết" />
               </Form.Item>
 
               <Form.Item>
@@ -306,16 +269,17 @@ const Reminder = () => {
             dataSource={reminders}
             renderItem={item => (
               <List.Item
-                onClick={() => handleReminderClick(item)}
-                style={{ cursor: 'pointer' }}
                 actions={[
+                  <Checkbox
+                    checked={item.completed}
+                    onChange={() => handleToggleComplete(item.id)}
+                  >
+                    {item.completed ? 'Hoàn thành' : 'Chưa hoàn thành'}
+                  </Checkbox>,
                   <Button 
                     type="text" 
                     icon={<EditOutlined />} 
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent modal from opening
-                      handleEdit(item);
-                    }}
+                    onClick={() => handleEdit(item)}
                   >
                     Chỉnh sửa
                   </Button>,
@@ -323,9 +287,8 @@ const Reminder = () => {
                     type="text" 
                     danger 
                     icon={<DeleteOutlined />} 
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent modal from opening
-                      handleDelete(item);
+                    onClick={() => {
+                      setReminders(reminders.filter(r => r.id !== item.id));
                     }}
                   >
                     Xóa
@@ -334,83 +297,26 @@ const Reminder = () => {
               >
                 <List.Item.Meta
                   avatar={reminderTypes.find(type => type.value === item.type)?.icon}
-                  title={item.title}
-                  description={`Ngày: ${item.date?.format('DD/MM/YYYY')}`}
+                  title={
+                    <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                      {item.title}
+                    </span>
+                  }
+                  description={
+                    <div>
+                      <div style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                        {item.description}
+                      </div>
+                      <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
+                    </div>
+                  }
                 />
+                <div>{item.time?.format('HH:mm')}</div>
               </List.Item>
             )}
           />
         </Card>
       </div>
-
-      {/* Detail Modal */}
-      <Modal
-        title="Chi tiết nhắc nhở"
-        open={selectedReminder !== null}
-        onCancel={handleModalClose}
-        footer={
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-            <Select
-              value={selectedReminder?.tempStatus || selectedReminder?.status || 'NOT_YET'}
-              style={{ width: 120 }}
-              onChange={(value) => {
-                setSelectedReminder({ ...selectedReminder, tempStatus: value });
-              }}
-            >
-              <Option value="NOT_YET">Chưa hoàn thành</Option>
-              <Option value="DONE">Hoàn thành</Option>
-              <Option value="SKIP">Bỏ qua</Option>
-            </Select>
-            <Button 
-              type="primary"
-              onClick={async () => {
-                if (!selectedReminder?.id || !selectedReminder?.tempStatus) return;
-                try {
-                  await api.reminders.updateReminderStatus(selectedReminder.id, {
-                    status: selectedReminder.tempStatus
-                  });
-                  handleModalClose();
-                  await fetchReminders();
-                  message.success('Cập nhật trạng thái thành công');
-                } catch (error) {
-                  console.error('Failed to update status:', error);
-                  message.error('Không thể cập nhật trạng thái');
-                }
-              }}
-            >
-              Xác nhận
-            </Button>
-            <Button onClick={handleModalClose}>Đóng</Button>
-          </div>
-        }
-        width={600}
-      >
-        {selectedReminder && (
-          <div>
-            <h2>{selectedReminder.title}</h2>
-            <div style={{ marginBottom: '16px' }}>
-              <p><strong>Loại nhắc nhở:</strong> {reminderTypes.find(t => t.value === selectedReminder.type)?.label}</p>
-              <p><strong>Ngày:</strong> {selectedReminder.date?.format('DD/MM/YYYY')}</p>
-              <p><strong>Trạng thái:</strong> {
-                selectedReminder.status === 'NOT_YET' ? 'Chưa hoàn thành' :
-                selectedReminder.status === 'DONE' ? 'Hoàn thành' :
-                selectedReminder.status === 'SKIP' ? 'Bỏ qua' : 'Không xác định'
-              }</p>
-              
-              {selectedReminder.type === 'MEDICAL_TASK' && selectedReminder.tasks && selectedReminder.tasks.length > 0 && (
-                <div style={{ marginTop: '16px' }}>
-                  <h3>Thông tin nhiệm vụ</h3>
-                  <p><strong>Tuần thai:</strong> {selectedReminder.tasks[0].week}</p>
-                  <p><strong>Loại nhiệm vụ:</strong> {taskTypes.find(t => t.value === selectedReminder.tasks[0].taskType)?.label}</p>
-                  <p><strong>Tiêu đề:</strong> {selectedReminder.tasks[0].taskName}</p>
-                  <p><strong>Mô tả:</strong> {selectedReminder.tasks[0].notes || 'Không có mô tả'}</p>
-                </div>
-              )}
-            </div>
-            {/* Removed the extra close button div here */}
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };
