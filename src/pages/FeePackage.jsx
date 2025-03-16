@@ -81,11 +81,7 @@ function FeePackage() {
     }
     
     try {
-      // Thêm xử lý lỗi và kiểm tra response
       const response = await api.membership.getUserMembership();
-      console.log("User membership response:", response);
-      
-      // Kiểm tra nếu response là array
       const currentSubscriptions = Array.isArray(response) ? response : [];
       const activeSubscription = currentSubscriptions.find(sub => sub.status === 'Active');
       
@@ -106,27 +102,30 @@ function FeePackage() {
         });
         setIsModalVisible(true);
       } else {
-        const packageId = selectedPackage.id;
-        if (!packageId) {
-          throw new Error('Invalid package ID');
-        }
-        await api.membership.registerMembership(packageId);
-        message.success('Successfully registered for new membership package');
-        navigate('/subscription-history?upgraded=true');
+        // Chuyển đến trang payment với thông tin gói đã chọn
+        navigate('/payment', { 
+          state: { 
+            packageDetails: selectedPackage,
+            isNewSubscription: true
+          }
+        });
       }
     } catch (error) {
-      console.error('Error managing subscription:', error);
-      message.error('Failed to manage subscription. Please try again later.');
+      console.error('Error checking subscription:', error);
+      message.error('Failed to process request. Please try again later.');
     }
   };
 
   const handleModalConfirm = async () => {
     try {
-      await api.membership.upgradeSubscription(selectedPackageData.subscription.subscription_id);
-      message.success('Successfully upgraded to Premium');
-      navigate('/subscription-history?upgraded=true');
-    } catch (error) {
-      message.error(error.message || 'Failed to upgrade subscription');
+      // Với case nâng cấp gói, cũng chuyển qua trang payment
+      navigate('/payment', {
+        state: {
+          packageDetails: selectedPackageData.package,
+          isUpgrade: true,
+          currentSubscription: selectedPackageData.subscription
+        }
+      });
     } finally {
       setIsModalVisible(false);
       setSelectedPackageData(null);
