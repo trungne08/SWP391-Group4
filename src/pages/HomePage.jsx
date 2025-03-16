@@ -1,8 +1,23 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import { Link } from "react-router-dom";
+import api from "../services/api";
 
 const HomePage = () => {
+  const [blogs, setBlogs] = useState([]);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const blogsData = await api.blog.getAllBlogs();
+        setBlogs(blogsData.slice(0, 3)); 
+      } catch (error) {
+        console.error("Failed to fetch blogs:", error);
+      }
+    };
+    fetchBlogs();
+  }, []);
+
   return (
     <Box>
       {/* Hero Section */}
@@ -21,8 +36,8 @@ const HomePage = () => {
           justifyContent: "center",
           mb: 4,
           position: "relative",
-          borderRadius: "8px", // bo góc
-          overflow: "hidden",  // ẩn phần ảnh thừa
+          borderRadius: "8px",
+          overflow: "hidden",  
         }}
       >
         <Container sx={{ textAlign: "center" }}>
@@ -56,60 +71,92 @@ const HomePage = () => {
       </Box>
 
       {/* Featured Images */}
-      <Container sx={{ mb: 6 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <img
-              src="/images/pregnant-teddy.jpg"
-              alt="Pregnancy Care"
-              style={{
-                width: "100%",
-                height: "300px",
-                objectFit: "cover",
-                borderRadius: "8px",
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <img
-              src="/images/baby-smile.jpg"
-              alt="Baby Care"
-              style={{
-                width: "100%",
-                height: "300px",
-                objectFit: "cover",
-                objectPosition: "top center",
-                borderRadius: "8px",
-              }}
-            />
-          </Grid>
-        </Grid>
-      </Container>
-
-      {/* Trimester Sections */}
-      <Container sx={{ mb: 6 }}>
-        {[
-          { title: "First Trimester (Weeks 1-12)", link: "/pregnancy/first-trimester" },
-          { title: "Second Trimester (Weeks 13-26)", link: "/pregnancy/second-trimester" },
-          { title: "Third Trimester (Weeks 27-40)", link: "/pregnancy/third-trimester" },
-        ].map((trimester, index) => (
-          <Paper key={index} sx={{ p: 3, bgcolor: "#f5f5f5", mb: 3 }}>
-            <Typography variant="h6">{trimester.title}</Typography>
-            <Typography variant="body2" sx={{ color: "#666", my: 2 }}>
-              Learn about your baby’s growth and development during this period.
-            </Typography>
-            <Link to={trimester.link} style={{ textDecoration: "none" }}>
-              <Typography sx={{ color: "#000" }}>Read more</Typography>
-            </Link>
-          </Paper>
-        ))}
+      <Container 
+        sx={{ 
+          mb: 6, 
+          overflow: 'hidden',
+          maxWidth: '1200px !important',
+          padding: '0 !important',
+          borderRadius: '16px',
+        }}
+      >
+        <Box
+          className="carousel"
+          sx={{
+            display: 'grid',
+            gridAutoFlow: 'column',
+            gridAutoColumns: '250px',
+            overflow: 'hidden',
+            '& img': {
+              borderRadius: '8px',
+            },
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            },
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'grid',
+              gridAutoFlow: 'column',
+              gridAutoColumns: '250px',
+              animation: 'scroll 20s linear infinite',
+              '@keyframes scroll': {
+                '0%': {
+                  transform: 'translateX(0)',
+                },
+                '100%': {
+                  transform: 'translateX(calc(-250px * 6))', // Adjusted for more images
+                },
+              },
+            }}
+          >
+            {[
+              { src: '/images/baby-smile.jpg', title: 'Baby Care' },
+              { src: '/images/doctor-patient.jpg', title: 'Doctor Care' },
+              { src: '/images/134949-dep-tu-trong-trung-2.jpg', title: 'Baby Development' },
+              { src: '/images/pregnant-teddy.jpg', title: 'Pregnancy Care' },
+              { src: '/images/image001-2900-1703579998.jpg', title: 'Family Care' },
+              { src: '/images/tre-mut-tay-3-c161-1662443957357294142935.jpg', title: 'Child Care' },
+              // Duplicate for infinite effect
+              { src: '/images/baby-smile.jpg', title: 'Baby Care' },
+              { src: '/images/doctor-patient.jpg', title: 'Doctor Care' },
+              { src: '/images/134949-dep-tu-trong-trung-2.jpg', title: 'Baby Development' },
+              { src: '/images/pregnant-teddy.jpg', title: 'Pregnancy Care' },
+              { src: '/images/image001-2900-1703579998.jpg', title: 'Family Care' },
+              { src: '/images/tre-mut-tay-3-c161-1662443957357294142935.jpg', title: 'Child Care' },
+            ].map((item, index) => (
+              <Box
+                key={index}
+                sx={{
+                  height: '300px',
+                }}
+              >
+                <img
+                  src={item.src}
+                  alt={item.title}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        </Box>
       </Container>
 
       {/* Blog Section */}
       <Container sx={{ mb: 8 }}>
+        <Typography variant="h4" sx={{ mb: 4, textAlign: "center" }}>
+          Latest Blog Posts
+        </Typography>
         <Grid container spacing={4}>
-          {[1, 2, 3].map((item) => (
-            <Grid item xs={12} sm={6} md={4} key={item}>
+          {blogs.map((blog) => (
+            <Grid item xs={12} sm={6} md={4} key={blog.blogId}>
               <Paper
                 sx={{
                   p: 3,
@@ -120,12 +167,27 @@ const HomePage = () => {
                   },
                 }}
               >
-                <Box sx={{ width: "100%", height: "200px", bgcolor: "#f5f5f5", mb: 2 }} />
-                <Typography variant="h6">Blog's Title</Typography>
+                {blog.images && blog.images[0]?.imageUrl ? (
+                  <Box
+                    component="img"
+                    src={blog.images[0].imageUrl}
+                    alt={blog.title}
+                    sx={{
+                      width: "100%",
+                      height: "200px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      mb: 2
+                    }}
+                  />
+                ) : (
+                  <Box sx={{ width: "100%", height: "200px", bgcolor: "#f5f5f5", mb: 2 }} />
+                )}
+                <Typography variant="h6">{blog.title}</Typography>
                 <Typography variant="body2" sx={{ color: "#666", mb: 2 }}>
-                  Learn more about pregnancy and baby care in our latest blog posts.
+                  {blog.content.substring(0, 100)}...
                 </Typography>
-                <Link to="/" style={{ textDecoration: "none" }}>
+                <Link to="/blog" style={{ textDecoration: "none" }}>
                   <Typography sx={{ color: "#000" }}>Read more</Typography>
                 </Link>
               </Paper>

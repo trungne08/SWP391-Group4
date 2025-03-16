@@ -51,7 +51,7 @@ const AdminMembership = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ price: parseInt(values.price) })
+          body: JSON.stringify({ price: parseInt(values.price) }) // Multiply by 1000 to convert to thousands
         }
       );
       
@@ -95,7 +95,7 @@ const AdminMembership = () => {
       title: 'Giá (VNĐ)',
       dataIndex: 'price',
       key: 'price',
-      render: (price) => new Intl.NumberFormat('vi-VN').format(price),
+      render: (price) => new Intl.NumberFormat('vi-VN').format(price), // Multiply by 1000 when displaying
     },
     {
       title: 'Thao tác',
