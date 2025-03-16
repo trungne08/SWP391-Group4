@@ -17,7 +17,33 @@ const Reminder = () => {
   const [selectedType, setSelectedType] = useState(null);
   const [selectedReminder, setSelectedReminder] = useState(null);  // Add this line
 
-  // Add these functions
+  const handleUpdateReminder = async (updatedData) => {
+    if (!selectedReminder?.id) return;
+    try {
+      const reminderData = {
+        userId,
+        pregnancyId,
+        type: selectedReminder.type,
+        reminderDate: selectedReminder.date.format('YYYY-MM-DD'),
+        status: selectedReminder.status,
+        tasks: []
+      };
+  
+      if (selectedReminder.type === 'MEDICAL_TASK' && selectedReminder.tasks[0]) {
+        reminderData.tasks = [{
+          ...selectedReminder.tasks[0],
+          ...updatedData
+        }];
+      }
+  
+      await api.reminders.updateReminder(selectedReminder.id, reminderData);
+      await fetchReminders();
+      message.success('Cập nhật nhắc nhở thành công');
+    } catch (error) {
+      console.error('Failed to update reminder:', error);
+      message.error('Không thể cập nhật nhắc nhở');
+    }
+  };
   const handleReminderClick = (reminder) => {
     setSelectedReminder(reminder);
   };
@@ -45,13 +71,26 @@ const Reminder = () => {
 
   const handleEdit = (reminder) => {
     setEditingReminder(reminder);
-    form.setFieldsValue({
-      ...reminder,
+    setSelectedType(reminder.type);
+    
+    const formData = {
+      type: reminder.type,
       date: reminder.date && dayjs(reminder.date),
-      time: reminder.time && dayjs(reminder.time)
-    });
-  };
+    };
 
+    if (reminder.type === 'MEDICAL_TASK' && reminder.tasks[0]) {
+      const task = reminder.tasks[0];
+      formData.week = task.week;
+      formData.taskType = task.taskType;
+      formData.title = task.taskName;  // Changed back to title to match form field name
+      formData.description = task.notes;
+    } else if (reminder.type === 'APPOINTMENT') {
+      formData.title = reminder.title;
+    }
+
+    console.log('Setting form data:', formData);
+    form.setFieldsValue(formData);
+  };
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -131,24 +170,26 @@ const Reminder = () => {
         pregnancyId: pregnancyId,
         type: values.type,
         reminderDate: values.date.format('YYYY-MM-DD'),
+        status: editingReminder?.status || 'NOT_YET',
         tasks: []
       };
 
       if (values.type === 'MEDICAL_TASK' && values.taskType) {
         reminderData.tasks = [{
-          week: values.week || 12, // Add week field to your form if needed
+          week: values.week || 12,
           taskType: values.taskType,
           taskName: values.title || values.taskType,
-          notes: values.description || ''
+          notes: values.description || '',
+          status: editingReminder?.tasks[0]?.status || 'NOT_YET'
         }];
       }
 
       if (editingReminder) {
         await api.reminders.updateReminder(editingReminder.id, reminderData);
-        message.success('Reminder updated successfully');
+        message.success('Cập nhật nhắc nhở thành công');
       } else {
         await api.reminders.createReminder(reminderData);
-        message.success('Reminder created successfully');
+        message.success('Tạo nhắc nhở thành công');
       }
 
       form.resetFields();
@@ -157,7 +198,7 @@ const Reminder = () => {
       await fetchReminders();
     } catch (error) {
       console.error('Failed to save reminder:', error);
-      message.error('Failed to save reminder. Please try again.');
+      message.error('Không thể lưu nhắc nhở. Vui lòng thử lại.');
     }
   };
 
@@ -206,6 +247,22 @@ const Reminder = () => {
   };
 
   // Update the Calendar section in your JSX
+  // Add this before the return statement
+  const today = dayjs();
+  const sortedReminders = [...reminders].sort((a, b) => {
+    // First, sort by status (NOT_YET first)
+    if (a.status === 'NOT_YET' && b.status !== 'NOT_YET') return -1;
+    if (a.status !== 'NOT_YET' && b.status === 'NOT_YET') return 1;
+    
+    // Then sort by date chronologically
+    if (a.status === b.status) {
+      return dayjs(a.date).valueOf() - dayjs(b.date).valueOf();
+    }
+    
+    // Finally sort SKIP before DONE
+    return a.status === 'SKIP' ? -1 : 1;
+  });
+
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <h1>Tạo lịch nhắc nhở</h1>
@@ -303,7 +360,7 @@ const Reminder = () => {
       <div style={{ marginTop: '24px' }}>
         <Card title="Danh sách nhắc nhở">
           <List
-            dataSource={reminders}
+            dataSource={sortedReminders}
             renderItem={item => (
               <List.Item
                 onClick={() => handleReminderClick(item)}
@@ -333,9 +390,28 @@ const Reminder = () => {
                 ]}
               >
                 <List.Item.Meta
-                  avatar={reminderTypes.find(type => type.value === item.type)?.icon}
-                  title={item.title}
-                  description={`Ngày: ${item.date?.format('DD/MM/YYYY')}`}
+                  avatar={
+                    item.type === 'HEALTH_ALERT' ? <FileSearchOutlined /> :
+                    reminderTypes.find(type => type.value === item.type)?.icon
+                  }
+                  title={
+                    <span style={{ 
+                      textDecoration: (item.status === 'DONE' || item.status === 'SKIP') ? 'line-through' : 'none',
+                      color: (item.status === 'DONE' || item.status === 'SKIP') ? '#999' : 'inherit'
+                    }}>
+                      {item.title}
+                    </span>
+                  }
+                  description={
+                    <div>
+                      <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
+                      <div>Trạng thái: {
+                        item.status === 'NOT_YET' ? 'Chưa hoàn thành' :
+                        item.status === 'DONE' ? 'Hoàn thành' :
+                        item.status === 'SKIP' ? 'Bỏ qua' : 'Không xác định'
+                      }</div>
+                    </div>
+                  }
                 />
               </List.Item>
             )}
@@ -366,11 +442,20 @@ const Reminder = () => {
               onClick={async () => {
                 if (!selectedReminder?.id || !selectedReminder?.tempStatus) return;
                 try {
-                  await api.reminders.updateReminderStatus(selectedReminder.id, {
+                  const updatedReminder = await api.reminders.updateReminderStatus(selectedReminder.id, {
                     status: selectedReminder.tempStatus
                   });
-                  handleModalClose();
+                  
+                  // Update reminders list
                   await fetchReminders();
+                  
+                  // Update modal data with the response from API
+                  setSelectedReminder({
+                    ...selectedReminder,
+                    status: selectedReminder.tempStatus,
+                    ...updatedReminder
+                  });
+                  
                   message.success('Cập nhật trạng thái thành công');
                 } catch (error) {
                   console.error('Failed to update status:', error);
@@ -416,3 +501,5 @@ const Reminder = () => {
 };
 
 export default Reminder;
+
+// Add this function near other handler functions

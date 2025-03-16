@@ -81,45 +81,37 @@ function FeePackage() {
     }
     
     try {
-      // Thêm xử lý lỗi và kiểm tra response
       const response = await api.membership.getUserMembership();
       console.log("User membership response:", response);
+      console.log("Selected package:", selectedPackage); // Add this log
       
-      // Kiểm tra nếu response là array
-      const currentSubscriptions = Array.isArray(response) ? response : [];
-      const activeSubscription = currentSubscriptions.find(sub => sub.status === 'Active');
+      const activeSubscription = response.find(sub => sub.status === 'Active');
       
       if (activeSubscription) {
-        if (activeSubscription.packageName === 'Premium Plan') {
-          message.info('You are already on Premium Plan');
-          return;
-        }
-    
-        if (selectedPackage.name === 'Basic Plan') {
+        if (activeSubscription.packageName === 'Premium Plan' && selectedPackage.name === 'Basic Plan') {
           message.info('Cannot downgrade from Premium to Basic Plan');
           return;
         }
-    
-        setSelectedPackageData({ 
-          subscription: activeSubscription,
-          package: selectedPackage 
-        });
-        setIsModalVisible(true);
-      } else {
-        const packageId = selectedPackage.id;
-        if (!packageId) {
-          throw new Error('Invalid package ID');
-        }
-        await api.membership.registerMembership(packageId);
-        message.success('Successfully registered for new membership package');
-        navigate('/subscription-history?upgraded=true');
       }
+
+      // Make sure we pass the correct price
+      navigate('/payment', {
+        state: {
+          packageDetails: {
+            id: selectedPackage.id,
+            name: selectedPackage.name,
+            price: selectedPackage.price, // This should be 150000 for Basic Plan
+            description: selectedPackage.description
+          }
+        }
+      });
     } catch (error) {
-      console.error('Error managing subscription:', error);
-      message.error('Failed to manage subscription. Please try again later.');
+      console.error('Error checking subscription:', error);
+      message.error('Failed to process package selection');
     }
   };
 
+  // Remove handleModalConfirm and isModalVisible since we're not using modal anymore
   const handleModalConfirm = async () => {
     try {
       await api.membership.upgradeSubscription(selectedPackageData.subscription.subscription_id);
