@@ -1,5 +1,5 @@
-import React from 'react';
-import { Typography, Card, Button, Row, message } from 'antd';
+import React, { useState } from 'react';
+import { Typography, Card, Button, Row, message, Form, Input } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import api from '../services/api';
@@ -9,50 +9,39 @@ const { Title, Text } = Typography;
 function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const { packageDetails } = location.state || {};
+  console.log("Package details in Payment:", packageDetails); // Add this log
 
   const handlePayment = async () => {
     try {
+      setLoading(true);
       const userData = JSON.parse(localStorage.getItem('user'));
       if (!userData?.user_id) {
         message.error('User information not found');
         return;
       }
 
-      // Kiểm tra packageDetails
-      if (!packageDetails || !packageDetails.id) {
-        message.error('Package information is invalid');
-        console.error('Package details:', packageDetails);
+      if (!packageDetails?.id) {
+        message.error('Invalid package information');
         return;
       }
 
-      // Thêm returnUrl cho VNPay callback
-      const returnUrl = `${window.location.origin}/payment-return`;
-      
-      console.log('Creating payment with:', {
-        userId: userData.user_id,
-        packageId: packageDetails.id,
-        returnUrl
-      });
-
-      // Gọi API tạo thanh toán với returnUrl
-      const response = await api.payment.createPayment(
+      const result = await api.payment.createPaymentUrl(
         userData.user_id,
-        packageDetails.id,
-        returnUrl
+        packageDetails.id
       );
 
-      console.log('Payment response:', response);
-
-      if (response && response.paymentUrl) {
-        window.location.href = response.paymentUrl;
+      if (result?.paymentUrl) {
+        window.location.href = result.paymentUrl;
       } else {
-        message.error('Invalid payment response from server');
-        console.error('Payment response:', response);
+        throw new Error('No payment URL received');
       }
     } catch (error) {
       console.error('Payment error:', error);
-      message.error(error.message || 'Payment failed');
+      message.error('Cannot create payment. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,30 +70,41 @@ function Payment() {
         Payment Details
       </Title>
 
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <Title level={4} style={{ margin: 0 }}>Amount to Pay</Title>
-        <Text style={{ fontSize: '24px', color: '#52c41a' }}>
-          {packageDetails?.price ? formatCurrency(packageDetails.price) : 'N/A'}
-        </Text>
-      </div>
-
       <Card>
-        <div style={{ textAlign: 'center' }}>
-          <Title level={4}>Payment Method</Title>
-          <img 
-            src="/vnpay-logo.png" 
-            alt="VNPay" 
-            style={{ height: '50px', marginBottom: '20px' }}
-          />
-          <Button 
-            type="primary" 
-            size="large" 
-            block 
-            onClick={handlePayment}
-          >
-            Pay with VNPay
-          </Button>
+        <div style={{ marginBottom: '24px' }}>
+          <Title level={4}>Package Information</Title>
+          <Text strong>Package Name: </Text>
+          <Text>{packageDetails?.name || 'N/A'}</Text>
+          <br />
+          <Text strong>Amount: </Text>
+          <Text style={{ fontSize: '18px', color: '#52c41a' }}>
+            {packageDetails?.price ? formatCurrency(packageDetails.price) : 'N/A'}
+          </Text>
         </div>
+
+        <Form onFinish={handlePayment} layout="vertical">
+          <Form.Item
+            name="orderDescription"
+            label="Order Description"
+            initialValue={`Payment for ${packageDetails?.name || 'subscription'}`}
+            rules={[{ required: true, message: 'Please enter order description' }]}
+          >
+            <Input.TextArea rows={3} />
+          </Form.Item>
+
+          <div style={{ textAlign: 'center' }}>
+            <Title level={4}>Payment Method</Title>
+            <Button 
+              type="primary" 
+              size="large" 
+              block 
+              htmlType="submit"
+              loading={loading}
+            >
+              Pay with VNPay
+            </Button>
+          </div>
+        </Form>
       </Card>
 
       <div style={{ marginTop: '24px', textAlign: 'center' }}>

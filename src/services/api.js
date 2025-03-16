@@ -858,8 +858,8 @@ const api = {
 
     updateReminderStatus: async (reminderId, status) => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No token found');
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
 
         console.log("Updating status:", { reminderId, status }); // Debug log
 
@@ -880,16 +880,16 @@ const api = {
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(errorText || 'Failed to update reminder status');
+          throw new Error(errorText || "Failed to update reminder status");
         }
 
         const data = await response.json();
         return data;
       } catch (error) {
-        console.error('Update reminder status error:', error);
+        console.error("Update reminder status error:", error);
         throw error;
       }
-    }
+    },
   },
   blog: {
     getAllBlogs: async () => {
@@ -1582,45 +1582,94 @@ const api = {
       }
     },
   },
-
   payment: {
-    createPayment: async (userId, packageId, returnUrl) => {
+    createPaymentUrl: async (userId, packageId) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
+        // Add returnUrl parameter
+        const returnUrl = `${window.location.origin}/confirm`;
+
         const response = await fetch(
-          `${API_BASE_URL}/api/payment/create/${userId}/${packageId}?returnUrl=${encodeURIComponent(
-            returnUrl
-          )}`,
+          `${API_BASE_URL}/api/payment/create/${userId}/${packageId}?returnUrl=${encodeURIComponent(returnUrl)}`,
           {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-            },
+            }
           }
         );
 
-        const responseText = await response.text();
         if (!response.ok) {
-          throw new Error(responseText || "Failed to create payment");
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to create payment URL");
         }
 
-        return responseText ? JSON.parse(responseText) : null;
+        const paymentUrl = await response.text();
+        return { paymentUrl: paymentUrl.trim() };
       } catch (error) {
-        console.error("Create payment error:", error);
+        console.error("Create VNPay URL error:", error);
         throw error;
       }
     },
 
-    handleVNPayReturn: async () => {
+    processPaymentReturn: async (queryParams) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        // Get order info from VNPay response
+        const orderInfo = queryParams.get('vnp_OrderInfo');
+        const [userId, packageId] = orderInfo.split('_');
+        const responseCode = queryParams.get('vnp_ResponseCode');
+
+        if (responseCode === '00') {
+          // Create subscription with the package
+          const response = await fetch(
+            `${API_BASE_URL}/api/subscriptions/subscribe/${packageId}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                transactionId: queryParams.get('vnp_TransactionNo'),
+                amount: parseInt(queryParams.get('vnp_Amount')) / 100,
+                bankCode: queryParams.get('vnp_BankCode'),
+                paymentDate: queryParams.get('vnp_PayDate')
+              })
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Failed to process payment");
+          }
+
+          const result = await response.json();
+          return {
+            success: true,
+            ...result
+          };
+        } else {
+          throw new Error("Payment failed: Transaction declined");
+        }
+      } catch (error) {
+        console.error("Process payment return error:", error);
+        throw error;
+      }
+    },
+
+    getSubscriptionHistory: async (userId) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
         const response = await fetch(
-          `${API_BASE_URL}/api/payment/vnpay-return`,
+          `${API_BASE_URL}/api/membership/subscriptions/${userId}`,
           {
             method: "GET",
             headers: {
@@ -1630,14 +1679,14 @@ const api = {
           }
         );
 
-        const responseText = await response.text();
         if (!response.ok) {
-          throw new Error(responseText || "Failed to process payment return");
+          throw new Error("Failed to fetch subscription history");
         }
 
-        return responseText ? JSON.parse(responseText) : null;
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
       } catch (error) {
-        console.error("VNPay return error:", error);
+        console.error("Get subscription history error:", error);
         throw error;
       }
     },

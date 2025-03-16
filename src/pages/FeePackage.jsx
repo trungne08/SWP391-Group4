@@ -82,50 +82,43 @@ function FeePackage() {
     
     try {
       const response = await api.membership.getUserMembership();
-      const currentSubscriptions = Array.isArray(response) ? response : [];
-      const activeSubscription = currentSubscriptions.find(sub => sub.status === 'Active');
+      console.log("User membership response:", response);
+      console.log("Selected package:", selectedPackage); // Add this log
+      
+      const activeSubscription = response.find(sub => sub.status === 'Active');
       
       if (activeSubscription) {
-        if (activeSubscription.packageName === 'Premium Plan') {
-          message.info('You are already on Premium Plan');
-          return;
-        }
-    
-        if (selectedPackage.name === 'Basic Plan') {
+        if (activeSubscription.packageName === 'Premium Plan' && selectedPackage.name === 'Basic Plan') {
           message.info('Cannot downgrade from Premium to Basic Plan');
           return;
         }
-    
-        setSelectedPackageData({ 
-          subscription: activeSubscription,
-          package: selectedPackage 
-        });
-        setIsModalVisible(true);
-      } else {
-        // Chuyển đến trang payment với thông tin gói đã chọn
-        navigate('/payment', { 
-          state: { 
-            packageDetails: selectedPackage,
-            isNewSubscription: true
-          }
-        });
       }
+
+      // Make sure we pass the correct price
+      navigate('/payment', {
+        state: {
+          packageDetails: {
+            id: selectedPackage.id,
+            name: selectedPackage.name,
+            price: selectedPackage.price, // This should be 150000 for Basic Plan
+            description: selectedPackage.description
+          }
+        }
+      });
     } catch (error) {
       console.error('Error checking subscription:', error);
-      message.error('Failed to process request. Please try again later.');
+      message.error('Failed to process package selection');
     }
   };
 
+  // Remove handleModalConfirm and isModalVisible since we're not using modal anymore
   const handleModalConfirm = async () => {
     try {
-      // Với case nâng cấp gói, cũng chuyển qua trang payment
-      navigate('/payment', {
-        state: {
-          packageDetails: selectedPackageData.package,
-          isUpgrade: true,
-          currentSubscription: selectedPackageData.subscription
-        }
-      });
+      await api.membership.upgradeSubscription(selectedPackageData.subscription.subscription_id);
+      message.success('Successfully upgraded to Premium');
+      navigate('/subscription-history?upgraded=true');
+    } catch (error) {
+      message.error(error.message || 'Failed to upgrade subscription');
     } finally {
       setIsModalVisible(false);
       setSelectedPackageData(null);
