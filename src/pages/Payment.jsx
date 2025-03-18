@@ -1,24 +1,48 @@
-import React from 'react';
-import { Typography, Card, Form, Input, Button, Row, Col, Space } from 'antd';
+import React, { useState } from 'react';
+import { Typography, Card, Button, Row, message, Form, Input } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import api from '../services/api';
 
 const { Title, Text } = Typography;
 
 function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const { packageDetails } = location.state || {};
-  const [form] = Form.useForm();
+  console.log("Package details in Payment:", packageDetails); // Add this log
 
-  const onFinish = (values) => {
-    // After successful form submission, navigate to confirm page
-    navigate('/confirm', { 
-      state: { 
-        packageDetails,
-        paymentDetails: values
-      } 
-    });
+  const handlePayment = async () => {
+    try {
+      setLoading(true);
+      const userData = JSON.parse(localStorage.getItem('user'));
+      if (!userData?.user_id) {
+        message.error('User information not found');
+        return;
+      }
+
+      if (!packageDetails?.id) {
+        message.error('Invalid package information');
+        return;
+      }
+
+      const result = await api.payment.createPaymentUrl(
+        userData.user_id,
+        packageDetails.id
+      );
+
+      if (result?.paymentUrl) {
+        window.location.href = result.paymentUrl;
+      } else {
+        throw new Error('No payment URL received');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      message.error('Cannot create payment. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -46,65 +70,46 @@ function Payment() {
         Payment Details
       </Title>
 
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <Title level={4} style={{ margin: 0 }}>Amount to Pay</Title>
-        <Text style={{ fontSize: '24px', color: '#52c41a' }}>
-          {packageDetails?.price ? formatCurrency(packageDetails.price) : 'N/A'}
-        </Text>
-      </div>
-
       <Card>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-        >
+        <div style={{ marginBottom: '24px' }}>
+          <Title level={4}>Package Information</Title>
+          <Text strong>Package Name: </Text>
+          <Text>{packageDetails?.name || 'N/A'}</Text>
+          <br />
+          <Text strong>Amount: </Text>
+          <Text style={{ fontSize: '18px', color: '#52c41a' }}>
+            {packageDetails?.price ? formatCurrency(packageDetails.price) : 'N/A'}
+          </Text>
+        </div>
+
+        <Form onFinish={handlePayment} layout="vertical">
           <Form.Item
-            label="Card Number"
-            name="cardNumber"
-            rules={[{ required: true, message: 'Please enter your card number' }]}
+            name="orderDescription"
+            label="Order Description"
+            initialValue={`Payment for ${packageDetails?.name || 'subscription'}`}
+            rules={[{ required: true, message: 'Please enter order description' }]}
           >
-            <Input placeholder="1234 5678 9012 3456" maxLength={19} />
+            <Input.TextArea rows={3} />
           </Form.Item>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Expiry Date"
-                name="expiryDate"
-                rules={[{ required: true, message: 'Please enter expiry date' }]}
-              >
-                <Input placeholder="MM/YY" maxLength={5} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="CVV"
-                name="cvv"
-                rules={[{ required: true, message: 'Please enter CVV' }]}
-              >
-                <Input placeholder="123" maxLength={3} type="password" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label="Cardholder Name"
-            name="cardholderName"
-            rules={[{ required: true, message: 'Please enter cardholder name' }]}
-          >
-            <Input placeholder="John Doe" />
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" block size="large">
-            Pay Now
-          </Button>
+          <div style={{ textAlign: 'center' }}>
+            <Title level={4}>Payment Method</Title>
+            <Button 
+              type="primary" 
+              size="large" 
+              block 
+              htmlType="submit"
+              loading={loading}
+            >
+              Pay with VNPay
+            </Button>
+          </div>
         </Form>
       </Card>
 
       <div style={{ marginTop: '24px', textAlign: 'center' }}>
         <Text type="secondary">
-          Your payment information is secure and encrypted
+          You will be redirected to VNPay to complete your payment
         </Text>
       </div>
     </div>

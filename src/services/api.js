@@ -1,7 +1,4 @@
-import { message } from 'antd';
-
 const API_BASE_URL = "https://poetic-helping-mallard.ngrok-free.app";
-
 
 const api = {
   auth: {
@@ -67,7 +64,6 @@ const api = {
             username: userData.username,
             email: userData.email,
             password: userData.password,
-            role: "MEMBER",
           }),
         });
 
@@ -118,7 +114,7 @@ const api = {
             },
             body: JSON.stringify({
               oldPassword: passwordData.currentPassword,
-              newPassword: passwordData.newPassword
+              newPassword: passwordData.newPassword,
             }),
           }
         );
@@ -137,7 +133,6 @@ const api = {
       }
     },
   },
-
   user: {
     getAllUsers: async () => {
       try {
@@ -149,16 +144,16 @@ const api = {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           mode: "cors",
-          credentials: "include"
+          credentials: "include",
         });
-    
+
         const responseText = await response.text();
         console.log("Get all users response:", responseText);
-    
+
         if (!response.ok) {
           throw new Error("Failed to fetch users");
         }
-    
+
         try {
           return responseText ? JSON.parse(responseText) : [];
         } catch (parseError) {
@@ -291,7 +286,7 @@ const api = {
           body: JSON.stringify({
             fullName: data.fullName,
             phoneNumber: data.phoneNumber,
-            avatar: data.avatar
+            avatar: data.avatar,
           }),
         });
 
@@ -317,34 +312,34 @@ const api = {
   membership: {
     getAllPackages: async () => {
       try {
-        const token = localStorage.getItem('token');
-        
+        const token = localStorage.getItem("token");
+
         const response = await fetch(
-          `${API_BASE_URL}/api/membership/packages`,  // Sửa lại endpoint đúng theo API docs
+          `${API_BASE_URL}/api/membership/packages`, // Sửa lại endpoint đúng theo API docs
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
-              ...(token && { Authorization: `Bearer ${token}` })
+              ...(token && { Authorization: `Bearer ${token}` }),
             },
             mode: "cors",
-            credentials: "include"
+            credentials: "include",
           }
         );
-    
+
         console.log("Response status:", response.status);
         const responseText = await response.text();
         console.log("Raw response:", responseText);
-    
+
         if (!response.ok) {
           throw new Error(`Failed to fetch packages: ${response.status}`);
         }
-    
+
         if (!responseText) {
           return [];
         }
-    
+
         const data = JSON.parse(responseText);
         console.log("Parsed data:", data);
         return Array.isArray(data) ? data : [data];
@@ -371,7 +366,7 @@ const api = {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ packageId }) // Thêm packageId vào body
+            body: JSON.stringify({ packageId }), // Thêm packageId vào body
           }
         );
 
@@ -405,10 +400,10 @@ const api = {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              Accept: "application/json"
+              Accept: "application/json",
             },
             mode: "cors",
-            credentials: "include"
+            credentials: "include",
           }
         );
 
@@ -437,7 +432,7 @@ const api = {
         if (!token) {
           throw new Error("No token found");
         }
-        
+
         const response = await fetch(
           `${API_BASE_URL}/api/subscriptions/cancel/${subscriptionId}`,
           {
@@ -448,22 +443,19 @@ const api = {
             },
           }
         );
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(errorText || "Failed to cancel subscription");
         }
-        
+
         return true;
       } catch (error) {
         console.error("Cancel subscription error:", error);
         throw error;
       }
     },
-<<<<<<< Updated upstream
-=======
-    
->>>>>>> Stashed changes
+
     upgradeSubscription: async () => {
       try {
         const token = localStorage.getItem("token");
@@ -481,7 +473,7 @@ const api = {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-            }
+            },
           }
         );
 
@@ -497,129 +489,137 @@ const api = {
         throw error;
       }
     },
-<<<<<<< HEAD
-=======
-    // Add these new functions
-    updatePackage: async (packageId, packageData) => {
+
+    getRevenueStatistics: async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No token found');
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
 
         const response = await fetch(
-          `${API_BASE_URL}/api/membership/packages/${packageId}`,
+          `${API_BASE_URL}/api/subscriptions/revenue-statistics`,
           {
-            method: 'PUT',
+            method: "GET",
             headers: {
-              'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
             },
-            body: JSON.stringify(packageData),
+            mode: "cors",
+            credentials: "include",
           }
         );
 
-        if (!response.ok) {
-          throw new Error('Failed to update package');
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          console.error("Received HTML response instead of JSON");
+          return {
+            totalRevenue: 0,
+            revenueByPackage: {},
+            subscriptionsByPackage: {},
+            totalSubscriptions: 0
+          };
         }
 
-        return await response.json();
+        if (!response.ok) {
+          throw new Error("Failed to fetch revenue statistics");
+        }
+
+        const data = await response.json();
+        console.log("Revenue statistics response:", data);
+        
+        return {
+          totalRevenue: data.totalRevenue || 0,
+          revenueByPackage: data.revenueByPackage || {},
+          subscriptionsByPackage: data.subscriptionsByPackage || {},
+          totalSubscriptions: data.totalSubscriptions || 0
+        };
       } catch (error) {
-        console.error('Update package error:', error);
-        throw error;
+        console.error("Get revenue statistics error:", error);
+        return {
+          totalRevenue: 0,
+          revenueByPackage: {},
+          subscriptionsByPackage: {},
+          totalSubscriptions: 0
+        };
       }
     },
-
-    updatePackagePrice: async (packageId, price) => {
+  },
+  community: {
+    createPost: async (postData) => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No token found');
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/membership/packages/${packageId}/price`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ 
-              price: parseFloat(price).toFixed(2) // Convert to format "xxx.00"
-            }),
-          }
-        );
+        console.log("Sending post data:", postData); // Debug log
+
+        const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(postData),
+        });
 
         const responseText = await response.text();
-        console.log('Update price response:', responseText);
+        console.log("Server response:", responseText); // Debug log
 
         if (!response.ok) {
-          throw new Error('Failed to update package price');
+          const errorMessage = responseText || "Failed to create post";
+          console.error("Server error:", response.status, errorMessage);
+          throw new Error(errorMessage);
         }
 
         return responseText ? JSON.parse(responseText) : { success: true };
       } catch (error) {
-<<<<<<< Updated upstream
-        console.error('Update package price error:', error);
-=======
         console.error("API Error:", error);
         throw error;
-      }  
+      }
     },
 
-      getAllPosts: async () => {
-        try {
-          const token = localStorage.getItem("token");
-          const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            mode: "cors",
-            credentials: "include", // Giữ lại để hỗ trợ xác thực nếu cần
-          });
-      
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Server error response:", errorText);
-            throw new Error(`Failed to fetch posts: ${response.status}`);
-          }
-      
-          const responseText = await response.text();
-          console.log("Raw response:", responseText);
-      
-          // Kiểm tra nếu response rỗng
-          if (!responseText.trim()) {
-            console.warn("No posts found, returning empty array");
-            return [];
-          }
-      
-          try {
-            const posts = JSON.parse(responseText);
-            
-            // Xử lý dữ liệu để đảm bảo chartData được parse đúng
-            const processedPosts = posts.map(post => {
-              if (post.postType === "GROWTH_CHART" && typeof post.chartData === "string") {
-                try {
-                  post.chartData = JSON.parse(post.chartData);
-                } catch (e) {
-                  console.warn(`Failed to parse chartData for post ${post.postId}:`, e);
-                  post.chartData = {}; // Gán giá trị mặc định nếu parse thất bại
-                }
-              }
-              return post;
-            });
-      
-            return processedPosts;
-          } catch (parseError) {
-            console.error("Parse error:", parseError);
-            console.error("Response that failed to parse:", responseText);
-            throw new Error("Invalid JSON response from server");
-          }
-        } catch (error) {
-          console.error("Get posts error:", error);
-          throw error;
+    getAllPosts: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/api/community/posts`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          mode: "cors",
+          credentials: "include", // Add this back as it might be needed for authentication
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server error response:", errorText);
+          throw new Error(`Failed to fetch posts: ${response.status}`);
         }
-      },
+
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+
+        // Check if response is empty
+        if (!responseText.trim()) {
+          return [];
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          console.error("Response that failed to parse:", responseText);
+          throw new Error("Invalid JSON response from server");
+        }
+      } catch (error) {
+        console.error("Get posts error:", error);
+        throw error;
+      }
+    },
 
     getPostById: async (postId) => {
       try {
@@ -916,23 +916,30 @@ const api = {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
+        console.log("Updating status:", { reminderId, status }); // Debug log
+
         const response = await fetch(
           `${API_BASE_URL}/api/reminders/${reminderId}/status`,
           {
             method: "PATCH",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify({ status }),
+            body: JSON.stringify(status),
           }
         );
 
+        const responseText = await response.text();
+        console.log("Status update response:", responseText);
+
         if (!response.ok) {
-          throw new Error("Failed to update reminder status");
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to update reminder status");
         }
 
-        return await response.json();
+        const data = await response.json();
+        return data;
       } catch (error) {
         console.error("Update reminder status error:", error);
         throw error;
@@ -1066,13 +1073,65 @@ const api = {
         return true;
       } catch (error) {
         console.error("Delete blog error:", error);
->>>>>>> Stashed changes
         throw error;
       }
     },
->>>>>>> main
   },
   pregnancy: {
+    getCurrentPregnancy: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const tokenData = JSON.parse(atob(token.split(".")[1]));
+        const userId = tokenData.id;
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancies/ongoing/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            mode: "cors", // Add CORS mode
+            credentials: "include", // Include credentials
+          }
+        );
+
+        // First check if response is HTML
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          console.error(
+            "Received HTML instead of JSON. API endpoint might be unavailable."
+          );
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pregnancy data: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log("Pregnancy API response:", responseText);
+
+        if (!responseText.trim()) {
+          return null;
+        }
+
+        try {
+          const pregnancyData = JSON.parse(responseText);
+          return pregnancyData;
+        } catch (parseError) {
+          console.error("Failed to parse pregnancy data:", parseError);
+          return null;
+        }
+      } catch (error) {
+        console.error("Get pregnancy error:", error);
+        return null; // Return null instead of throwing
+      }
+    },
     getOngoingPregnancy: async () => {
       try {
         const token = localStorage.getItem("token");
@@ -1100,16 +1159,16 @@ const api = {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "Accept": "application/json"
+              Accept: "application/json",
             },
             mode: "cors",
-            credentials: "include"
+            credentials: "include",
           }
         );
 
         console.log("Response status:", response.status);
         console.log("Response headers:", Object.fromEntries(response.headers));
-        
+
         const responseText = await response.text();
         console.log("Raw pregnancy response:", responseText);
 
@@ -1133,26 +1192,16 @@ const api = {
         return null;
       }
     },
-
     createPregnancy: async (pregnancyData) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
-<<<<<<< HEAD
-    
-        // Extract user ID from token
+
         const tokenData = JSON.parse(atob(token.split(".")[1]));
         const userId = tokenData.id || tokenData.user_id;
         if (!userId) {
           throw new Error("User ID not found in token");
         }
-<<<<<<< Updated upstream
-    
-        // Add userId to pregnancy data
-        const pregnancyDataWithUserId = {
-          ...pregnancyData,
-          userId: userId
-=======
 
         // Đảm bảo dữ liệu đúng định dạng
         const formattedData = {
@@ -1162,68 +1211,36 @@ const api = {
           examDate: pregnancyData.examDate,
           totalFetuses: parseInt(pregnancyData.totalFetuses),
           status: "ONGOING",
-          startDate: new Date().toISOString().split('T')[0] // Thêm ngày bắt đầu
->>>>>>> Stashed changes
+          startDate: new Date().toISOString().split("T")[0], // Thêm ngày bắt đầu
         };
-    
-=======
 
->>>>>>> main
+        console.log("Sending pregnancy data:", formattedData);
+
         const response = await fetch(`${API_BASE_URL}/api/pregnancies`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-<<<<<<< HEAD
             "Content-Type": "application/json",
-<<<<<<< Updated upstream
-            "Accept": "application/json"
-=======
-            Accept: "application/json"
->>>>>>> Stashed changes
+            Accept: "application/json",
           },
+          body: JSON.stringify(formattedData),
           mode: "cors",
-<<<<<<< Updated upstream
           credentials: "include",
-          body: JSON.stringify(pregnancyDataWithUserId)
-        });
-    
-        const responseText = await response.text();
-        console.log("Create pregnancy response:", responseText);
-    
-        if (!response.ok) {
-          const errorMessage = responseText || "Failed to create pregnancy";
-          throw new Error(errorMessage);
-        }
-    
-        try {
-          return responseText ? JSON.parse(responseText) : null;
-        } catch (parseError) {
-          console.error("Failed to parse response:", parseError);
-          return null;
-        }
-=======
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(pregnancyData)
-=======
-          credentials: "include"
->>>>>>> Stashed changes
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create pregnancy");
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to create pregnancy");
         }
 
-        return await response.json();
->>>>>>> main
+        const result = await response.json();
+        return result;
       } catch (error) {
         console.error("Create pregnancy error:", error);
         throw error;
       }
     },
 
-<<<<<<< Updated upstream
-=======
     updatePregnancyStatus: async (pregnancyId, fetusId, status) => {
       try {
         const token = localStorage.getItem("token");
@@ -1238,7 +1255,7 @@ const api = {
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
-              }
+              },
             }
           );
 
@@ -1252,13 +1269,15 @@ const api = {
         // Case 2: Update entire pregnancy status
         if (pregnancyId) {
           const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${status || "COMPLETED"}`,
+            `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${
+              status || "COMPLETED"
+            }`,
             {
               method: "PATCH",
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
-              }
+              },
             }
           );
 
@@ -1275,50 +1294,50 @@ const api = {
         throw error;
       }
     },
->>>>>>> Stashed changes
     updatePregnancy: async (pregnancyId, updateData) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-<<<<<<< Updated upstream
-=======
         // Format data according to API spec
         const formattedData = {
           userId: updateData.userId,
           examDate: updateData.examDate, // Changed from checkupDate to examDate
           gestationalWeeks: parseInt(updateData.gestationalWeeks),
           gestationalDays: parseInt(updateData.gestationalDays),
-          totalFetuses: parseInt(updateData.totalFetuses || 0)
+          totalFetuses: parseInt(updateData.totalFetuses || 0),
         };
 
         console.log("Sending update data:", formattedData); // Debug log
 
->>>>>>> Stashed changes
         const response = await fetch(
           `${API_BASE_URL}/api/pregnancies/${pregnancyId}`,
           {
             method: "PUT",
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              Accept: "application/json",
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify(formattedData),
+            mode: "cors",
+            credentials: "include",
           }
         );
 
+        const responseText = await response.text();
+        console.log("Update pregnancy response:", responseText);
+
         if (!response.ok) {
-          throw new Error("Failed to update pregnancy");
+          throw new Error(responseText || "Failed to update pregnancy");
         }
 
-        return await response.json();
+        return responseText ? JSON.parse(responseText) : null;
       } catch (error) {
         console.error("Update pregnancy error:", error);
         throw error;
       }
     },
-
-<<<<<<< HEAD
     getUserPregnancies: async () => {
       try {
         const token = localStorage.getItem("token");
@@ -1345,10 +1364,10 @@ const api = {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "Accept": "application/json"
+              Accept: "application/json",
             },
             mode: "cors",
-            credentials: "include"
+            credentials: "include",
           }
         );
 
@@ -1370,12 +1389,13 @@ const api = {
         return [];
       }
     },
+    getPregnancyHistory: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
 
-<<<<<<< Updated upstream
-=======
->>>>>>> main
-    updatePregnancyStatus: async (pregnancyId, status) => {
-=======
         const tokenData = JSON.parse(atob(token.split(".")[1]));
         const userId = tokenData.id || tokenData.user_id;
         if (!userId) {
@@ -1469,9 +1489,9 @@ const api = {
         const formattedData = {
           fetalWeight: measurements.fetalWeight?.toString() || "0",
           femurLength: measurements.femurLength?.toString() || "0",
-          headCircumference: measurements.headCircumference?.toString() || "0"
+          headCircumference: measurements.headCircumference?.toString() || "0",
         };
-        console.log('Sending data:', { fetusId, formattedData });
+        console.log("Sending data:", { fetusId, formattedData });
 
         const response = await fetch(
           `${API_BASE_URL}/api/fetus-records/${fetusId}`,
@@ -1479,9 +1499,9 @@ const api = {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify(formattedData)
+            body: JSON.stringify(formattedData),
           }
         );
 
@@ -1502,10 +1522,9 @@ const api = {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          message.error("No token found");
           throw new Error("No token found");
         }
-    
+
         const response = await fetch(
           `${API_BASE_URL}/api/fetus-records/${fetusId}/growth-data`,
           {
@@ -1515,73 +1534,47 @@ const api = {
               "Content-Type": "application/json",
               Accept: "application/json",
             },
-            mode: "cors",
-            credentials: "include",
           }
         );
-    
-        // Handle membership restriction
-        if (response.status === 403) {
-          message.error("This feature requires Basic or Premium membership");
-          throw new Error("Membership required");
-        }
-    
-        // Handle server errors
-        if (response.status === 500) {
-          message.error("Internal server error occurred");
-          throw new Error("Internal server error");
-        }
-    
+
         const responseText = await response.text();
-        console.log("Raw fetus records response:", responseText);
-    
+        console.log("Raw growth data response:", responseText);
+
         if (!response.ok) {
-          message.error("Failed to fetch fetus records");
-          throw new Error(`Failed to fetch fetus records: ${responseText}`);
+          throw new Error(`Failed to fetch fetus growth data: ${responseText}`);
         }
-    
-        if (!responseText.trim()) {
-          return [];
-        }
-    
+
         try {
           const data = JSON.parse(responseText);
-          console.log("Parsed fetus records:", data);
-    
-          // Transform data into required format
-          if (!Array.isArray(data)) {
-            console.error("Expected array but got:", typeof data);
-            return [];
+          console.log("Parsed growth data:", data);
+
+          // Transform the data into table format
+          const transformedData = [];
+
+          // Check if data is an array
+          if (Array.isArray(data)) {
+            data.forEach((record) => {
+              transformedData.push({
+                key: record.week,
+                week: record.week,
+                fetalWeight: record.fetalWeight,
+                femurLength: record.femurLength,
+                headCircumference: record.headCircumference,
+              });
+            });
           }
-    
-          const transformedData = data.map(record => ({
-            key: record.id || `${record.fetusId}-${record.week}`,
-            week: record.week,
-            fetalWeight: record.fetalWeight || 0,
-            femurLength: record.femurLength || 0,
-            headCircumference: record.headCircumference || 0,
-            createdAt: record.createdAt
-          }));
-    
-          console.log("Transformed fetus records:", transformedData);
+
+          console.log("Transformed data:", transformedData);
           return transformedData;
-    
         } catch (parseError) {
           console.error("Parse error:", parseError);
-          console.error("Response that failed to parse:", responseText);
-          message.error("Invalid data format received from server");
           return [];
         }
       } catch (error) {
-        console.error("Get fetus records error:", error);
-        if (!error.message.includes("Membership required")) {
-          message.error(error.message || "Failed to fetch fetus records");
-        }
+        console.error("Get fetus growth data error:", error);
         return [];
       }
     },
-
-   
   },
   standards: {
     getPregnancyStandards: async (fetusNumber) => {
@@ -1601,7 +1594,7 @@ const api = {
               Accept: "application/json",
             },
             mode: "cors",
-            credentials: "include"
+            credentials: "include",
           }
         );
 
@@ -1618,7 +1611,7 @@ const api = {
           console.log("Parsed standards data:", data);
 
           // Transform data to include min/max values
-          const transformedData = data.map(standard => ({
+          const transformedData = data.map((standard) => ({
             week: standard.week,
             avgWeight: standard.avgWeight,
             minWeight: standard.minWeight,
@@ -1628,7 +1621,7 @@ const api = {
             maxLength: standard.maxLength,
             avgHeadCircumference: standard.avgHeadCircumference,
             minHeadCircumference: standard.minHeadCircumference,
-            maxHeadCircumference: standard.maxHeadCircumference
+            maxHeadCircumference: standard.maxHeadCircumference,
           }));
 
           console.log("Transformed standards with min/max:", transformedData);
@@ -1642,287 +1635,119 @@ const api = {
         console.error("Get standards error:", error);
         return [];
       }
-    }
+    },
   },
-  growth: {
-    shareChart: async (fetusId, chartData) => {
->>>>>>> Stashed changes
+  payment: {
+    createPaymentUrl: async (userId, packageId) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-<<<<<<< Updated upstream
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status`,
-=======
-        // Format data with selected chart types
-        const formattedData = {
-          chartTypes: chartData.chartTypes, // Array of selected chart types (WEIGHT, HEAD_CIRCUMFERENCE, LENGTH)
-          title: chartData.title,
-          content: chartData.content,
-          type: "GROWTH_CHART",
-          isAnonymous: chartData.isAnonymous || false
-        };
-
-        console.log("Sharing chart data:", formattedData);
+        // Add returnUrl parameter
+        const returnUrl = `${window.location.origin}/confirm`;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/growth-charts/share/${fetusId}`,
+          `${API_BASE_URL}/api/payment/create/${userId}/${packageId}?returnUrl=${encodeURIComponent(
+            returnUrl
+          )}`,
           {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(formattedData)
           }
         );
 
-        const responseText = await response.text();
-        console.log("Share chart response:", responseText);
-
         if (!response.ok) {
-          throw new Error(responseText || "Failed to share chart");
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to create payment URL");
         }
 
-        try {
-          return responseText ? JSON.parse(responseText) : { success: true };
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          console.error("Response that failed to parse:", responseText);
-          throw new Error("Invalid response format from server");
-        }
+        const paymentUrl = await response.text();
+        return { paymentUrl: paymentUrl.trim() };
       } catch (error) {
-        console.error("Share chart error:", error);
+        console.error("Create VNPay URL error:", error);
         throw error;
       }
     },
 
- getGrowthChart : async (postId) => {
+    processPaymentReturn: async (queryParams) => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found. Please log in again.");
-    
+        if (!token) throw new Error("No token found");
+
+        // Get order info from VNPay response
+        const orderInfo = queryParams.get("vnp_OrderInfo");
+        const [userId, packageId] = orderInfo.split("_");
+        const responseCode = queryParams.get("vnp_ResponseCode");
+
+        if (responseCode === "00") {
+          // Create subscription with the package
+          const response = await fetch(
+            `${API_BASE_URL}/api/subscriptions/subscribe/${packageId}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                transactionId: queryParams.get("vnp_TransactionNo"),
+                amount: parseInt(queryParams.get("vnp_Amount")) / 100,
+                bankCode: queryParams.get("vnp_BankCode"),
+                paymentDate: queryParams.get("vnp_PayDate"),
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Failed to process payment");
+          }
+
+          const result = await response.json();
+          return {
+            success: true,
+            ...result,
+          };
+        } else {
+          throw new Error("Payment failed: Transaction declined");
+        }
+      } catch (error) {
+        console.error("Process payment return error:", error);
+        throw error;
+      }
+    },
+
+    getSubscriptionHistory: async (userId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
         const response = await fetch(
-          `${API_BASE_URL}/api/growth-charts/post/${postId}`,
->>>>>>> Stashed changes
+          `${API_BASE_URL}/api/membership/subscriptions/${userId}`,
           {
-            method: "PATCH",
+            method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
-<<<<<<< Updated upstream
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ status })
-=======
               "Content-Type": "application/json",
-              Accept: "application/json"
-            }
->>>>>>> Stashed changes
+            },
           }
         );
-    
+
         if (!response.ok) {
-<<<<<<< Updated upstream
-          throw new Error("Failed to update pregnancy status");
+          throw new Error("Failed to fetch subscription history");
         }
 
-        return await response.json();
-      } catch (error) {
-        console.error("Update pregnancy status error:", error);
-        throw error;
-      }
-    }
-  },
-<<<<<<< HEAD
-  getPregnancyHistory: async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No token found");
-      }
-
-      const tokenData = JSON.parse(atob(token.split(".")[1]));
-      const userId = tokenData.id || tokenData.user_id;
-      if (!userId) {
-        throw new Error("User ID not found in token");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/pregnancies/history/${userId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        mode: "cors",
-        credentials: "include"
-      });
-
-      const responseText = await response.text();
-      console.log("Pregnancy history response:", responseText);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch pregnancy history");
-      }
-
-      try {
-        return responseText ? JSON.parse(responseText) : [];
-      } catch (parseError) {
-        console.error("Parse error:", parseError);
-        return [];
-      }
-    } catch (error) {
-      console.error("Get pregnancy history error:", error);
-      return [];
-    }
-  },
-fetus:{
-  getFetusMeasurements: async (fetusId) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No token found");
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/fetus-records/${fetusId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          mode: "cors",
-          credentials: "include"
-        }
-      );
-
-      const responseText = await response.text();
-      console.log("Fetus measurements response:", responseText);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch fetus measurements");
-      }
-
-      try {
-        return responseText ? JSON.parse(responseText) : [];
-      } catch (parseError) {
-        console.error("Parse error:", parseError);
-        return [];
-      }
-    } catch (error) {
-      console.error("Get fetus measurements error:", error);
-      return [];
-    }
-  },
-  createFetusRecord: async (fetusId, recordData) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No token found");
-      }
-  
-      // Format the data according to the API requirements
-      const formattedData = {
-        fetusId: fetusId,
-        week: parseInt(recordData.week),
-        fetalWeight: parseInt(recordData.fetalWeight),
-        crownHeelLength: parseInt(recordData.crownHeelLength),
-        headCircumference: parseInt(recordData.headCircumference),
-        examDate: new Date().toISOString().split('T')[0]
-      };
-  
-      console.log('Sending formatted data:', formattedData);
-  
-      const response = await fetch(
-        `${API_BASE_URL}/api/fetus-records/${fetusId}`, // Changed back to include fetusId in URL
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          mode: "cors",
-          credentials: "include",
-          body: JSON.stringify(formattedData)
-        }
-      );
-  
-      // Log the full response for debugging
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers));
-      
-      const responseText = await response.text();
-      console.log('Server response text:', responseText);
-  
-      if (!response.ok) {
-        throw new Error(responseText || "Failed to create fetus record");
-      }
-  
-      return responseText ? JSON.parse(responseText) : null;
-  
-    } catch (error) {
-      console.error("Create fetus record error:", error);
-      throw error;
-    }
-  }
-  
-}
-=======
->>>>>>> main
-};
-=======
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to fetch growth chart data");
-        }
-    
         const data = await response.json();
-        console.log("Raw growth chart data:", data);
-    
-        // Kiểm tra xem data.chartData có tồn tại không
-        const chartData = data.chartData || {};
-        
-        // Chuyển đổi dữ liệu
-        const transformedData = {
-          chartData: {
-            headCircumference: chartData.headCircumference || [],
-            fetalWeight: chartData.fetalWeight || [],
-            femurLength: chartData.femurLength || [],
-          },
-          predictionLine: {
-            weightPrediction: chartData.predictionLine?.weightPrediction || [],
-            lengthPrediction: chartData.predictionLine?.lengthPrediction || [],
-            headPrediction: chartData.predictionLine?.headPrediction || [],
-          },
-          standardLines: {
-            weight: data.standardLines?.weight || [],
-            length: data.standardLines?.length || [],
-            headCircumference: data.standardLines?.headCircumference || [],
-          },
-          post: {
-            title: data.post?.title || "No title",
-            content: data.post?.content || "No content",
-            authorId: data.post?.authorId || null,
-            createdAt: data.post?.createdAt || null,
-          }
-        };
-    
-        console.log("Transformed chart data:", transformedData);
-        return transformedData;
-    
+        return Array.isArray(data) ? data : [];
       } catch (error) {
-        console.error("Get growth chart error:", error.message);
+        console.error("Get subscription history error:", error);
         throw error;
       }
-    
-    
->>>>>>> Stashed changes
-
+    },
   },
-  }
 };
-export default api;
 
+export default api;

@@ -106,9 +106,6 @@ const Login = () => {
               Sign In
             </Button>
             <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link to="/forgot-password" style={{ textDecoration: 'underline', color: 'black' }}>
-                Forgot password?
-              </Link>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Don't have an account?{' '}
                 <Link to="/register" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'bold' }}>
