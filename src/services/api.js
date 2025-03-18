@@ -489,6 +489,61 @@ const api = {
         throw error;
       }
     },
+
+    getRevenueStatistics: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/subscriptions/revenue-statistics`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            mode: "cors",
+            credentials: "include",
+          }
+        );
+
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          console.error("Received HTML response instead of JSON");
+          return {
+            totalRevenue: 0,
+            revenueByPackage: {},
+            subscriptionsByPackage: {},
+            totalSubscriptions: 0
+          };
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch revenue statistics");
+        }
+
+        const data = await response.json();
+        console.log("Revenue statistics response:", data);
+        
+        return {
+          totalRevenue: data.totalRevenue || 0,
+          revenueByPackage: data.revenueByPackage || {},
+          subscriptionsByPackage: data.subscriptionsByPackage || {},
+          totalSubscriptions: data.totalSubscriptions || 0
+        };
+      } catch (error) {
+        console.error("Get revenue statistics error:", error);
+        return {
+          totalRevenue: 0,
+          revenueByPackage: {},
+          subscriptionsByPackage: {},
+          totalSubscriptions: 0
+        };
+      }
+    },
   },
   community: {
     createPost: async (postData) => {
@@ -1592,13 +1647,15 @@ const api = {
         const returnUrl = `${window.location.origin}/confirm`;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/payment/create/${userId}/${packageId}?returnUrl=${encodeURIComponent(returnUrl)}`,
+          `${API_BASE_URL}/api/payment/create/${userId}/${packageId}?returnUrl=${encodeURIComponent(
+            returnUrl
+          )}`,
           {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-            }
+            },
           }
         );
 
@@ -1621,11 +1678,11 @@ const api = {
         if (!token) throw new Error("No token found");
 
         // Get order info from VNPay response
-        const orderInfo = queryParams.get('vnp_OrderInfo');
-        const [userId, packageId] = orderInfo.split('_');
-        const responseCode = queryParams.get('vnp_ResponseCode');
+        const orderInfo = queryParams.get("vnp_OrderInfo");
+        const [userId, packageId] = orderInfo.split("_");
+        const responseCode = queryParams.get("vnp_ResponseCode");
 
-        if (responseCode === '00') {
+        if (responseCode === "00") {
           // Create subscription with the package
           const response = await fetch(
             `${API_BASE_URL}/api/subscriptions/subscribe/${packageId}`,
@@ -1636,11 +1693,11 @@ const api = {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                transactionId: queryParams.get('vnp_TransactionNo'),
-                amount: parseInt(queryParams.get('vnp_Amount')) / 100,
-                bankCode: queryParams.get('vnp_BankCode'),
-                paymentDate: queryParams.get('vnp_PayDate')
-              })
+                transactionId: queryParams.get("vnp_TransactionNo"),
+                amount: parseInt(queryParams.get("vnp_Amount")) / 100,
+                bankCode: queryParams.get("vnp_BankCode"),
+                paymentDate: queryParams.get("vnp_PayDate"),
+              }),
             }
           );
 
@@ -1652,7 +1709,7 @@ const api = {
           const result = await response.json();
           return {
             success: true,
-            ...result
+            ...result,
           };
         } else {
           throw new Error("Payment failed: Transaction declined");

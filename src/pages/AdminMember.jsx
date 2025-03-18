@@ -36,12 +36,6 @@ function AdminMember() {
 
   const handleEditUser = async (values) => {
     try {
-      const userId = selectedMember.user_id;
-      
-      if (values.role !== selectedMember.role) {
-        await api.user.updateUserRole(userId, values.role);
-      }
-      
       await api.user.updateProfile({
         fullName: values.fullName,
         phoneNumber: values.phoneNumber
@@ -202,8 +196,7 @@ function AdminMember() {
             layout="vertical"
             initialValues={{
               fullName: selectedMember?.fullName || '',
-              phoneNumber: selectedMember?.phoneNumber || '',
-              role: selectedMember?.role
+              phoneNumber: selectedMember?.phoneNumber || ''
             }}
           >
             <Form.Item
@@ -224,15 +217,6 @@ function AdminMember() {
               ]}
             >
               <Input />
-            </Form.Item>
-            <Form.Item
-              name="role"
-              label="Role"
-            >
-              <Select>
-                <Select.Option value="MEMBER">Member</Select.Option>
-                <Select.Option value="ADMIN">Admin</Select.Option>
-              </Select>
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" block>

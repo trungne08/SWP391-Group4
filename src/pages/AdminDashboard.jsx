@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Statistic, Typography, Table, Progress } from 'antd';
-import { UserOutlined, FileTextOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Statistic, Typography, Table } from 'antd';
+import { UserOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
 import api from '../services/api';
-
 import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
@@ -13,12 +12,13 @@ function AdminDashboard() {
     totalUsers: 0,
     adminUsers: 0,
     memberUsers: 0,
-    activeUsers: 0
+    activeUsers: 0,
+    totalRevenue: 0,
+    subscriptionsByPackage: {}
   });
   const [loading, setLoading] = useState(true);
   const [recentUsers, setRecentUsers] = useState([]);
 
-  // Define columns once
   const columns = [
     { title: 'Username', dataIndex: 'name', key: 'name' },
     { title: 'Full Name', dataIndex: 'fullName', key: 'fullName' },
@@ -32,13 +32,15 @@ function AdminDashboard() {
       try {
         setLoading(true);
         const users = await api.user.getAllUsers();
-        console.log('Raw users data:', users);
+        const revenueStats = await api.membership.getRevenueStatistics();
+        
+        console.log('Users data:', users);
+        console.log('Revenue stats:', revenueStats);
 
         const totalUsers = users.length;
         const adminUsers = users.filter(user => user.role === 'ADMIN').length;
         const memberUsers = users.filter(user => user.role === 'MEMBER').length;
         
-        // Format recent users data
         const recent = users.map(user => ({
           key: user.id,
           name: user.username,
@@ -53,10 +55,18 @@ function AdminDashboard() {
           totalUsers,
           adminUsers,
           memberUsers,
-          activeUsers: totalUsers
+          activeUsers: totalUsers,
+          totalRevenue: revenueStats?.totalRevenue || 0,
+          subscriptionsByPackage: revenueStats?.subscriptionsByPackage || { "Premium Plan": 0 }
         });
+
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
+        setStats(prevStats => ({
+          ...prevStats,
+          totalRevenue: 0,
+          subscriptionsByPackage: { "Premium Plan": 0 }
+        }));
       } finally {
         setLoading(false);
       }
@@ -103,16 +113,35 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic 
-              title="Active Users" 
-              value={stats.activeUsers} 
-              prefix={<UserOutlined />}
+              title="Total Revenue" 
+              value={stats.totalRevenue}
+              prefix={<DollarOutlined />}
               loading={loading}
+              suffix="VNĐ"
+              formatter={value => `${value.toLocaleString()}`}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Recent Users Table with loading state */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col span={24}>
+          <Card title="Subscription Statistics">
+            <Row gutter={16}>
+              {Object.entries(stats.subscriptionsByPackage).map(([packageName, count]) => (
+                <Col span={12} key={packageName}>
+                  <Statistic
+                    title={`${packageName} Subscriptions`}
+                    value={count}
+                    suffix="users"
+                  />
+                </Col>
+              ))}
+            </Row>
+          </Card>
+        </Col>
+      </Row>
+
       <Card title="Recent Users">
         <Table 
           columns={columns} 
