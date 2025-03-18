@@ -12,7 +12,7 @@ const api = {
           mode: "cors",
           credentials: "include",
           body: JSON.stringify({
-            email: credentials.email.trim(), // Giữ nguyên là email
+            email: credentials.email.trim(), // Giữ Snguyên là email
             password: credentials.password,
           }),
         });
