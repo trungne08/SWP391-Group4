@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://hare-causal-prawn.ngrok-free.app";
+const API_BASE_URL = "https://poetic-helping-mallard.ngrok-free.app";
 
 const api = {
   auth: {
