@@ -50,12 +50,13 @@ const Reminder = () => {
 
   const handleModalClose = () => {
     setSelectedReminder(null);
+    fetchReminders(); // Add this line to refresh the data when modal closes
   };
 
   const taskTypes = [
-    { value: 'CHECK_UP', label: 'Khám định kỳ (CHECK_UP)' },
-    { value: 'VACCINATION', label: 'Tiêm phòng (VACCINATION)' },
-    { value: 'TEST', label: 'Xét nghiệm (TEST)' }
+    { value: 'CHECK_UP', label: 'Khám định kỳ' },
+    { value: 'VACCINATION', label: 'Tiêm phòng' },
+    { value: 'TEST', label: 'Xét nghiệm' }
   ];
 
   const handleToggleComplete = (id) => {
@@ -65,8 +66,8 @@ const Reminder = () => {
   };
 
   const reminderTypes = [
-    { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai (APPOINTMENT)', icon: <MedicineBoxOutlined /> },
-    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế (MEDICAL_TASK)', icon: <MedicineBoxOutlined /> }
+    { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai', icon: <MedicineBoxOutlined /> },
+    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế', icon: <MedicineBoxOutlined /> }
   ];
 
   const handleEdit = (reminder) => {
@@ -265,7 +266,7 @@ const Reminder = () => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>Tạo lịch nhắc nhở</h1>
+      <h1>Lịch nhắc nhở</h1>
       
       <div style={{ display: 'flex', gap: '24px' }}>
         {/* Calendar Section */}
@@ -442,18 +443,16 @@ const Reminder = () => {
               onClick={async () => {
                 if (!selectedReminder?.id || !selectedReminder?.tempStatus) return;
                 try {
-                  const updatedReminder = await api.reminders.updateReminderStatus(selectedReminder.id, {
+                  await api.reminders.updateReminderStatus(selectedReminder.id, {
                     status: selectedReminder.tempStatus
                   });
                   
-                  // Update reminders list
                   await fetchReminders();
-                  
-                  // Update modal data with the response from API
+                  const updatedReminder = reminders.find(r => r.id === selectedReminder.id);
                   setSelectedReminder({
-                    ...selectedReminder,
+                    ...updatedReminder,
                     status: selectedReminder.tempStatus,
-                    ...updatedReminder
+                    tempStatus: selectedReminder.tempStatus
                   });
                   
                   message.success('Cập nhật trạng thái thành công');

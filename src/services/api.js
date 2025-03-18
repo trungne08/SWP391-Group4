@@ -12,7 +12,7 @@ const api = {
           mode: "cors",
           credentials: "include",
           body: JSON.stringify({
-            email: credentials.email.trim(), // Giữ nguyên là email
+            email: credentials.email.trim(), // Giữ Snguyên là email
             password: credentials.password,
           }),
         });
@@ -952,16 +952,14 @@ const api = {
           }
         );
 
-        const responseText = await response.text();
-        console.log("Status update response:", responseText);
-
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(errorText || "Failed to update reminder status");
         }
 
-        const data = await response.json();
-        return data;
+        // Only read the response body once
+        const responseText = await response.text();
+        return responseText ? JSON.parse(responseText) : null;
       } catch (error) {
         console.error("Update reminder status error:", error);
         throw error;
