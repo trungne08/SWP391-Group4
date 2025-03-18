@@ -13,9 +13,12 @@ const Footer = () => {
   return (
     <footer className="footer-container">
       <div className="footer-content">
-        {/* Cột 1 - Logo + Social Media */}
         <div className="footer-column social-column">
-          <FontAwesomeIcon icon={faPersonBreastfeeding} className="footer-logo" />
+          <FontAwesomeIcon 
+            icon={faPersonBreastfeeding} 
+            className="footer-logo"
+            style={{ color: '#FF69B4' }}
+          />
           <div className="footer-social">
             <FontAwesomeIcon icon={faFacebook} />
             <FontAwesomeIcon icon={faYoutube} />
@@ -23,7 +26,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Cột 2 - Chính sách & Điều khoản */}
         <div className="footer-column">
           <h4>Policies & Terms</h4>
           <ul>
@@ -33,15 +35,13 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* Cột 3 - Thông tin liên hệ */}
         <div className="footer-column">
           <h4>Contact Information</h4>
-          <p>Address:<br/> 3rd Floor, ABC Building, 123 XYZ Street, District 1, Ho Chi Minh City, Vietnam</p>
-          <p>Phone: (+84) 987 654 321</p>
-          <p>Email: support@thaikycare.com</p>
+          <p>✉️ support@thaikycare.com</p>
+          <p>📞 (+84) 987 654 321</p>
+          <p>📍 3rd Floor, ABC Building<br/>123 XYZ Street, District 1<br/>Ho Chi Minh City, Vietnam</p>
         </div>
 
-        {/* Cột 4 - Liên kết nhanh */}
         <div className="footer-column">
           <h4>Quick Links</h4>
           <ul>

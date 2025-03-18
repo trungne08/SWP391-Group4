@@ -53,10 +53,10 @@ const AdminHeader = () => {
       <div className="logo-container">
         <FontAwesomeIcon 
           icon={faPersonBreastfeeding} 
-          className="logo-icon" 
-          style={{ color: '#fff' }} // Added explicit color
+          className="logo-icon"
+          style={{ color: '#FF69B4', fontSize: '24px' }}
         />
-        <span className="logo-text">BaBy Care Center</span>
+        <span className="logo-text">BaBy Care</span>
       </div>
       
       <Menu
@@ -64,46 +64,45 @@ const AdminHeader = () => {
         selectedKeys={[location.pathname]}
         style={{ 
           borderRight: 'none',
-          marginTop: 0,
           background: 'transparent'
         }}
         items={[
           {
-            key: '/',
-            icon: <HomeOutlined />,
-            label: <Link to="/">Home</Link>,
-          },
-          {
             key: '/admin/dashboard',
-            icon: <DashboardOutlined />,
+            icon: <DashboardOutlined style={{ color: '#FFB6C1' }} />,
             label: <Link to="/admin/dashboard">Dashboard</Link>,
           },
           {
             key: '/admin/members',
-            icon: <TeamOutlined />,
+            icon: <TeamOutlined style={{ color: '#FFB6C1' }} />,
             label: <Link to="/admin/members">Members</Link>,
           },
           {
             key: '/admin/membership',
-            icon: <MoneyCollectOutlined />,
-            label: <Link to="/admin/membership">Membership Packages</Link>,
+            icon: <MoneyCollectOutlined style={{ color: '#FFB6C1' }} />,
+            label: <Link to="/admin/membership">Membership</Link>,
           },
           {
             key: '/admin/blog',
-            icon: <FileTextOutlined />,
+            icon: <FileTextOutlined style={{ color: '#FFB6C1' }} />,
             label: <Link to="/admin/blog">Blog</Link>,
+          },
+          {
+            key: '/',
+            icon: <HomeOutlined style={{ color: '#FFB6C1' }} />,
+            label: <Link to="/">Back to Home</Link>,
           },
         ]}
       />
 
       <Dropdown menu={profileMenu} placement="topRight" trigger={['click']}>
-        <div className="admin-profile" style={{ cursor: 'pointer' }}>
+        <div className="admin-profile">
           <Avatar 
-            size={40} 
+            size={36}
             src={userData?.avatar}
             icon={!userData?.avatar && <UserOutlined />}
             style={{
-              backgroundColor: '#1890ff',
+              backgroundColor: '#FF69B4',
               verticalAlign: 'middle'
             }}
           />

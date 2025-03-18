@@ -5,25 +5,21 @@ const AdminLayout = () => {
   return (
     <div style={{ 
       display: 'flex',
-      background: '#f0f2f5',
-      minHeight: '100vh'
+      minHeight: '100vh',
+      margin: 0,
+      padding: 0,
+      background: 'linear-gradient(135deg, #FFF5EE 0%, #FFF0F5 100%)'
     }}>
       <AdminHeader />
       <main style={{ 
-        marginLeft: '250px', 
-        width: '100%', 
-        padding: '0', // Removed padding
-        transition: 'all 0.3s ease',
-        animation: 'fadeIn 0.5s ease-in-out'
+        flex: 1,
+        marginLeft: '250px',
+        minHeight: '100vh',
+        padding: '20px',
+        background: 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(8px)'
       }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '0 20px', // Changed padding to only horizontal
-          borderRadius: '8px',
-        }}>
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
     </div>
   );

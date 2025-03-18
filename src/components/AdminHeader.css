@@ -2,64 +2,101 @@
 .admin-sidebar {
   width: 250px;
   height: 100vh;
-  background-color: #001529;
+  background: linear-gradient(180deg, #FFE4E1 0%, #FFF0F5 100%);
   position: fixed;
   left: 0;
   top: 0;
   display: flex;
   flex-direction: column;
-  color: white;
+  color: #333;
+  box-shadow: 4px 0 10px rgba(255, 182, 193, 0.3);
+  z-index: 1000;
 }
 
 .logo-container {
-  padding: 20px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 12px;
+  border-bottom: 2px solid rgba(255, 105, 180, 0.2);
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.logo-icon {
-  font-size: 24px;
-}
-
-.logo-text {
-  font-size: 18px;
-  font-weight: bold;
-}
-.admin-profile {
-  margin-top: auto;
-  padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.admin-name {
-  color: white;
-}
-.admin-profile {
-  transition: background-color 0.3s;
-}
-.admin-profile:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-/* Override ant-design menu styles */
 .ant-menu {
-  background-color: transparent !important;
+  flex: 1;
+  padding: 16px 8px !important;
+  border-right: none !important;
 }
 
 .ant-menu-item {
-  color: rgba(255, 255, 255, 0.65) !important;
+  margin: 8px 0 !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+}
+
+/* Xóa bỏ tất cả các style không liên quan đến admin sidebar */
+.ant-menu-root {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.logo-icon {
+  font-size: 28px;
+  color: #FF69B4;
+  filter: drop-shadow(0 2px 4px rgba(255, 105, 180, 0.3));
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: #FF69B4;
+  font-family: 'Comfortaa', cursive;
+}
+
+.admin-profile {
+  margin-top: auto;
+  padding: 20px;
+  border-top: 2px solid rgba(255, 105, 180, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.admin-name {
+  color: #333;
+  font-weight: 500;
+}
+
+.admin-profile:hover {
+  background: rgba(255, 105, 180, 0.1);
+}
+
+/* Override ant-design menu styles */
+.ant-menu {
+  background: transparent !important;
+}
+
+.ant-menu-item {
+  color: #666 !important;
+  margin: 8px 0 !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
 }
 
 .ant-menu-item:hover {
-  color: white !important;
+  color: #FF69B4 !important;
+  background: rgba(255, 105, 180, 0.1) !important;
 }
 
 .ant-menu-item-selected {
-  background-color: #1890ff !important;
+  background: linear-gradient(45deg, #FF69B4, #FFB6C1) !important;
   color: white !important;
+}
+
+.ant-menu-item a {
+  color: inherit !important;
 }
 .container-header {
   display: flex;

@@ -61,7 +61,12 @@ const Header = () => {
         <ul className="nav-list">
           <li className="nav-icon">
             <Link to="/" className={location.pathname === "/" ? "active" : ""}>
-              <FontAwesomeIcon icon={faPersonBreastfeeding} />
+              <FontAwesomeIcon 
+                icon={faPersonBreastfeeding} 
+                style={{ 
+                  filter: 'drop-shadow(0 2px 4px rgba(255,105,180,0.3))'
+                }}
+              />
             </Link>
           </li>
           <div className="nav-links">
@@ -94,19 +99,21 @@ const Header = () => {
                     src={userData?.avatar} 
                     icon={<UserOutlined />}
                     style={{ 
-                      backgroundColor: '#1890ff',
-                      verticalAlign: 'middle'
+                      backgroundColor: '#FF69B4',
+                      verticalAlign: 'middle',
+                      border: '2px solid #FFB6C1',
+                      boxShadow: '0 2px 8px rgba(255,105,180,0.2)'
                     }} 
                   />
                 </div>
               </Dropdown>
             ) : (
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <Button type="primary">
                   <Link to="/login">Sign In</Link>
                 </Button>
-                <Button>
-                  <Link to="/register">Sign Up</Link>
+                <Button style={{ borderColor: '#FF69B4', color: '#FF69B4' }}>
+                  <Link to="/register" style={{ color: '#FF69B4' }}>Sign Up</Link>
                 </Button>
               </div>
             )}
