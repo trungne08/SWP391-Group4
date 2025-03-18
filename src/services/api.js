@@ -1776,16 +1776,12 @@ const api = {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        // Format data with selected chart types
         const formattedData = {
-          chartTypes: chartData.chartTypes, // Array of selected chart types (WEIGHT, HEAD_CIRCUMFERENCE, LENGTH)
-          title: chartData.title,
-          content: chartData.content,
-          type: "GROWTH_CHART",
-          isAnonymous: chartData.isAnonymous || false,
+          ...chartData,
+          isAnonymous: chartData.isAnonymous === true, // Đảm bảo giá trị boolean
         };
 
-        console.log("Sharing chart data:", formattedData);
+        console.log("Final formatted data:", formattedData); // Log để kiểm tra
 
         const response = await fetch(
           `${API_BASE_URL}/api/growth-charts/share/${fetusId}`,

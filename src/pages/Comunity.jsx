@@ -177,37 +177,22 @@ function Comunity() {
           message.error("No pregnancy data found. Please create a pregnancy first.");
           return;
         }
-
+        
         const fetusId = pregnancyData.fetuses[0].fetusId;
-
-        const chartKeys = {
-          HEAD_CIRCUMFERENCE: "headCircumference",
-          WEIGHT: "fetalWeight",
-          LENGTH: "femurLength",
-        };
-
-        const predictionKeys = {
-          WEIGHT: "weightPrediction",
-          LENGTH: "lengthPrediction",
-          HEAD_CIRCUMFERENCE: "headPrediction",
-        };
-
         const chartData = {
           chartTypes: values.chartTypes || [],
           title: values.title,
           content: values.content,
-          isAnonymous,
-          type: "GROWTH_CHART",
-          chartData: Object.keys(chartKeys).reduce((acc, key) => {
-            acc[chartKeys[key]] = values.chartTypes.includes(key) ? [] : null;
-            return acc;
-          }, {}),
-          predictionLine: Object.keys(predictionKeys).reduce((acc, key) => {
-            acc[predictionKeys[key]] = values.chartTypes.includes(key) ? [] : null;
-            return acc;
-          }, {}),
+          isAnonymous: isAnonymous, // Chỉ sử dụng giá trị từ state
+          postType: "GROWTH_CHART",
+          chartData: {
+            headCircumference: values.chartTypes.includes("HEAD_CIRCUMFERENCE") ? [] : null,
+            fetalWeight: values.chartTypes.includes("WEIGHT") ? [] : null,
+            femurLength: values.chartTypes.includes("LENGTH") ? [] : null,
+          }
         };
 
+        console.log("Sending chart data with isAnonymous:", isAnonymous); // Log để kiểm tra
         await api.growth.shareChart(fetusId, chartData);
         message.success("Chart shared successfully");
       } else {
@@ -216,7 +201,7 @@ function Comunity() {
           title: values.title,
           content: values.content,
           mediaUrls,
-          isAnonymous,
+          isAnonymous, // Sử dụng trực tiếp giá trị từ state
         };
 
         await api.community.createPost(postData);
@@ -393,13 +378,13 @@ function Comunity() {
             style={{ padding: "16px", background: "#fff", marginBottom: "12px", borderRadius: "8px", border: "1px solid #f0f0f0", cursor: "pointer", boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)" }}
           >
             <List.Item.Meta
-              avatar={<Avatar size={40} icon={<UserOutlined />} src={!post.isAnonymous ? post.author?.userProfile?.avatar : null} />}
+              avatar={post.isAnonymous ? <Avatar size={40} icon={<UserOutlined />} /> : <Avatar size={40} icon={<UserOutlined />} src={post.author?.userProfile?.avatar} />}
               title={
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <Text strong style={{ fontSize: "15px" }}>
-                    {post.isAnonymous ? "Anonymous" : post.author?.userProfile?.fullName || post.author?.usernameField || "Unknown User"}
+                    {post.isAnonymous ? "Anonymous" : (post.author?.userProfile?.fullName || "Unknown User")}
                   </Text>
-                  {post.author?.enabled && !post.isAnonymous && <Tag color="blue" style={{ margin: 0 }}>✓</Tag>}
+                  {!post.isAnonymous && post.author?.enabled && <Tag color="blue" style={{ margin: 0 }}>✓</Tag>}
                   <Text type="secondary" style={{ fontSize: "13px" }}>
                     {post.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
                   </Text>
@@ -496,11 +481,14 @@ function Comunity() {
                 <div style={{ marginTop: "12px", padding: "12px", background: "#f8f9fa", borderRadius: "4px" }}>
                   {post.comments.map((comment) => (
                     <div key={comment.commentId} style={{ display: "flex", gap: "12px", marginBottom: "8px", position: "relative" }}>
-                      <Avatar size={32} icon={<UserOutlined />} src={!comment.isAnonymous ? comment.author?.userProfile?.avatar : null} />
+                      {comment.isAnonymous ? 
+                        <Avatar size={32} icon={<UserOutlined />} /> :
+                        <Avatar size={32} icon={<UserOutlined />} src={comment.author?.userProfile?.avatar} />
+                      }
                       <div style={{ flex: 1 }}>
                         <div style={{ background: "#fff", padding: "8px 12px", borderRadius: "16px", display: "inline-block" }}>
                           <Text strong style={{ fontSize: "14px", display: "block", marginBottom: "4px" }}>
-                            {comment.isAnonymous ? "Anonymous" : comment.author?.userProfile?.fullName || comment.author?.usernameField || "Unknown User"}
+                            {comment.isAnonymous ? "Anonymous" : (comment.author?.userProfile?.fullName || "Unknown User")}
                           </Text>
                           <div style={{ fontSize: "14px" }}>{comment.content}</div>
                         </div>
