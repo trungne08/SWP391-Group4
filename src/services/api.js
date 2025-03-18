@@ -517,7 +517,7 @@ const api = {
             totalRevenue: 0,
             revenueByPackage: {},
             subscriptionsByPackage: {},
-            totalSubscriptions: 0
+            totalSubscriptions: 0,
           };
         }
 
@@ -527,12 +527,12 @@ const api = {
 
         const data = await response.json();
         console.log("Revenue statistics response:", data);
-        
+
         return {
           totalRevenue: data.totalRevenue || 0,
           revenueByPackage: data.revenueByPackage || {},
           subscriptionsByPackage: data.subscriptionsByPackage || {},
-          totalSubscriptions: data.totalSubscriptions || 0
+          totalSubscriptions: data.totalSubscriptions || 0,
         };
       } catch (error) {
         console.error("Get revenue statistics error:", error);
@@ -540,7 +540,7 @@ const api = {
           totalRevenue: 0,
           revenueByPackage: {},
           subscriptionsByPackage: {},
-          totalSubscriptions: 0
+          totalSubscriptions: 0,
         };
       }
     },
@@ -591,7 +591,7 @@ const api = {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
           mode: "cors",
-          credentials: "include", // Add this back as it might be needed for authentication
+          credentials: "include", // Giữ lại để hỗ trợ xác thực nếu cần
         });
 
         if (!response.ok) {
@@ -603,13 +603,35 @@ const api = {
         const responseText = await response.text();
         console.log("Raw response:", responseText);
 
-        // Check if response is empty
+        // Kiểm tra nếu response rỗng
         if (!responseText.trim()) {
+          console.warn("No posts found, returning empty array");
           return [];
         }
 
         try {
-          return JSON.parse(responseText);
+          const posts = JSON.parse(responseText);
+
+          // Xử lý dữ liệu để đảm bảo chartData được parse đúng
+          const processedPosts = posts.map((post) => {
+            if (
+              post.postType === "GROWTH_CHART" &&
+              typeof post.chartData === "string"
+            ) {
+              try {
+                post.chartData = JSON.parse(post.chartData);
+              } catch (e) {
+                console.warn(
+                  `Failed to parse chartData for post ${post.postId}:`,
+                  e
+                );
+                post.chartData = {}; // Gán giá trị mặc định nếu parse thất bại
+              }
+            }
+            return post;
+          });
+
+          return processedPosts;
         } catch (parseError) {
           console.error("Parse error:", parseError);
           console.error("Response that failed to parse:", responseText);
@@ -1744,6 +1766,116 @@ const api = {
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Get subscription history error:", error);
+        throw error;
+      }
+    },
+  },
+  growth: {
+    shareChart: async (fetusId, chartData) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        // Format data with selected chart types
+        const formattedData = {
+          chartTypes: chartData.chartTypes, // Array of selected chart types (WEIGHT, HEAD_CIRCUMFERENCE, LENGTH)
+          title: chartData.title,
+          content: chartData.content,
+          type: "GROWTH_CHART",
+          isAnonymous: chartData.isAnonymous || false,
+        };
+
+        console.log("Sharing chart data:", formattedData);
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/growth-charts/share/${fetusId}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formattedData),
+          }
+        );
+
+        const responseText = await response.text();
+        console.log("Share chart response:", responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || "Failed to share chart");
+        }
+
+        try {
+          return responseText ? JSON.parse(responseText) : { success: true };
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          console.error("Response that failed to parse:", responseText);
+          throw new Error("Invalid response format from server");
+        }
+      } catch (error) {
+        console.error("Share chart error:", error);
+        throw error;
+      }
+    },
+
+    getGrowthChart: async (postId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found. Please log in again.");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/growth-charts/post/${postId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to fetch growth chart data");
+        }
+
+        const data = await response.json();
+        console.log("Raw growth chart data:", data);
+
+        // Kiểm tra xem data.chartData có tồn tại không
+        const chartData = data.chartData || {};
+
+        // Chuyển đổi dữ liệu
+        const transformedData = {
+          chartData: {
+            headCircumference: chartData.headCircumference || [],
+            fetalWeight: chartData.fetalWeight || [],
+            femurLength: chartData.femurLength || [],
+          },
+          predictionLine: {
+            weightPrediction: chartData.predictionLine?.weightPrediction || [],
+            lengthPrediction: chartData.predictionLine?.lengthPrediction || [],
+            headPrediction: chartData.predictionLine?.headPrediction || [],
+          },
+          standardLines: {
+            weight: data.standardLines?.weight || [],
+            length: data.standardLines?.length || [],
+            headCircumference: data.standardLines?.headCircumference || [],
+          },
+          post: {
+            title: data.post?.title || "No title",
+            content: data.post?.content || "No content",
+            authorId: data.post?.authorId || null,
+            createdAt: data.post?.createdAt || null,
+          },
+        };
+
+        console.log("Transformed chart data:", transformedData);
+        return transformedData;
+      } catch (error) {
+        console.error("Get growth chart error:", error.message);
         throw error;
       }
     },
