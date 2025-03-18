@@ -50,6 +50,7 @@ const Reminder = () => {
 
   const handleModalClose = () => {
     setSelectedReminder(null);
+    fetchReminders(); // Add this line to refresh the data when modal closes
   };
 
   const taskTypes = [
@@ -442,18 +443,16 @@ const Reminder = () => {
               onClick={async () => {
                 if (!selectedReminder?.id || !selectedReminder?.tempStatus) return;
                 try {
-                  const updatedReminder = await api.reminders.updateReminderStatus(selectedReminder.id, {
+                  await api.reminders.updateReminderStatus(selectedReminder.id, {
                     status: selectedReminder.tempStatus
                   });
                   
-                  // Update reminders list
                   await fetchReminders();
-                  
-                  // Update modal data with the response from API
+                  const updatedReminder = reminders.find(r => r.id === selectedReminder.id);
                   setSelectedReminder({
-                    ...selectedReminder,
+                    ...updatedReminder,
                     status: selectedReminder.tempStatus,
-                    ...updatedReminder
+                    tempStatus: selectedReminder.tempStatus
                   });
                   
                   message.success('Cập nhật trạng thái thành công');
