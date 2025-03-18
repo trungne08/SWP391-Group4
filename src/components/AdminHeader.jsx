@@ -51,13 +51,22 @@ const AdminHeader = () => {
   return (
     <div className="admin-sidebar">
       <div className="logo-container">
-        <FontAwesomeIcon icon={faPersonBreastfeeding} className="logo-icon" />
+        <FontAwesomeIcon 
+          icon={faPersonBreastfeeding} 
+          className="logo-icon" 
+          style={{ color: '#fff' }} // Added explicit color
+        />
         <span className="logo-text">BaBy Care Center</span>
       </div>
       
       <Menu
         mode="inline"
         selectedKeys={[location.pathname]}
+        style={{ 
+          borderRight: 'none',
+          marginTop: 0,
+          background: 'transparent'
+        }}
         items={[
           {
             key: '/',

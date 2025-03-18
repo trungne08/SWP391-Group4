@@ -1,10 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Statistic, Typography, Table } from 'antd';
-import { UserOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
+import { UserOutlined, DollarOutlined, TeamOutlined, RiseOutlined } from '@ant-design/icons';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
+
+const cardStyle = {
+  borderRadius: '12px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+  transition: 'all 0.3s ease',
+  cursor: 'pointer',
+  background: '#fff',
+  border: 'none',
+  overflow: 'hidden',
+  height: '100%', // Thêm chiều cao cố định
+  ':hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+  }
+};
+
+const iconStyle = {
+  fontSize: '24px',
+  padding: '8px',
+  borderRadius: '8px',
+  marginRight: '8px'
+};
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -24,7 +46,6 @@ function AdminDashboard() {
     { title: 'Full Name', dataIndex: 'fullName', key: 'fullName' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Role', dataIndex: 'role', key: 'role' },
-    { title: 'Join Date', dataIndex: 'joinDate', key: 'joinDate' },
   ];
 
   useEffect(() => {
@@ -47,7 +68,6 @@ function AdminDashboard() {
           fullName: user.fullName === null ? 'Not updated' : user.fullName,
           email: user.email,
           role: user.role,
-          joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US') : 'N/A'
         }));
 
         setRecentUsers(recent);
@@ -76,64 +96,104 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2}>Admin Dashboard</Title>
+    <div style={{ animation: 'fadeIn 0.5s ease-in-out' }}>
+      <Title level={2} style={{ 
+        marginBottom: '30px',
+        color: '#1a3353',
+        fontSize: '28px',
+        fontWeight: '600',
+        position: 'relative',
+        paddingBottom: '10px'
+      }}>
+        Admin Dashboard
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '60px',
+          height: '3px',
+          background: '#1890ff',
+          borderRadius: '2px'
+        }}/>
+      </Title>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/members')}>
+          <Card 
+            style={{ ...cardStyle, background: 'linear-gradient(135deg, #1890ff 0%, #36a1ff 100%)' }}
+            onClick={() => navigate('/admin/members')}
+          >
             <Statistic 
-              title="Total Users" 
+              title={<span style={{ color: '#fff' }}>Total Users</span>}
               value={stats.totalUsers} 
-              prefix={<UserOutlined />}
+              prefix={<UserOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
+              valueStyle={{ color: '#fff' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/members')}>
+          <Card 
+            style={{ ...cardStyle, background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)' }}
+            onClick={() => navigate('/admin/members')}
+          >
             <Statistic 
-              title="Admin Users" 
+              title={<span style={{ color: '#fff' }}>Admin Users</span>}
               value={stats.adminUsers} 
-              prefix={<TeamOutlined />}
+              prefix={<TeamOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
+              valueStyle={{ color: '#fff' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ ...cardStyle, background: 'linear-gradient(135deg, #722ed1 0%, #8e44ad 100%)' }}>
             <Statistic 
-              title="Member Users" 
+              title={<span style={{ color: '#fff' }}>Member Users</span>}
               value={stats.memberUsers} 
-              prefix={<TeamOutlined />}
+              prefix={<TeamOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
+              valueStyle={{ color: '#fff' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ ...cardStyle, background: 'linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%)' }}>
             <Statistic 
-              title="Total Revenue" 
+              title={<span style={{ color: '#fff' }}>Total Revenue</span>}
               value={stats.totalRevenue}
-              prefix={<DollarOutlined />}
+              prefix={<DollarOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
               suffix="VNĐ"
+              valueStyle={{ color: '#fff' }}
               formatter={value => `${value.toLocaleString()}`}
             />
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
-          <Card title="Subscription Statistics">
-            <Row gutter={16}>
+          <Card 
+            title="Subscription Statistics" 
+            style={{ 
+              ...cardStyle, 
+              cursor: 'default',
+              background: '#fff'
+            }}
+            headStyle={{
+              borderBottom: '2px solid #f0f0f0',
+              padding: '16px 24px'
+            }}
+          >
+            <Row gutter={24}>
               {Object.entries(stats.subscriptionsByPackage).map(([packageName, count]) => (
                 <Col span={12} key={packageName}>
                   <Statistic
-                    title={`${packageName} Subscriptions`}
+                    title={packageName}
                     value={count}
                     suffix="users"
+                    prefix={<RiseOutlined style={{ color: '#1890ff' }} />}
                   />
                 </Col>
               ))}
@@ -142,11 +202,24 @@ function AdminDashboard() {
         </Col>
       </Row>
 
-      <Card title="Recent Users">
+      <Card 
+        title="Recent Users" 
+        style={{ 
+          ...cardStyle, 
+          cursor: 'default' 
+        }}
+        headStyle={{
+          borderBottom: '2px solid #f0f0f0',
+          padding: '16px 24px'
+        }}
+      >
         <Table 
           columns={columns} 
           dataSource={recentUsers} 
-          pagination={{ pageSize: 5 }}
+          pagination={{ 
+            pageSize: 5,
+            style: { marginTop: '16px' }
+          }}
           loading={loading}
         />
       </Card>

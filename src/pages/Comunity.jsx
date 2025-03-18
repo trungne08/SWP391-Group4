@@ -50,9 +50,8 @@ function Comunity() {
     try {
       const post = await api.community.getPostById(postId);
       if (post?.postType === 'GROWTH_CHART') {
-        if (!chartData[postId]) {
-          message.error("Chart data not available for this post");
-        }
+        // Refresh chart data when clicking on a chart post
+        await refreshChartData(postId);
       } else {
         navigate(`/comunity/post/${postId}`);
       }

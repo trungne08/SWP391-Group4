@@ -2,9 +2,35 @@ import React, { useState, useEffect } from 'react';
 // Import thêm Spin để hiển thị loading state
 import { Typography, Button, Card, Avatar, Row, Pagination, message, Modal, Form, Input, Select, Spin } from 'antd';
 import api from '../services/api';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+
+const pageStyle = {
+  animation: 'fadeIn 0.5s ease-in-out',
+  maxWidth: "1200px",
+  margin: "0 auto",
+  padding: "24px"
+};
+
+const cardStyle = {
+  borderRadius: '12px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  transition: 'all 0.3s ease',
+  border: 'none',
+  marginBottom: '20px',
+  ':hover': {
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  }
+};
+
+const buttonStyle = {
+  borderRadius: '6px',
+  fontWeight: 500,
+  height: '38px',
+  padding: '0 20px'
+};
 
 function AdminBlog() {
   const [blogs, setBlogs] = useState([]);
@@ -106,42 +132,112 @@ function AdminBlog() {
   };
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
+    <div style={pageStyle}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Title level={2}>Blog Management</Title>
-        <Button type="primary" onClick={() => showModal()}>Add Blog</Button>
+        <Title 
+          level={2} 
+          style={{
+            color: '#1a3353',
+            marginBottom: 0,
+            position: 'relative',
+            paddingBottom: '10px'
+          }}
+        >
+          Blog Management
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '50px',
+            height: '3px',
+            background: '#1890ff',
+            borderRadius: '2px'
+          }}/>
+        </Title>
+        <Button 
+          type="primary" 
+          onClick={() => showModal()}
+          style={buttonStyle}
+          icon={<PlusOutlined />}
+        >
+          Add Blog
+        </Button>
       </Row>
 
       <Spin spinning={loading}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {blogs.map((blog) => (
-            <Card key={blog.id} style={{ width: '100%' }}>
+            <Card 
+              key={blog.id} 
+              style={cardStyle}
+              hoverable
+            >
               <div style={{ marginBottom: 16 }}>
-                <Title level={4}>{blog.title}</Title>
-                <Text type="secondary">{blog.postedAt}</Text>
+                <Title 
+                  level={4}
+                  style={{ 
+                    color: '#1a3353',
+                    marginBottom: '8px'
+                  }}
+                >
+                  {blog.title}
+                </Title>
+                <Text 
+                  type="secondary"
+                  style={{ 
+                    display: 'block',
+                    fontSize: '14px'
+                  }}
+                >
+                  Posted on: {blog.postedAt}
+                </Text>
               </div>
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ 
+                marginBottom: 16,
+                fontSize: '16px',
+                lineHeight: '1.6',
+                color: '#666'
+              }}>
                 <Text>{blog.content}</Text>
               </div>
               {blog.imageUrl && (
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ 
+                  marginBottom: 16,
+                  width: '300px', // Fixed width
+                  height: '200px', // Fixed height
+                  overflow: 'hidden' // Hide overflow
+                }}>
                   <img 
                     src={blog.imageUrl}
                     alt="Blog image"
                     style={{ 
-                      maxWidth: '300px',
-                      height: 'auto',
-                      marginBottom: 8,
-                      objectFit: 'contain'
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover', // This will ensure the image covers the container
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                     }}
                   />
                 </div>
               )}
-              <div>
-                <Button type="primary" onClick={() => showModal(blog)} style={{ marginRight: 8 }}>
+              <div style={{ 
+                display: 'flex',
+                gap: '12px'
+              }}>
+                <Button 
+                  type="primary" 
+                  onClick={() => showModal(blog)}
+                  style={buttonStyle}
+                  icon={<EditOutlined />}
+                >
                   Edit
                 </Button>
-                <Button danger onClick={() => handleDelete(blog.id)}>
+                <Button 
+                  danger 
+                  onClick={() => handleDelete(blog.id)}
+                  style={buttonStyle}
+                  icon={<DeleteOutlined />}
+                >
                   Delete
                 </Button>
               </div>
@@ -151,7 +247,17 @@ function AdminBlog() {
       </Spin>
 
       <Modal
-        title={editingBlog ? "Edit Blog" : "Add New Blog"}
+        title={
+          <div style={{ 
+            borderBottom: '2px solid #f0f0f0',
+            paddingBottom: '16px',
+            marginBottom: '24px',
+            fontSize: '18px',
+            fontWeight: 500
+          }}>
+            {editingBlog ? "Edit Blog" : "Add New Blog"}
+          </div>
+        }
         open={isModalVisible}
         onOk={() => form.submit()}
         onCancel={() => {
@@ -160,6 +266,8 @@ function AdminBlog() {
           form.resetFields();
         }}
         confirmLoading={loading}
+        width={600}
+        style={{ top: 20 }}
       >
         <Form
           form={form}
@@ -169,23 +277,42 @@ function AdminBlog() {
         >
           <Form.Item
             name="title"
-            label="Title"
+            label={<span style={{ fontSize: '16px' }}>Title</span>}
             rules={[{ required: true, message: 'Please input the title!' }]}
           >
-            <Input />
+            <Input 
+              style={{ 
+                height: '40px',
+                borderRadius: '6px',
+                fontSize: '16px'
+              }} 
+            />
           </Form.Item>
           <Form.Item
             name="content"
-            label="Content"
+            label={<span style={{ fontSize: '16px' }}>Content</span>}
             rules={[{ required: true, message: 'Please input the content!' }]}
           >
-            <TextArea rows={4} />
+            <TextArea 
+              rows={6}
+              style={{ 
+                borderRadius: '6px',
+                fontSize: '16px'
+              }} 
+            />
           </Form.Item>
           <Form.Item
             name="imageUrls"
-            label="Image URL"
+            label={<span style={{ fontSize: '16px' }}>Image URL</span>}
           >
-            <Input placeholder="Enter image URL" />
+            <Input 
+              placeholder="Enter image URL"
+              style={{ 
+                height: '40px',
+                borderRadius: '6px',
+                fontSize: '16px'
+              }} 
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -197,6 +324,12 @@ function AdminBlog() {
           total={blogs.length}
           pageSize={10}
           showSizeChanger={false}
+          style={{
+            padding: '12px',
+            background: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}
         />
       </Row>
     </div>

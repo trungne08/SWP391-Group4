@@ -6,6 +6,7 @@ import "./App.css";
 import HomePage from "./pages/HomePage";
 import Comunity from "./pages/Comunity";
 import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";  // Add this import
 import Mom from "./pages/Mom";
 import Baby from "./pages/Baby";
 import FAQ from "./pages/FAQ";  
@@ -74,6 +75,11 @@ function App() {
             <Route path="blog" element={
               <PrivateRoute>
                 <Blog />
+              </PrivateRoute>
+            } />
+            <Route path="blog/:blogId" element={
+              <PrivateRoute>
+                <BlogDetail />
               </PrivateRoute>
             } />
             <Route path="baby" element={

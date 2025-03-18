@@ -998,6 +998,34 @@ const api = {
       }
     },
 
+    getBlogById: async (blogId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          mode: "cors",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blog: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Get blog by ID error:", error);
+        throw error;
+      }
+    },
+
     createBlog: async (blogData) => {
       try {
         const token = localStorage.getItem("token");
@@ -1073,7 +1101,6 @@ const api = {
         throw error;
       }
     },
-    // ... deleteBlog remains the same ...
 
     deleteBlog: async (blogId) => {
       try {
