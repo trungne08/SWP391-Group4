@@ -56,23 +56,39 @@ body {
   color: #666;
   font-weight: 600;
   font-size: 16px;
-  padding: 8px 16px;
+  padding: 8px 0;
+  margin: 0 16px;
   transition: all 0.3s ease;
-  border-radius: 20px;
   font-family: 'Quicksand', sans-serif;
+  position: relative;
 }
 
 .nav-links a:hover {
-  background: linear-gradient(45deg, #FF69B4, #FFB6C1);
-  color: white;
-  text-decoration: none;
-  transform: translateY(-2px);
+  color: #666;
+  background: none;
+  transform: none;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px; /* Giảm độ dày của gạch chân */
+  bottom: 0;
+  left: 0;
+  background: #333; /* Đổi màu gạch chân thành đen nhạt */
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  width: 100%;
 }
 
 .nav-links a.active {
-  background: linear-gradient(45deg, #FF69B4, #FFB6C1);
-  color: white;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+  color: #333; /* Màu chữ khi active cũng đen nhạt */
+  background: none;
+  box-shadow: none;
 }
 
 .nav-avatar {
