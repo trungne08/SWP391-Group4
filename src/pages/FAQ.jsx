@@ -42,24 +42,95 @@ function FAQ() {
 
   return (
     <>
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 4, textAlign: 'center' }}>
-          Frequently Asked Questions
+      <Container maxWidth="md" sx={{ 
+        py: 8,
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%)'
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          sx={{ 
+            mb: 6, 
+            textAlign: 'center',
+            fontSize: '72px',
+            fontFamily: "'Comic Sans MS', cursive",
+            fontWeight: 800,
+            color: '#2c3e50',
+            textShadow: '2px 2px 4px rgba(248, 148, 207, 0.9)',
+            position: 'relative',
+            letterSpacing: '2px',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: '-15px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '120px',
+              height: '4px',
+              background: 'linear-gradient(45deg, #FF69B4, #FFB6C1)',
+              borderRadius: '2px'
+            }
+          }}
+        >
+          Câu Hỏi Thường Gặp
         </Typography>
         
         {faqs.map((faq) => (
-          <Accordion key={faq.id} sx={{ mb: 2 }}>
+          <Accordion 
+            key={faq.id} 
+            sx={{ 
+              mb: 2,
+              borderRadius: '12px !important',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              '&:before': {
+                display: 'none',
+              },
+              '&.Mui-expanded': {
+                margin: '16px 0',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+              }
+            }}
+          >
             <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
+              expandIcon={<ExpandMoreIcon sx={{ color: '#FF69B4' }} />}
               aria-controls={`panel${faq.id}-content`}
               id={`panel${faq.id}-header`}
+              sx={{
+                borderRadius: '12px',
+                '&.Mui-expanded': {
+                  borderBottomLeftRadius: 0,
+                  borderBottomRightRadius: 0,
+                },
+                background: 'white',
+                '&:hover': {
+                  background: '#fafafa',
+                }
+              }}
             >
-              <Typography fontWeight="500">{faq.question}</Typography>
+              <Typography 
+                fontWeight="600" 
+                sx={{ 
+                  color: '#2c3e50',
+                  fontSize: '1.1rem'
+                }}
+              >
+                {faq.question}
+              </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ 
+              background: 'white',
+              borderBottomLeftRadius: '12px',
+              borderBottomRightRadius: '12px',
+              p: 3
+            }}>
               <Typography 
                 color="text.secondary"
-                sx={{ whiteSpace: 'pre-line' }} // This will preserve line breaks in the answer
+                sx={{ 
+                  whiteSpace: 'pre-line',
+                  lineHeight: 1.8,
+                  fontSize: '1rem'
+                }}
               >
                 {faq.answer}
               </Typography>
@@ -67,25 +138,49 @@ function FAQ() {
           </Accordion>
         ))}
     
-        <Box sx={{ textAlign: 'center', mt: 6 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            Still have questions?
+        <Box sx={{ 
+          textAlign: 'center', 
+          mt: 8,
+          p: 4,
+          background: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+        }}>
+          <Typography variant="h5" sx={{ 
+            mb: 2,
+            fontWeight: 700,
+            color: '#2c3e50'
+          }}>
+            Bạn vẫn còn thắc mắc?
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
-            Can't find the answer you're looking for? Please contact our support team.
+          <Typography variant="body1" sx={{ 
+            mb: 4, 
+            color: 'text.secondary',
+            fontSize: '1.1rem'
+          }}>
+            Không tìm thấy câu trả lời bạn đang tìm kiếm? Vui lòng liên hệ đội ngũ hỗ trợ của chúng tôi.
           </Typography>
           <Button
             component={Link}
             to="/contact"
             variant="contained"
             sx={{ 
-              bgcolor: 'black',
+              bgcolor: '#FF69B4',
+              px: 4,
+              py: 1.5,
+              borderRadius: '30px',
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              boxShadow: '0 4px 15px rgba(255,105,180,0.3)',
+              transition: 'all 0.3s ease',
               '&:hover': {
-                bgcolor: '#333'
+                bgcolor: '#FF1493',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(255,105,180,0.4)',
               }
             }}
           >
-            Contact Us
+            Liên Hệ Chúng Tôi
           </Button>
         </Box>
       </Container>

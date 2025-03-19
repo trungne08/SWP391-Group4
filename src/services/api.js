@@ -144,7 +144,7 @@ const api = {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           mode: "cors",
-          credentials: "include"
+          credentials: "include",
         });
 
         const responseText = await response.text();
@@ -271,10 +271,10 @@ const api = {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
-    
+
         // Sử dụng userId được truyền vào hoặc lấy từ token nếu không có
         const userId = data.user_id || JSON.parse(atob(token.split(".")[1])).id;
-    
+
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
           method: "PUT",
           headers: {
@@ -286,17 +286,17 @@ const api = {
           body: JSON.stringify({
             fullName: data.fullName,
             phoneNumber: data.phoneNumber,
-            avatar: data.avatar
+            avatar: data.avatar,
           }),
         });
-    
+
         const responseText = await response.text();
         console.log("Update profile response:", responseText);
-    
+
         if (!response.ok) {
           throw new Error(responseText || "Failed to update profile");
         }
-    
+
         try {
           return JSON.parse(responseText);
         } catch (e) {
@@ -1290,59 +1290,61 @@ const api = {
       }
     },
 
-    updatePregnancyStatus: async (pregnancyId, fetusId, status) => {
+    updatePregnancyStatus: async (pregnancyId, status) => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        // Case 1: Update specific fetus status
-        if (fetusId) {
-          const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/fetus/${fetusId}/status?status=CANCEL`,
-            {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Could not update fetus status");
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancy/${pregnancyId}/status`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: status }),
           }
-          return true;
+        );
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(error || "Failed to update pregnancy status");
         }
 
-        // Case 2: Update entire pregnancy status
-        if (pregnancyId) {
-          const response = await fetch(
-            `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${
-              status || "COMPLETED"
-            }`,
-            {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Could not update pregnancy status");
-          }
-          return true;
-        }
-
-        throw new Error("Either pregnancyId or fetusId must be provided");
+        return await response.json();
       } catch (error) {
-        console.error(`Update status error:`, error);
+        console.error("Error updating pregnancy status:", error);
         throw error;
       }
     },
+
+    // For individual fetus status update (keep existing method)
+    updateFetusStatus: async (pregnancyId, fetusId, status) => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `${API_BASE_URL}/api/pregnancy/${pregnancyId}/fetus/${fetusId}/status`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: status }),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(error || "Failed to update fetus status");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Error updating fetus status:", error);
+        throw error;
+      }
+    },
+
     updatePregnancy: async (pregnancyId, updateData) => {
       try {
         const token = localStorage.getItem("token");
@@ -1903,45 +1905,45 @@ const api = {
       }
     },
   },
-    // Add this new section in the api object
-    faq: {
-      getAllFaqs: async () => {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) throw new Error("No token found");
+  // Add this new section in the api object
+  faq: {
+    getAllFaqs: async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
 
-          const response = await fetch(`${API_BASE_URL}/api/faqs`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`, // Add authentication token
-            },
-            mode: "cors",
-            credentials: "include",
-          });
+        const response = await fetch(`${API_BASE_URL}/api/faqs`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`, // Add authentication token
+          },
+          mode: "cors",
+          credentials: "include",
+        });
 
-          console.log('FAQ API Response:', response);
+        console.log("FAQ API Response:", response);
 
-          if (!response.ok) {
-            throw new Error(`Failed to fetch FAQs: ${response.status}`);
-          }
+        if (!response.ok) {
+          throw new Error(`Failed to fetch FAQs: ${response.status}`);
+        }
 
-          const responseText = await response.text();
-          console.log('FAQ Raw response:', responseText);
+        const responseText = await response.text();
+        console.log("FAQ Raw response:", responseText);
 
-          if (!responseText) {
-            return [];
-          }
-
-          const data = JSON.parse(responseText);
-          return Array.isArray(data) ? data : [];
-        } catch (error) {
-          console.error("Get FAQs error:", error);
+        if (!responseText) {
           return [];
         }
-      },
+
+        const data = JSON.parse(responseText);
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Get FAQs error:", error);
+        return [];
+      }
     },
+  },
 };
 
 export default api;

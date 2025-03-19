@@ -33,24 +33,24 @@ const Header = () => {
   const authenticatedMenu = (
     <Menu>
       <Menu.Item key="profile">
-        <Link to="/profile">Profile</Link>
+        <Link to="/profile">Hồ Sơ</Link>
       </Menu.Item>
       <Menu.Item key="reminder">
-        <Link to="/reminder">Reminder</Link>
+        <Link to="/reminder">Nhắc Nhở</Link>
       </Menu.Item>
       <Menu.Item key="membership">
-        <Link to="/feepackage">Membership Registration</Link>
+        <Link to="/feepackage">Đăng Ký Thành Viên</Link>
       </Menu.Item>
       <Menu.Item key="subscriptionHistory">
-        <Link to="/subscription-history">Subscription History</Link>
+        <Link to="/subscription-history">Lịch Sử Đăng Ký</Link>
       </Menu.Item>
       {user?.role === 'ADMIN' && (
         <Menu.Item key="dashboard">
-          <Link to="/admin/dashboard">Dashboard</Link>
+          <Link to="/admin/dashboard">Bảng Điều Khiển</Link>
         </Menu.Item>
       )}
       <Menu.Item key="logout" onClick={handleLogout}>
-        Logout
+        Đăng Xuất
       </Menu.Item>
     </Menu>
   );
@@ -71,48 +71,28 @@ const Header = () => {
           </li>
           <div className="nav-links">
             <li>
-              <Link 
-                to="/" 
-                className={location.pathname === "/" ? "active" : ""}
-                style={{ textDecoration: 'none' }}  // Add this line
-              >
-                Home
+              <Link to="/" className={location.pathname === "/" ? "active" : ""}>
+                Trang Chủ
               </Link>
             </li>
             <li>
-              <Link 
-                to="/comunity" 
-                className={location.pathname === "/comunity" ? "active" : ""}
-                style={{ textDecoration: 'none' }}  // Add this line
-              >
-                Community
+              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>
+                Cộng Đồng
               </Link>
             </li>
             <li>
-              <Link 
-                to="/blog" 
-                className={location.pathname === "/blog" ? "active" : ""}
-                style={{ textDecoration: 'none' }}  // Add this line
-              >
+              <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>
                 Blog
               </Link>
             </li>
             <li>
-              <Link 
-                to="/baby" 
-                className={location.pathname === "/baby" ? "active" : ""}
-                style={{ textDecoration: 'none' }}  // Add this line
-              >
-                Baby
+              <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>
+                Em Bé
               </Link>
             </li>
             <li>
-              <Link 
-                to="/faq" 
-                className={location.pathname === "/faq" ? "active" : ""}
-                style={{ textDecoration: 'none' }}  // Add this line
-              >
-                FAQ
+              <Link to="/faq" className={location.pathname === "/faq" ? "active" : ""}>
+                Hỏi Đáp
               </Link>
             </li>
           </div>
@@ -136,10 +116,10 @@ const Header = () => {
             ) : (
               <div style={{ display: 'flex', gap: '12px' }}>
                 <Button type="primary">
-                  <Link to="/login">Sign In</Link>
+                  <Link to="/login">Đăng Nhập</Link>
                 </Button>
                 <Button style={{ borderColor: '#FF69B4', color: '#FF69B4' }}>
-                  <Link to="/register" style={{ color: '#FF69B4' }}>Sign Up</Link>
+                  <Link to="/register" style={{ color: '#FF69B4' }}>Đăng Ký</Link>
                 </Button>
               </div>
             )}

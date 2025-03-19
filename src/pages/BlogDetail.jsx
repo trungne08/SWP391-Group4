@@ -97,7 +97,7 @@ function BlogDetail() {
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate('/blog')}
           >
-            Back to Blogs
+            Quay Lại Blog
           </BackButton>
 
           <StyledPaper elevation={0}>
@@ -126,7 +126,7 @@ function BlogDetail() {
               color="text.secondary"
               sx={{ mb: 4 }}
             >
-              {new Date(blog.createdAt).toLocaleDateString('en-US', {
+              {new Date(blog.createdAt).toLocaleDateString('vi-VN', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -158,7 +158,7 @@ function BlogDetail() {
           severity="error" 
           sx={{ width: '100%' }}
         >
-          Không thể tải thông tin blog
+          Không thể tải thông tin bài viết
         </Alert>
       </Snackbar>
     </Container>

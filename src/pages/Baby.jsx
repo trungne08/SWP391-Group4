@@ -22,19 +22,18 @@ import {
   InputNumber,
 } from "antd";
 
-import { UserOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { UserOutlined, ArrowUpOutlined } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import { Line } from "react-chartjs-2";
 import {
   faWeightScale,
   faRuler,
   faCircleNotch,
-  faNewspaper,
-  faCalendarDays,
+  faSyringe,
   faList,
+  faPersonBreastfeeding,
 } from "@fortawesome/free-solid-svg-icons";
-
-import { weightData, heightData, circumferenceData } from "../data/chartData";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -67,9 +66,9 @@ const { Text } = Typography;
 
 function Baby() {
   const navigate = useNavigate();
-  const weightRef = useRef(null);
-  const heightRef = useRef(null);
-  const circumferenceRef = useRef(null);
+  const weightChartRef = useRef(null);
+  const heightChartRef = useRef(null);
+  const circumferenceChartRef = useRef(null);
   const vaccinationRef = useRef(null);
 
   // State management
@@ -123,44 +122,28 @@ function Baby() {
     setIsPregnancyListModalOpen(true);
   };
 
-  const handleUpdateStatus = async (pregnancyId, fetusId = null) => {
+  // For completing pregnancy
+  const handleUpdateStatus = async (pregnancyId) => {
     try {
-      // Update single fetus - change to CANCEL for miscarriage
-      if (fetusId) {
-        const response = await api.pregnancy.updatePregnancyStatus(
-          pregnancyId,
-          fetusId,
-          "CANCEL" // Changed from ISSUE to CANCEL
-        );
-        if (response) {
-          // Refresh data to show updated status
-          const updatedPregnancy = await api.pregnancy.getOngoingPregnancy();
-          if (updatedPregnancy) {
-            setPregnancyData(updatedPregnancy);
-            setIsPregnancyActive(true);
-          }
-        }
-      }
-      // Update entire pregnancy to COMPLETED
-      else if (pregnancyId) {
-        const response = await api.pregnancy.updatePregnancyStatus(
-          pregnancyId,
-          null,
-          "COMPLETED"
-        );
-        if (response) {
-          setIsPregnancyActive(false);
-        }
-      }
-
-      // Refresh pregnancy history
-      const historyResponse = await api.pregnancy.getUserPregnancies();
-      if (Array.isArray(historyResponse)) {
-        setPregnancyHistoryData(historyResponse);
-      }
+      await api.pregnancy.updatePregnancyStatus(pregnancyId, "COMPLETED");
+      message.success("Thai kỳ đã hoàn thành thành công");
+      await fetchPregnancyData();
+      await fetchPregnancyHistory();
     } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái:", error);
-      throw error; // Throw the error so it can be caught by the calling function
+      console.error("Error completing pregnancy:", error);
+      message.error("Không thể hoàn thành thai kỳ");
+    }
+  };
+
+  const handleCancelPregnancy = async (pregnancyId) => {
+    try {
+      await api.pregnancy.updatePregnancyStatus(pregnancyId, "CANCEL");
+      message.success("Đã kết thúc thai kỳ");
+      await fetchPregnancyData();
+      await fetchPregnancyHistory();
+    } catch (error) {
+      console.error("Error canceling pregnancy:", error);
+      message.error("Không thể kết thúc thai kỳ");
     }
   };
 
@@ -302,19 +285,62 @@ function Baby() {
   const scrollToChart = (ref) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-
+  const iconStyles = {
+    container: {
+      display: "flex",
+      justifyContent: "space-around",
+      padding: "20px",
+      background: "white",
+      borderRadius: "12px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      marginBottom: "20px",
+    },
+    iconWrapper: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      cursor: "pointer",
+      transition: "all 0.3s ease",
+      padding: "10px",
+      borderRadius: "8px",
+    },
+  };
+  const getIconColor = (index) => {
+    const colors = [
+      { bg: "#ffecec", icon: "#ff4d4f" }, // Red theme
+      { bg: "#e6f7ff", icon: "#1890ff" }, // Blue theme
+      { bg: "#f6ffed", icon: "#52c41a" }, // Green theme
+      { bg: "#fff7e6", icon: "#fa8c16" }, // Orange theme
+      { bg: "#f9f0ff", icon: "#722ed1" }, // Purple theme
+      { bg: "#fff0f6", icon: "#eb2f96" }, // Pink theme
+    ];
+    return colors[index % colors.length];
+  };
   const iconList = [
-    { icon: faWeightScale, label: "Cân nặng", ref: weightRef },
-    { icon: faRuler, label: "Chiều dài", ref: heightRef },
-    { icon: faCircleNotch, label: "Chu vi vòng đầu", ref: circumferenceRef },
-    { icon: faNewspaper, label: "Tin tức" },
-    { icon: faCalendarDays, label: "Lịch tiêm", ref: vaccinationRef },
+    { icon: faWeightScale, label: "Cân nặng", ref: weightChartRef },
+    { icon: faRuler, label: "Chiều dài", ref: heightChartRef },
+    {
+      icon: faCircleNotch,
+      label: "Chu vi vòng đầu",
+      ref: circumferenceChartRef,
+    },
+    {
+      icon: faSyringe,
+      label: "Lịch tiêm ",
+      onClick: () => navigate("/reminder"),
+    },
+    { icon: faPersonBreastfeeding, label: "Lịch tiêm", ref: vaccinationRef },
+
     {
       icon: faList,
       label: "Danh sách thai kì",
       onClick: handlePregnancyListClick,
     },
-  ];
+  ].map((item, index) => ({
+    ...item,
+    colors: getIconColor(index),
+    hoverAnimation: "all 0.3s ease",
+  }));
 
   useEffect(() => {
     const fetchPregnancyData = async () => {
@@ -403,11 +429,15 @@ function Baby() {
       if (pregnancyData?.fetuses) {
         try {
           // Fetch records for all fetuses
-          const allRecordsPromises = pregnancyData.fetuses.map(async (fetus) => {
-            console.log("Fetching for fetusId:", fetus.fetusId);
-            const records = await api.fetus.getFetusMeasurements(fetus.fetusId);
-            return { fetusId: fetus.fetusId, records };
-          });
+          const allRecordsPromises = pregnancyData.fetuses.map(
+            async (fetus) => {
+              console.log("Fetching for fetusId:", fetus.fetusId);
+              const records = await api.fetus.getFetusMeasurements(
+                fetus.fetusId
+              );
+              return { fetusId: fetus.fetusId, records };
+            }
+          );
 
           const allRecordsResults = await Promise.all(allRecordsPromises);
           console.log("All fetuses raw data:", allRecordsResults);
@@ -487,11 +517,11 @@ function Baby() {
             labels: weeks,
             datasets: [
               {
-                label: `Cân nặng thực tế - Thai ${String.fromCharCode(
-                  65 + index
-                )}`,
+                label: `Cân nặng thực tế - Cục vàng ${index + 1}`,
                 data: weeks.map((week) => {
-                  const record = currentFetusRecords.find((r) => r.week === week);
+                  const record = currentFetusRecords.find(
+                    (r) => r.week === week
+                  );
                   return record ? parseFloat(record.fetalWeight) : null;
                 }),
                 borderColor: "#1890ff",
@@ -544,9 +574,7 @@ function Baby() {
             labels: weeks,
             datasets: [
               {
-                label: `Chiều dài thực tế - Thai ${String.fromCharCode(
-                  65 + index
-                )}`,
+                label: `Chiều dài thực tế - Cục vàng ${index + 1}`,
                 data: weeks.map((week) => {
                   const record = currentFetusRecords.find(
                     (r) => r.week === week
@@ -603,9 +631,7 @@ function Baby() {
             labels: weeks,
             datasets: [
               {
-                label: `Chu vi đầu thực tế - Thai ${String.fromCharCode(
-                  65 + index
-                )}`,
+                label: `Chu vi đầu thực tế - Cục vàng ${index + 1}`,
                 data: weeks.map((week) => {
                   const record = currentFetusRecords.find(
                     (r) => r.week === week
@@ -673,23 +699,23 @@ function Baby() {
 
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false,  // This allows the chart to fill its container
+    maintainAspectRatio: false, // This allows the chart to fill its container
     plugins: {
       legend: {
         position: "top",
-        align: "start",
+        align: "center",
         labels: {
           padding: 20,
           boxWidth: 40,
-        }
+        },
       },
       title: {
         display: true,
         text: "So sánh với tiêu chuẩn",
         padding: 20,
         font: {
-          size: 16
-        }
+          size: 16,
+        },
       },
     },
     scales: {
@@ -702,9 +728,9 @@ function Baby() {
           display: true,
           text: "Tuần thai",
           font: {
-            size: 14
-          }
-        }
+            size: 14,
+          },
+        },
       },
       y: {
         beginAtZero: true,
@@ -714,22 +740,27 @@ function Baby() {
         },
         title: {
           display: true,
-          text: "Giá trị đo lường",
+          // text: "Giá trị đo lường",
           font: {
-            size: 14
-          }
-        }
-      }
-    }
+            size: 14,
+          },
+        },
+      },
+    },
   };
 
   return (
     <div>
       <Row
-        gutter={[4, 4]}
-        justify="center"
+        gutter={[32, 32]} // Increased gutter spacing
+        justify="space-around" // Fixed typo from "space-aroun" to "space-around"
         align="middle"
-        style={{ minHeight: "30vh" }}
+        style={{
+          minHeight: "30vh",
+          padding: "20px 40px",
+          maxWidth: "1200px", // Added max width
+          margin: "0 auto",
+        }}
       >
         <Col xs={24} md={4} className="text-center">
           <div
@@ -737,31 +768,83 @@ function Baby() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "10px",
+              gap: "16px",
+              padding: "20px",
+              backgroundColor: "#fff",
+              borderRadius: "8px",
             }}
           >
-         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-  <Title level={5} style={{ margin: 0 }}>
-    Mang thai lần thứ
-  </Title>
-  <div
-    style={{
-      width: "60px",
-      textAlign: "center",
-      padding: "4px 11px",
-      border: "1px solid #d9d9d9",
-      borderRadius: "2px",
-      backgroundColor: "#f5f5f5"
-    }}
-  >
-    {pregnancyHistoryData?.findIndex(p => p.pregnancyId === pregnancyData?.pregnancyId) + 1 || pregnancyNumber}
-  </div>
-</div>
+            <span
+              style={{
+                margin: 0,
+                fontSize: "20px",
+                fontFamily: "Montserrat, sans-serif",
+                background:
+                  "linear-gradient(45deg, #73d13d, #36cfc9, #40a9ff, #597ef7, #9254de, #f759ab, #ff4d4f)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+              }}
+            >
+              MANG THAI LẦN{" "}
+              {pregnancyHistoryData?.findIndex(
+                (p) => p.pregnancyId === pregnancyData?.pregnancyId
+              ) + 1 || pregnancyNumber}
+            </span>
+            <span
+              style={{
+                fontSize: "20px",
+                fontWeight: "bold",
+                color: "#1890ff",
+              }}
+            ></span>
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <Button
+                type="primary"
+                onClick={() => setIsModalOpen(true)}
+                style={{
+                  background: "linear-gradient(45deg, #73d13d, #36cfc9)",
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(54, 207, 201, 0.3)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(54, 207, 201, 0.4)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 2px 8px rgba(54, 207, 201, 0.3)";
+                }}
+              >
+                Nhập số tuần hiện tại
+              </Button>
+            </div>
           </div>
         </Col>
 
         <Col xs={24} md={6}>
-          <Title level={4}>Mom Information</Title>
+          <Title
+            level={4}
+            style={{
+              margin: 0,
+              fontSize: "20px",
+              fontFamily: "Montserrat, sans-serif",
+              background:
+                "linear-gradient(45deg, #73d13d, #36cfc9, #40a9ff, #597ef7, #9254de, #f759ab, #ff4d4f)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontWeight: "bold",
+              textAlign: "center",
+              width: "100%",
+            }}
+          >
+            THÔNG TIN NGÀY THAI
+          </Title>
           {[
             {
               label: "Tuần thai kỳ hiện tại",
@@ -787,14 +870,41 @@ function Baby() {
             </p>
           ))}
           {isPregnancyActive && pregnancyData?.pregnancyId && (
-            <Button
-              type="primary"
-              danger
-              style={{ marginTop: 10 }}
-              onClick={() => setIsEndPregnancyModalOpen(true)}
-            >
-              Kết thúc thai kỳ chính
-            </Button>
+            <Space>
+              <Button
+                type="primary"
+                danger
+                onClick={() => {
+                  Modal.confirm({
+                    title: "Xác nhận kết thúc thai kỳ",
+                    content:
+                      "Bạn có chắc chắn muốn kết thúc thai kỳ này không?",
+                    okText: "Xác nhận",
+                    cancelText: "Hủy",
+                    onOk: () =>
+                      handleCancelPregnancy(pregnancyData.pregnancyId), // Changed from pregnancy.pregnancyId
+                  });
+                }}
+              >
+                Kết thúc thai kỳ
+              </Button>
+
+              <Button
+                type="primary"
+                onClick={() => {
+                  Modal.confirm({
+                    title: "Xác nhận hoàn thành thai kỳ",
+                    content:
+                      "Bạn có chắc chắn muốn hoàn thành thai kỳ này không?",
+                    okText: "Xác nhận",
+                    cancelText: "Hủy",
+                    onOk: () => handleUpdateStatus(pregnancyData.pregnancyId), // Changed from pregnancy.pregnancyId
+                  });
+                }}
+              >
+                Hoàn thành thai kỳ
+              </Button>
+            </Space>
           )}
         </Col>
 
@@ -808,26 +918,52 @@ function Baby() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Title level={4} style={{ margin: 0, fontSize: "13px" }}>
-                Bạn đang mang thai
+              <Title
+                level={4}
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  fontFamily: "Montserrat, sans-serif",
+                  background:
+                    "linear-gradient(45deg, #73d13d, #36cfc9, #40a9ff, #597ef7, #9254de, #f759ab, #ff4d4f)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Bạn đang mang
               </Title>
-              <div style={{ width: 100 }}>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  background: "linear-gradient(45deg, #73d13d, #36cfc9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  width: "auto",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {pregnancyData?.totalFetuses === 1
                   ? "Đơn thai"
                   : pregnancyData?.totalFetuses === 2
-                    ? "Song thai"
-                    : pregnancyData?.totalFetuses > 2
-                      ? `${pregnancyData.totalFetuses} thai`
-                      : "Chưa có thông tin"}
+                  ? "Song thai"
+                  : pregnancyData?.totalFetuses > 2
+                  ? `${pregnancyData.totalFetuses} thai`
+                  : "Chưa có thông tin"}
               </div>
             </div>
 
             <div
               style={{
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
+                gap: "10px",
+                padding: "20px",
+                backgroundColor: "#fff",
+                borderRadius: "8px",
               }}
             >
               {numberOfFetuses > 1 && (
@@ -851,36 +987,47 @@ function Baby() {
                   <div
                     style={{
                       display: "flex",
-                      flexDirection: "column",
                       alignItems: "center",
-                      gap: "8px",
+                      gap: "16px",
+                      marginBottom: "8px",
                     }}
                   >
-                    <Avatar
-                      size={100}
-                      style={{
-                        cursor: "pointer",
-                        border:
-                          currentAvatar === index
-                            ? "2px solid #1890ff"
-                            : "none",
-                      }}
-                      onClick={() => setCurrentAvatar(index)}
-                    >
-                      {String.fromCharCode(65 + index)}
-                    </Avatar>
-                    <div style={{ textAlign: "center", marginTop: "8px" }}>
+                    <Tooltip title={`Cục vàng ${index + 1}`} placement="top">
+                      <Avatar
+                        size={100}
+                        src={`https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvutYtRnnhZQfDq7_hEU-DWGdiDV16Kzz57KINw4EnG90UkCUrYJiQFWyPqICVt29O7PU&usqp=CAU`}
+                        style={{
+                          cursor: "pointer",
+                          border:
+                            currentAvatar === index
+                              ? "2px solid #1890ff"
+                              : "none",
+                          background:
+                            "linear-gradient(45deg, #FFD700, #FFA500)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                        }}
+                        onClick={() => setCurrentAvatar(index)}
+                      />{" "}
                       <Title
                         level={5}
                         style={{
                           margin: 0,
-                          alignContent: "center",
-                          fontSize: "12px",
+                          fontSize: "14px",
+                          fontFamily: "Montserrat, sans-serif",
+                          background:
+                            "linear-gradient(45deg, #FFD700, #FFA500)",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          fontWeight: "bold",
                         }}
                       >
-                        Thai nhi {String.fromCharCode(65 + index)}
+                        Cục vàng {index + 1}
                       </Title>
-                    </div>
+                    </Tooltip>
+
                     {pregnancyData?.fetuses && pregnancyData.fetuses[index] && (
                       <Space direction="vertical" size="small">
                         {numberOfFetuses > 1 &&
@@ -892,11 +1039,10 @@ function Baby() {
                               size="small"
                               onClick={() => {
                                 Modal.confirm({
-                                  title: `Xác nhận kết thúc thai nhi ${String.fromCharCode(
-                                    65 + index
+                                  title: `Xác nhận tạm biệt cục vàng {index + 1}
                                   )}`,
                                   content:
-                                    "Bạn có chắc chắn muốn kết thúc thai nhi này không? Hành động này không thể hoàn tác.",
+                                    "Bạn có chắc chắn muốn tạm biệt cục vàng này không? Hành động này không thể hoàn tác.",
                                   okText: "Xác nhận",
                                   cancelText: "Hủy",
                                   onOk: async () => {
@@ -905,11 +1051,7 @@ function Baby() {
                                         pregnancyData.pregnancyId,
                                         pregnancyData.fetuses[index].fetusId
                                       );
-                                      message.success(
-                                        `Đã kết thúc thai nhi ${String.fromCharCode(
-                                          65 + index
-                                        )} thành công`
-                                      );
+                                      message.success(`Tạm biệt cục vàng `);
                                     } catch (error) {
                                       message.error(
                                         "Không thể kết thúc thai nhi"
@@ -919,7 +1061,7 @@ function Baby() {
                                 });
                               }}
                             >
-                              Kết thúc thai {String.fromCharCode(65 + index)}
+                              Tạm biệt cục vàng {index + 1}
                             </Button>
                           )}
                         <Tag
@@ -927,21 +1069,21 @@ function Baby() {
                             pregnancyData.fetuses[index].status === "ISSUE"
                               ? "error"
                               : pregnancyData.fetuses[index].status === "CANCEL"
-                                ? "default"
-                                : pregnancyData.fetuses[index].status ===
-                                  "COMPLETED"
-                                  ? "success"
-                                  : "processing"
+                              ? "default"
+                              : pregnancyData.fetuses[index].status ===
+                                "COMPLETED"
+                              ? "success"
+                              : "processing"
                           }
                         >
                           {pregnancyData.fetuses[index].status === "ISSUE"
-                            ? "Có vấn đề"
+                            ? "Em bé đang có vấn đề!!!! bạn xem thử ở các biểu đồ xem"
                             : pregnancyData.fetuses[index].status === "CANCEL"
-                              ? "Đã sảy thai"
-                              : pregnancyData.fetuses[index].status ===
-                                "COMPLETED"
-                                ? "Đã hoàn thành"
-                                : "Đang phát triển"}
+                            ? "Đã sảy thai"
+                            : pregnancyData.fetuses[index].status ===
+                              "COMPLETED"
+                            ? "Đã hoàn thành"
+                            : "Đang phát triển"}
                         </Tag>
                       </Space>
                     )}
@@ -966,9 +1108,6 @@ function Baby() {
       <Col span={24}>
         <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
       </Col>
-
-      {/* Add this new section for the records table */}
-      {/* Replace the single table with multiple tables based on number of fetuses */}
       {pregnancyData?.fetuses?.map((fetus, index) => (
         <Col
           span={20}
@@ -977,28 +1116,50 @@ function Baby() {
           key={fetus.fetusId}
         >
           <Card
-            title={`Lịch sử đo lường thai nhi ${String.fromCharCode(
-              65 + index
-            )}`}
+            title={
+              <span
+                style={{
+                  fontSize: "20px",
+                  fontFamily: "Montserrat, sans-serif",
+                  background:
+                    "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontWeight: "bold",
+                  padding: "10px 0",
+                }}
+              >
+                ✨ Chỉ số của cục vàng {index + 1}
+              </span>
+            }
+            style={{
+              borderRadius: "15px",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+              background: "linear-gradient(to right bottom, #fff, #f8f8f8)",
+            }}
+            headStyle={{
+              borderBottom: "2px solidrgb(130, 197, 96)",
+              background: "rgba(255, 215, 0, 0.05)",
+            }}
             extra={
               <Tag
                 color={
                   fetus.status === "ISSUE"
                     ? "error"
                     : fetus.status === "CANCEL"
-                      ? "default"
-                      : fetus.status === "COMPLETED"
-                        ? "success"
-                        : "processing"
+                    ? "default"
+                    : fetus.status === "COMPLETED"
+                    ? "success"
+                    : "processing"
                 }
               >
                 {fetus.status === "ISSUE"
-                  ? "Có vấn đề"
+                  ? "Em bé đang có vấn đề!!!! bạn kiểm tra ở các biểu đồ xem"
                   : fetus.status === "CANCEL"
-                    ? "Đã sảy thai"
-                    : fetus.status === "COMPLETED"
-                      ? "Đã hoàn thành"
-                      : "Đang phát triển"}
+                  ? "Đã sảy thai"
+                  : fetus.status === "COMPLETED"
+                  ? "Đã hoàn thành"
+                  : "Đang phát triển"}
               </Tag>
             }
           >
@@ -1008,36 +1169,101 @@ function Baby() {
               )}
               columns={[
                 {
-                  title: "Tuần thai",
+                  title: (
+                    <span
+                      style={{
+                        color: "#1890ff",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      }}
+                    >
+                      Tuần thai
+                    </span>
+                  ),
                   dataIndex: "week",
                   key: "week",
                   sorter: (a, b) => a.week - b.week,
-                  render: (weeks) => (weeks ? `${weeks} ` : "N/A"),
+                  render: (weeks) => (
+                    <span style={{ fontSize: "15px", fontWeight: "500" }}>
+                      {weeks ? `${weeks} tuần` : "N/A"}
+                    </span>
+                  ),
+                  align: "center",
                 },
                 {
-                  title: "Cân nặng (g)",
+                  title: (
+                    <span
+                      style={{
+                        color: "#52c41a",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      }}
+                    >
+                      Cân nặng (g)
+                    </span>
+                  ),
                   dataIndex: "fetalWeight",
                   key: "fetalWeight",
-                  render: (value) => value?.toFixed(1) || "N/A",
+                  render: (value) => (
+                    <span style={{ fontSize: "15px", fontWeight: "500" }}>
+                      {value?.toFixed(1) || "N/A"}
+                    </span>
+                  ),
                   sorter: (a, b) => (a.fetalWeight || 0) - (b.fetalWeight || 0),
+                  align: "center",
                 },
                 {
-                  title: "Chiều dài (cm)",
+                  title: (
+                    <span
+                      style={{
+                        color: "#722ed1",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      }}
+                    >
+                      Chiều dài (cm)
+                    </span>
+                  ),
                   dataIndex: "femurLength",
                   key: "femurLength",
-                  render: (value) => value?.toFixed(1) || "N/A",
+                  render: (value) => (
+                    <span style={{ fontSize: "15px", fontWeight: "500" }}>
+                      {value?.toFixed(1) || "N/A"}
+                    </span>
+                  ),
                   sorter: (a, b) => (a.femurLength || 0) - (b.femurLength || 0),
+                  align: "center",
                 },
                 {
-                  title: "Chu vi đầu (mm)",
+                  title: (
+                    <span
+                      style={{
+                        color: "#eb2f96",
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                      }}
+                    >
+                      Chu vi đầu (mm)
+                    </span>
+                  ),
                   dataIndex: "headCircumference",
                   key: "headCircumference",
-                  render: (value) => value?.toFixed(1) || "N/A",
+                  render: (value) => (
+                    <span style={{ fontSize: "15px", fontWeight: "500" }}>
+                      {value?.toFixed(1) || "N/A"}
+                    </span>
+                  ),
                   sorter: (a, b) =>
                     (a.headCircumference || 0) - (b.headCircumference || 0),
+                  align: "center",
                 },
               ]}
-              pagination={{ pageSize: 5 }}
+              pagination={{ pageSize: 10 }}
+              style={{
+                borderRadius: "8px",
+                overflow: "hidden",
+              }}
+              className="custom-table"
             />
           </Card>
         </Col>
@@ -1071,7 +1297,7 @@ function Baby() {
               console.error("Create pregnancy error:", error);
               message.error(
                 "Không thể tạo thai kỳ: " +
-                (error.response?.data?.message || error.message)
+                  (error.response?.data?.message || error.message)
               );
             }
           }}
@@ -1310,20 +1536,29 @@ function Baby() {
                       display: "inline-block",
                       position: "relative",
                       cursor: "pointer",
+                      padding: "15px",
+                      borderRadius: "12px",
+                      background: item.colors.bg,
+                      transition: "all 0.3s ease",
                     }}
                     onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-5px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 15px rgba(0,0,0,0.1)";
                       const icon = e.currentTarget.querySelector(".icon");
                       const text = e.currentTarget.querySelector(".tooltip");
-                      icon.style.transform = "scale(1.2)";
-                      icon.style.color = "#a6a9ab";
+                      icon.style.transform = "scale(1.1) rotate(5deg)";
+                      icon.style.color = item.colors.icon;
                       text.style.opacity = "1";
                       text.style.visibility = "visible";
                     }}
                     onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
                       const icon = e.currentTarget.querySelector(".icon");
                       const text = e.currentTarget.querySelector(".tooltip");
-                      icon.style.transform = "scale(1)";
-                      icon.style.color = "black";
+                      icon.style.transform = "scale(1) rotate(0)";
+                      icon.style.color = "#666";
                       text.style.opacity = "0";
                       text.style.visibility = "hidden";
                     }}
@@ -1331,10 +1566,12 @@ function Baby() {
                     <div style={{ position: "relative" }}>
                       <FontAwesomeIcon
                         icon={item.icon}
-                        size="3x"
+                        size="2x"
                         className="icon"
                         style={{
-                          transition: "transform 0.2s, color 0.2s",
+                          color: "#666",
+                          transition: "all 0.3s ease",
+                          filter: "drop-shadow(2px 2px 3px rgba(0,0,0,0.1))",
                         }}
                       />
                       {item.badge > 0 && (
@@ -1358,14 +1595,13 @@ function Baby() {
                         </div>
                       )}
                     </div>
-
                     <span
                       className="tooltip"
                       style={{
                         position: "absolute",
-                        top: "50%",
+                        bottom: "100%", // Changed from top: 50% to bottom: 100%
                         left: "50%",
-                        transform: "translate(-50%, -50%)",
+                        transform: "translateX(-50%)", // Removed translateY
                         background: "rgba(0, 0, 0, 0.8)",
                         color: "white",
                         padding: "5px 10px",
@@ -1375,6 +1611,7 @@ function Baby() {
                         opacity: 0,
                         visibility: "hidden",
                         transition: "opacity 0.2s ease",
+                        marginBottom: "10px", // Added margin to create space between tooltip and icon
                       }}
                     >
                       {item.label}
@@ -1394,17 +1631,37 @@ function Baby() {
           >
             <Button
               type="primary"
-              onClick={() => setIsModalOpen(true)}
-              style={{ marginTop: "10px" }}
-            >
-              Nhập số liệu của em bé
-            </Button>
-            <Button
-              type="primary"
               onClick={() => setIsCreateFetusRecordModalOpen(true)}
-              style={{ marginTop: "10px" }}
+              style={{
+                marginTop: "10px",
+                height: "45px",
+                fontSize: "16px",
+                fontWeight: "bold",
+                background: "linear-gradient(45deg, #52c41a, #95de64)",
+                border: "none",
+                boxShadow: "0 4px 15px rgba(82, 196, 26, 0.3)",
+                transition: "all 0.3s ease",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 20px rgba(82, 196, 26, 0.4)";
+                e.currentTarget.style.background =
+                  "linear-gradient(45deg, #95de64, #52c41a)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 15px rgba(82, 196, 26, 0.3)";
+                e.currentTarget.style.background =
+                  "linear-gradient(45deg, #52c41a, #95de64)";
+              }}
             >
-              Tạo bản ghi thai nhi
+              ✨ Tạo bản ghi thai nhi
             </Button>
           </div>
 
@@ -1498,19 +1755,64 @@ function Baby() {
                 offset={2}
                 style={{ marginBottom: "20px" }}
                 key={`weight-${fetus.fetusId}`}
+                ref={weightChartRef}
               >
                 <Card
-                  title={`Biểu đồ cân nặng - Thai ${String.fromCharCode(65 + index)}`}
-                  style={{ width: '100%' }}
+                  title={
+                    <span
+                      style={{
+                        fontSize: "20px",
+                        fontFamily: "Montserrat, sans-serif",
+                        background:
+                          "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        fontWeight: "bold",
+                        padding: "10px 0",
+                      }}
+                    >
+                      ✨ Biểu đồ cân nặng - Cục vàng {index + 1}
+                    </span>
+                  }
+                  style={{
+                    width: "100%",
+                    borderRadius: "15px",
+                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                    background:
+                      "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                  }}
+                  headStyle={{
+                    borderBottom: "2px solid rgb(130, 197, 96)",
+                    background: "rgba(255, 215, 0, 0.05)",
+                  }}
                 >
-                  <div style={{ height: '600px', width: '100%' }}>
+                  <div
+                    style={{
+                      height: "600px",
+                      width: "100%",
+                      padding: "20px",
+                      borderRadius: "10px",
+                      background: "#fff",
+                    }}
+                  >
                     {fetusChartData[fetus.fetusId]?.weightData ? (
                       <Line
                         data={fetusChartData[fetus.fetusId].weightData}
                         options={chartOptions}
                       />
                     ) : (
-                      <div>Loading...</div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: "100%",
+                          fontSize: "16px",
+                          color: "#666",
+                        }}
+                      >
+                        Loading...
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -1526,19 +1828,64 @@ function Baby() {
                 offset={2}
                 style={{ marginBottom: "20px" }}
                 key={`height-${fetus.fetusId}`}
+                ref={heightChartRef}
               >
                 <Card
-                  title={`Biểu đồ chiều dài - Thai ${String.fromCharCode(65 + index)}`}
-                  style={{ width: '100%' }}
+                  title={
+                    <span
+                      style={{
+                        fontSize: "20px",
+                        fontFamily: "Montserrat, sans-serif",
+                        background:
+                          "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        fontWeight: "bold",
+                        padding: "10px 0",
+                      }}
+                    >
+                      ✨ Biểu đồ chiều dài - Cục vàng {index + 1}
+                    </span>
+                  }
+                  style={{
+                    width: "100%",
+                    borderRadius: "15px",
+                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                    background:
+                      "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                  }}
+                  headStyle={{
+                    borderBottom: "2px solid rgb(130, 197, 96)",
+                    background: "rgba(255, 215, 0, 0.05)",
+                  }}
                 >
-                  <div style={{ height: '600px', width: '100%' }}>
+                  <div
+                    style={{
+                      height: "600px",
+                      width: "100%",
+                      padding: "20px",
+                      borderRadius: "10px",
+                      background: "#fff",
+                    }}
+                  >
                     {fetusChartData[fetus.fetusId]?.heightData ? (
                       <Line
                         data={fetusChartData[fetus.fetusId].heightData}
                         options={chartOptions}
                       />
                     ) : (
-                      <div>Loading...</div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: "100%",
+                          fontSize: "16px",
+                          color: "#666",
+                        }}
+                      >
+                        Loading...
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -1554,19 +1901,64 @@ function Baby() {
                 offset={2}
                 style={{ marginBottom: "20px" }}
                 key={`circumference-${fetus.fetusId}`}
+                ref={circumferenceChartRef}
               >
                 <Card
-                  title={`Biểu đồ chu vi đầu - Thai ${String.fromCharCode(65 + index)}`}
-                  style={{ width: '100%' }}
+                  title={
+                    <span
+                      style={{
+                        fontSize: "20px",
+                        fontFamily: "Montserrat, sans-serif",
+                        background:
+                          "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        fontWeight: "bold",
+                        padding: "10px 0",
+                      }}
+                    >
+                      ✨ Biểu đồ chu vi đầu - Cục vàng {index + 1}
+                    </span>
+                  }
+                  style={{
+                    width: "100%",
+                    borderRadius: "15px",
+                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                    background:
+                      "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                  }}
+                  headStyle={{
+                    borderBottom: "2px solid rgb(130, 197, 96)",
+                    background: "rgba(255, 215, 0, 0.05)",
+                  }}
                 >
-                  <div style={{ height: '600px', width: '100%' }}>
+                  <div
+                    style={{
+                      height: "600px",
+                      width: "100%",
+                      padding: "20px",
+                      borderRadius: "10px",
+                      background: "#fff",
+                    }}
+                  >
                     {fetusChartData[fetus.fetusId]?.circumferenceData ? (
                       <Line
                         data={fetusChartData[fetus.fetusId].circumferenceData}
                         options={chartOptions}
                       />
                     ) : (
-                      <div>Loading...</div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: "100%",
+                          fontSize: "16px",
+                          color: "#666",
+                        }}
+                      >
+                        Loading...
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -1587,23 +1979,43 @@ function Baby() {
 
           <Tooltip title="Quay về đầu trang" placement="top">
             <Button
-              type="primary"
+              type="text"
               style={{
                 position: "fixed",
                 bottom: "50px",
                 right: "50px",
                 borderRadius: "50%",
-                width: "50px",
-                height: "50px",
+                width: "60px",
+                height: "60px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "20px",
+                fontSize: "24px",
                 zIndex: 1000,
+                background: "linear-gradient(45deg, #52c41a, #95de64)",
+                border: "none",
+                boxShadow: "0 4px 15px rgba(82, 196, 26, 0.3)",
+                transition: "all 0.3s ease",
+                transform: "rotate(0deg)",
+                animation: "float 2s ease-in-out infinite",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.1) rotate(180deg)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 20px rgba(82, 196, 26, 0.4)";
+                e.currentTarget.style.background =
+                  "linear-gradient(45deg, #95de64, #52c41a)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 15px rgba(82, 196, 26, 0.3)";
+                e.currentTarget.style.background =
+                  "linear-gradient(45deg, #52c41a, #95de64)";
               }}
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             >
-              ↑
+              <ArrowUpOutlined style={{ color: "#fff", fontSize: "24px" }} />
             </Button>
           </Tooltip>
 
@@ -1619,52 +2031,84 @@ function Baby() {
                 pregnancyHistoryData.map((pregnancy, index) => (
                   <Card
                     key={pregnancy.pregnancyId || index}
-                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${pregnancy.status === "ONGOING"
+                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${
+                      pregnancy.status === "ONGOING"
                         ? "Đang mang thai"
                         : "Đã kết thúc"
-                      }`}
+                    }`}
                     style={{ marginBottom: 16 }}
                     extra={
+                      // ... existing code ...
                       pregnancy.status === "ONGOING" && (
                         <Space>
-                          {pregnancy.fetuses?.length > 1 ? (
-                            <Button
-                              type="primary"
-                              danger
-                              onClick={() => {
-                                Modal.confirm({
-                                  title: "Xác nhận kết thúc toàn bộ thai kỳ",
-                                  content:
-                                    "Bạn có chắc chắn muốn kết thúc toàn bộ thai kỳ này không? Hành động này không thể hoàn tác.",
-                                  okText: "Xác nhận",
-                                  cancelText: "Hủy",
-                                  onOk: () =>
-                                    handleUpdateStatus(pregnancy.pregnancyId),
-                                });
-                              }}
-                            >
-                              Kết thúc toàn bộ thai kỳ
-                            </Button>
-                          ) : (
-                            <Button
-                              type="primary"
-                              danger
-                              onClick={() => {
-                                Modal.confirm({
-                                  title: "Xác nhận kết thúc thai kỳ",
-                                  content:
-                                    "Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.",
-                                  okText: "Xác nhận",
-                                  cancelText: "Hủy",
-                                  onOk: () =>
-                                    handleUpdateStatus(pregnancy.pregnancyId),
-                                });
-                              }}
-                            >
-                              Kết thúc thai kỳ
-                            </Button>
-                          )}
+                          <Button
+                            type="primary"
+                            danger
+                            style={{
+                              marginTop: 10,
+                              background:
+                                "linear-gradient(45deg, #ff4d4f, #ff7875)",
+                              // ... existing styles ...
+                            }}
+                            onClick={() => {
+                              Modal.confirm({
+                                title: "Xác nhận kết thúc thai kỳ",
+                                content:
+                                  "Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.",
+                                okText: "Xác nhận",
+                                cancelText: "Hủy",
+                                onOk: async () => {
+                                  try {
+                                    await handleCancelPregnancy(
+                                      pregnancyData.pregnancyId
+                                    );
+                                    message.success("Đã kết thúc thai kỳ");
+                                  } catch (error) {
+                                    message.error("Không thể kết thúc thai kỳ");
+                                  }
+                                },
+                              });
+                            }}
+                          >
+                            Kết thúc thai kỳ chính
+                          </Button>
+
+                          <Button
+                            type="primary"
+                            style={{
+                              marginTop: 10,
+                              background:
+                                "linear-gradient(45deg, #52c41a, #73d13d)",
+                              // ... existing styles ...
+                            }}
+                            onClick={() => {
+                              Modal.confirm({
+                                title: "Xác nhận hoàn thành thai kỳ",
+                                content:
+                                  "Bạn có chắc chắn muốn đánh dấu thai kỳ này là đã hoàn thành? Hành động này không thể hoàn tác.",
+                                okText: "Xác nhận",
+                                cancelText: "Hủy",
+                                onOk: async () => {
+                                  try {
+                                    await handleUpdateStatus(
+                                      pregnancyData.pregnancyId
+                                    );
+                                    message.success(
+                                      "Thai kỳ đã được đánh dấu là hoàn thành"
+                                    );
+                                  } catch (error) {
+                                    message.error(
+                                      "Không thể hoàn thành thai kỳ"
+                                    );
+                                  }
+                                },
+                              });
+                            }}
+                          >
+                            Hoàn thành thai kỳ
+                          </Button>
                         </Space>
+                        // ... existing code ...
                       )
                     }
                   >
@@ -1674,24 +2118,24 @@ function Baby() {
                           <strong>Ngày bắt đầu:</strong>{" "}
                           {pregnancy.startDate
                             ? new Date(pregnancy.startDate).toLocaleDateString(
-                              "vi-VN"
-                            )
+                                "vi-VN"
+                              )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày dự sinh:</strong>{" "}
                           {pregnancy.dueDate
                             ? new Date(pregnancy.dueDate).toLocaleDateString(
-                              "vi-VN"
-                            )
+                                "vi-VN"
+                              )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày khám gần nhất:</strong>{" "}
                           {pregnancy.examDate
                             ? new Date(pregnancy.examDate).toLocaleDateString(
-                              "vi-VN"
-                            )
+                                "vi-VN"
+                              )
                             : "Chưa có"}
                         </p>
                       </Col>
@@ -1712,15 +2156,15 @@ function Baby() {
                               pregnancy.status === "ONGOING"
                                 ? "processing"
                                 : pregnancy.status === "COMPLETED"
-                                  ? "success"
-                                  : "default"
+                                ? "success"
+                                : "default"
                             }
                           >
                             {pregnancy.status === "ONGOING"
                               ? "Đang mang thai"
                               : pregnancy.status === "COMPLETED"
-                                ? "Đã hoàn thành"
-                                : "Đã kết thúc"}
+                              ? "Đã hoàn thành"
+                              : "Đã kết thúc"}
                           </Tag>
                         </p>
                       </Col>
@@ -1792,19 +2236,19 @@ function Baby() {
                                         fetus.status === "ISSUE"
                                           ? "error"
                                           : fetus.status === "CANCEL"
-                                            ? "default"
-                                            : fetus.status === "COMPLETED"
-                                              ? "success"
-                                              : "processing"
+                                          ? "default"
+                                          : fetus.status === "COMPLETED"
+                                          ? "success"
+                                          : "processing"
                                       }
                                     >
                                       {fetus.status === "ISSUE"
                                         ? "Có vấn đề"
                                         : fetus.status === "CANCEL"
-                                          ? "Đã sảy thai"
-                                          : fetus.status === "COMPLETED"
-                                            ? "Đã hoàn thành"
-                                            : "Đang phát triển"}
+                                        ? "Đã sảy thai"
+                                        : fetus.status === "COMPLETED"
+                                        ? "Đã hoàn thành"
+                                        : "Đang phát triển"}
                                     </Tag>
                                   </Col>
                                   <Col span={8}>

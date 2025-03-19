@@ -69,7 +69,7 @@ const HomePage = () => {
                 fontFamily: "'Comfortaa', cursive",
               }}
             >
-              BabyCare Center
+              Theo Dõi Thai Kỳ
             </Typography>
             <Typography
               variant="h4"
@@ -81,7 +81,7 @@ const HomePage = () => {
                 fontFamily: "'Quicksand', sans-serif",
               }}
             >
-              Your Journey to Motherhood ✨
+              Hành Trình Làm Mẹ Của Bạn ✨
             </Typography>
           </Container>
         </Box>
@@ -135,19 +135,19 @@ const HomePage = () => {
             }}
           >
             {[
-              { src: '/images/baby-smile.jpg', title: 'Baby Care' },
-              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-2-07-11-44-50.jpg', title: 'BaBy' },
-              { src: '/images/134949-dep-tu-trong-trung-2.jpg', title: 'Baby Development' },
-              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-6-07-11-46-22.jpg', title: 'Pregnancy Care' },
-              { src: '/images/image001-2900-1703579998.jpg', title: 'Family Care' },
-              { src: '/images/tre-mut-tay-3-c161-1662443957357294142935.jpg', title: 'Child Care' },
+              { src: '/images/baby-smile.jpg', title: 'Chăm Sóc Em Bé' },
+              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-2-07-11-44-50.jpg', title: 'Em Bé' },
+              { src: '/images/134949-dep-tu-trong-trung-2.jpg', title: 'Sự Phát Triển Của Bé' },
+              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-6-07-11-46-22.jpg', title: 'Chăm Sóc Thai Kỳ' },
+              { src: '/images/image001-2900-1703579998.jpg', title: 'Chăm Sóc Gia Đình' },
+              { src: '/images/tre-mut-tay-3-c161-1662443957357294142935.jpg', title: 'Chăm Sóc Trẻ Em' },
               // Duplicate for infinite effect
-              { src: '/images/baby-smile.jpg', title: 'Baby Care' },
-              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-2-07-11-44-50.jpg', title: 'BaBy' },
-              { src: '/images/134949-dep-tu-trong-trung-2.jpg', title: 'Baby Development' },
-              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-6-07-11-46-22.jpg', title: 'Pregnancy Care' },
-              { src: '/images/image001-2900-1703579998.jpg', title: 'Family Care' },
-              { src: '/images/tre-mut-tay-3-c161-1662443957357294142935.jpg', title: 'Child Care' },
+              { src: '/images/baby-smile.jpg', title: 'Chăm Sóc Em Bé' },
+              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-2-07-11-44-50.jpg', title: 'Em Bé' },
+              { src: '/images/134949-dep-tu-trong-trung-2.jpg', title: 'Sự Phát Triển Của Bé' },
+              { src: '/images/hinh-nen-em-be-de-thuong-cho-dien-thoai-6-07-11-46-22.jpg', title: 'Chăm Sóc Thai Kỳ' },
+              { src: '/images/image001-2900-1703579998.jpg', title: 'Chăm Sóc Gia Đình' },
+              { src: '/images/tre-mut-tay-3-c161-1662443957357294142935.jpg', title: 'Chăm Sóc Trẻ Em' },
             ].map((item, index) => (
               <Box
                 key={index}
@@ -197,7 +197,7 @@ const HomePage = () => {
               }
             }}
           >
-            Pregnancy Journey Blog
+            Blog Hành Trình Thai Kỳ
           </Typography>
         </Slide>
         <Grid container spacing={4}>
@@ -263,7 +263,7 @@ const HomePage = () => {
                       e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
-                    Read More →
+                    Xem Thêm →
                   </Link>
                 </Paper>
               </Fade>

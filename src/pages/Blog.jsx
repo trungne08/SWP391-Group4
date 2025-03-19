@@ -48,19 +48,22 @@ const StyledCardMedia = styled(CardMedia)({
 });
 
 const BlogTitle = styled(Typography)(({ theme }) => ({
-  fontSize: '2.5rem',
-  fontWeight: 700,
+  fontSize: '4rem', // Increased from 2.5rem
+  fontWeight: 800, // Made bolder
   textAlign: 'center',
-  marginBottom: theme.spacing(6),
+  marginBottom: theme.spacing(8),
   color: '#2c3e50',
   position: 'relative',
+  fontFamily: "'Comic Sans MS', cursive", // Added playful font
+  letterSpacing: '2px',
+  textShadow: '2px 2px 4px rgba(248, 153, 224, 0.82)',
   '&::after': {
     content: '""',
     position: 'absolute',
-    bottom: '-16px',
+    bottom: '-20px',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: '80px',
+    width: '120px', // Made wider
     height: '4px',
     background: 'linear-gradient(45deg, #FF69B4, #FFB6C1)',
     borderRadius: '2px',
@@ -113,7 +116,7 @@ function Blog() {
     <Container maxWidth="lg" sx={{ py: 8 }}>
       <Fade in timeout={1000}>
         <BlogTitle variant="h1">
-          Pregnancy Journey Blog
+          Blog Hành Trình Thai Kỳ
         </BlogTitle>
       </Fade>
 
@@ -160,7 +163,7 @@ function Blog() {
                     '&:hover': { pl: 1 },
                     transition: 'all 0.3s ease'
                   }}>
-                    Read More →
+                    Xem Thêm →
                   </Box>
                 </CardContent>
               </StyledCard>
@@ -172,7 +175,7 @@ function Blog() {
       {blogs.length > 6 && (
         <Box sx={{ textAlign: 'center' }}>
           <ShowMoreButton onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? "Show Less" : "Show More"}
+            {isExpanded ? "Ẩn Bớt" : "Xem Thêm"}
           </ShowMoreButton>
         </Box>
       )}

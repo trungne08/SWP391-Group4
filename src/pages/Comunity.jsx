@@ -279,8 +279,26 @@ function Comunity() {
       <div style={{ position: "relative", height: "400px", borderRadius: "8px", overflow: "hidden", marginBottom: "30px" }}>
         <div style={{ backgroundImage: "url('/img2.webp')", backgroundSize: "cover", backgroundPosition: "center", height: "100%", width: "100%", filter: "brightness(0.8)" }} />
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", color: "#fff", zIndex: 2 }}>
-          <Title style={{ color: "#fff", marginBottom: "20px", fontSize: "48px" }}>Community</Title>
-          <Text style={{ color: "#fff", fontSize: "24px" }}>52+ million users every month</Text>
+          <Title style={{ 
+            color: "#fff", 
+            marginBottom: "20px", 
+            fontSize: "72px",
+            fontFamily: "'Comic Sans MS', cursive",
+            textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+            fontWeight: "bold",
+            letterSpacing: "2px"
+          }}>
+            Community
+          </Title>
+          <Text style={{ 
+            color: "#fff", 
+            fontSize: "32px",
+            fontFamily: "'Arial', sans-serif",
+            textShadow: "1px 1px 3px rgba(0,0,0,0.3)",
+            letterSpacing: "1px"
+          }}>
+            52+ million users every month
+          </Text>
         </div>
       </div>
 

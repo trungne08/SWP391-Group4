@@ -85,51 +85,126 @@ function SubscriptionHistory() {
   }
 
   return (
-    <div style={{ padding: '40px 20px' }}>
-      <Title level={2}>Subscription History</Title>
+    <div style={{ 
+      padding: '40px 20px',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      backgroundColor: '#f5f5f5',
+      minHeight: '100vh'
+    }}>
+      <Title level={2} style={{
+        textAlign: 'center',
+        marginBottom: '40px',
+        color: '#1890ff',
+        fontWeight: 'bold',
+        fontSize: '2.5rem'
+      }}>Subscription History</Title>
+      
       {subscriptions.length > 0 ? (
-        subscriptions.map((subscription, index) => {
-          console.log('Rendering subscription:', subscription);
-          return (
-            <Card key={index} style={{ marginBottom: '20px' }}>
-              <Title level={4}>{subscription.packageName}</Title>
-              <Text>Status: <span style={{
+        subscriptions.map((subscription, index) => (
+          <Card 
+            key={index} 
+            style={{ 
+              marginBottom: '20px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s ease',
+              cursor: 'pointer',
+              border: subscription.status === 'Active' ? '2px solid #52c41a' : 'none'
+            }}
+            hoverable
+          >
+            <Title level={4} style={{
+              color: '#2c3e50',
+              marginBottom: '20px',
+              borderBottom: '1px solid #eee',
+              paddingBottom: '10px'
+            }}>{subscription.packageName}</Title>
+            
+            <Text style={{ fontSize: '16px', display: 'block', marginBottom: '10px' }}>
+              Status: <span style={{
                 color: subscription.status === 'Active' ? '#52c41a' :
-                       subscription.status === 'Expired' ? '#ff4d4f' : '#faad14'
-              }}>{subscription.status}</span></Text>
-              <br />
-              <Text>Start Date: {new Date(subscription.startDate).toLocaleDateString()}</Text>
-              <br />
-              <Text>End Date: {new Date(subscription.endDate).toLocaleDateString()}</Text>
-              {subscription.status === 'Active' && subscription.packageName === 'Basic Plan' && (
-                <div style={{ marginTop: '16px' }}>
-                  <Text type="warning" strong style={{ display: 'block', marginBottom: '8px', fontSize: '16px' }}>
-                    🎉 Special Offer: Upgrade to Premium with 50% OFF! 🎉
-                  </Text>
-                  <Button
-                    type="primary"
-                    danger
-                    size="large"
-                    onClick={() => navigate('/payment', {
-                      state: {
-                        packageDetails: {
-                          id: 2,
-                          name: 'Premium Plan',
-                          price: 150000,
-                          description: 'Special Upgrade Offer - 50% OFF'
-                        }
+                       subscription.status === 'Expired' ? '#ff4d4f' : '#faad14',
+                fontWeight: 'bold',
+                padding: '4px 12px',
+                backgroundColor: subscription.status === 'Active' ? '#f6ffed' :
+                                subscription.status === 'Expired' ? '#fff1f0' : '#fffbe6',
+                borderRadius: '4px'
+              }}>{subscription.status}</span>
+            </Text>
+            
+            <Text style={{ fontSize: '16px', display: 'block', marginBottom: '10px' }}>
+              Start Date: <span style={{ fontWeight: '500' }}>
+                {new Date(subscription.startDate).toLocaleDateString()}
+              </span>
+            </Text>
+            
+            <Text style={{ fontSize: '16px', display: 'block' }}>
+              End Date: <span style={{ fontWeight: '500' }}>
+                {new Date(subscription.endDate).toLocaleDateString()}
+              </span>
+            </Text>
+
+            {subscription.status === 'Active' && subscription.packageName === 'Basic Plan' && (
+              <div style={{ 
+                marginTop: '20px',
+                padding: '16px',
+                backgroundColor: '#fff2e8',
+                borderRadius: '8px',
+                border: '1px dashed #ffbb96'
+              }}>
+                <Text type="warning" strong style={{ 
+                  display: 'block', 
+                  marginBottom: '12px', 
+                  fontSize: '18px',
+                  textAlign: 'center'
+                }}>
+                  🎉 Special Offer: Upgrade to Premium with 50% OFF! 🎉
+                </Text>
+                <Button
+                  type="primary"
+                  danger
+                  size="large"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(45deg, #ff4d4f, #ff7875)',
+                    border: 'none',
+                    boxShadow: '0 4px 12px rgba(255, 77, 79, 0.2)'
+                  }}
+                  onClick={() => navigate('/payment', {
+                    state: {
+                      packageDetails: {
+                        id: 2,
+                        name: 'Premium Plan',
+                        price: 150000,
+                        description: 'Special Upgrade Offer - 50% OFF'
                       }
-                    })}
-                  >
-                    Upgrade to Premium (150,000 VNĐ/month)
-                  </Button>
-                </div>
-              )}
-            </Card>
-          );
-        })
+                    }
+                  })}
+                >
+                  Upgrade to Premium (150,000 VNĐ/month)
+                </Button>
+              </div>
+            )}
+          </Card>
+        ))
       ) : (
-        <Empty description="No subscription history found" />
+        <Empty 
+          description={
+            <span style={{ fontSize: '16px', color: '#666' }}>
+              No subscription history found
+            </span>
+          }
+          style={{
+            backgroundColor: 'white',
+            padding: '40px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}
+        />
       )}
     </div>
   );
