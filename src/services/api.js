@@ -1290,33 +1290,39 @@ const api = {
       }
     },
 
-    updatePregnancyStatus: async (pregnancyId, status) => {
+    updatePregnancyStatus: async (pregnancyId, fetusId, status) => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(
-          `${API_BASE_URL}/api/pregnancy/${pregnancyId}/status`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ status: status }),
-          }
-        );
+        if (!token) throw new Error("No token found");
 
-        if (!response.ok) {
-          const error = await response.text();
-          throw new Error(error || "Failed to update pregnancy status");
+        let endpoint;
+        if (fetusId) {
+          endpoint = `${API_BASE_URL}/api/pregnancies/fetus/${fetusId}/status?status=${status}`;
+        } else {
+          endpoint = `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${status}`;
         }
 
-        return await response.json();
+        const response = await fetch(endpoint, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Could not update status to ${status}`);
+        }
+
+        // Check if there's actually content before trying to parse JSON
+        const text = await response.text();
+        return text ? JSON.parse(text) : true; // Return true if no content
       } catch (error) {
-        console.error("Error updating pregnancy status:", error);
+        console.error(`Update status error:`, error);
         throw error;
       }
     },
-
     // For individual fetus status update (keep existing method)
     updateFetusStatus: async (pregnancyId, fetusId, status) => {
       try {
@@ -1905,7 +1911,6 @@ const api = {
       }
     },
   },
-  // Add this new section in the api object
   faq: {
     getAllFaqs: async () => {
       try {

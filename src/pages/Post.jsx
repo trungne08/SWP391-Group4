@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Button, Avatar, Space, List, Form, Input, Tag, Tooltip, message } from 'antd';
 import { UserOutlined, LikeOutlined, CommentOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 
 const { Title, Text } = Typography;
@@ -33,6 +34,42 @@ function Post() {
     } finally {
       setLoading(false);
     }
+  };
+  const renderChart = () => {
+    if (post?.postType === 'GROWTH_CHART' && post?.chartData) {
+      const formattedData = post.chartData.headCircumference?.map(([week, value]) => ({
+        week,
+        value
+      })) || [];
+      return (
+        <div style={{ marginTop: "16px", height: "400px" }}>
+          <Text strong>Head Circumference Chart</Text>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={formattedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="week" 
+                label={{ value: 'Week', position: 'bottom' }} 
+              />
+              <YAxis 
+                dataKey="value" 
+                label={{ value: 'mm', angle: -90, position: 'insideLeft' }} 
+              />
+              <Tooltip formatter={(value) => `${value} mm`} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#8884d8" 
+                name="Head Circumference" 
+                dot={{ r: 4 }} 
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+    return null;
   };
 
   const handleSubmitComment = async (values) => {
@@ -68,6 +105,7 @@ function Post() {
       >
         Back to Community
       </Button>
+
 
       <div style={{ 
         padding: "24px",
@@ -112,8 +150,11 @@ function Post() {
               </div>
             )}
           </div>
+        
         </Space>
+        {renderChart()}
       </div>
+    
 
       {/* Comment Form */}
       <Form form={commentForm} onFinish={handleSubmitComment}>

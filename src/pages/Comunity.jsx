@@ -45,19 +45,22 @@ function Comunity() {
   const [chartData, setChartData] = useState({});
   const [chartLoading, setChartLoading] = useState({});
   const [pregnancyData, setPregnancyData] = useState(null); // Thêm state cho pregnancyData
-
+  
   const handlePostClick = async (postId) => {
     try {
       const post = await api.community.getPostById(postId);
-      if (post?.postType === 'GROWTH_CHART') {
-        // Refresh chart data when clicking on a chart post
-        await refreshChartData(postId);
-      } else {
-        navigate(`/comunity/post/${postId}`);
+      
+      if (!post) {
+        message.error('Không thể tải thông tin bài viết');
+        return;
       }
+
+      // Luôn chuyển hướng đến trang chi tiết bài viết, không quan tâm loại post
+      navigate(`/comunity/post/${postId}`);
+      
     } catch (error) {
       console.error("Error handling post click:", error);
-      message.error("Failed to load post details");
+      message.error("Không thể tải thông tin bài viết");
     }
   };
 
@@ -297,7 +300,7 @@ function Comunity() {
             textShadow: "1px 1px 3px rgba(0,0,0,0.3)",
             letterSpacing: "1px"
           }}>
-            Nơi mọi người chia sẻ những câu chuyện
+            52+ million users every month
           </Text>
         </div>
       </div>

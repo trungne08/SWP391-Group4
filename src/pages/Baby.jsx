@@ -366,6 +366,39 @@ function Baby() {
   }));
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Get current pregnancy data
+        const pregnancy = await api.pregnancy.getCurrentPregnancy();
+        console.log("Fetched pregnancy data:", pregnancy);
+  
+        if (!pregnancy) {
+          console.log("No pregnancy data found");
+          setError("Không tìm thấy thông tin thai kỳ");
+          return;
+        }
+  
+        setPregnancyData(pregnancy);
+  
+        // Get standard data for comparison
+        if (pregnancy.totalFetuses) {
+          const standards = await api.standards.getPregnancyStandards(pregnancy.totalFetuses);
+          console.log("Fetched standards:", standards);
+          setStandardData(standards);
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchData();
+  }, []);
+
+  useEffect(() => {
     const fetchPregnancyData = async () => {
       try {
         const token = localStorage.getItem("token");
