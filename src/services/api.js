@@ -1903,6 +1903,45 @@ const api = {
       }
     },
   },
+    // Add this new section in the api object
+    faq: {
+      getAllFaqs: async () => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) throw new Error("No token found");
+
+          const response = await fetch(`${API_BASE_URL}/api/faqs`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`, // Add authentication token
+            },
+            mode: "cors",
+            credentials: "include",
+          });
+
+          console.log('FAQ API Response:', response);
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch FAQs: ${response.status}`);
+          }
+
+          const responseText = await response.text();
+          console.log('FAQ Raw response:', responseText);
+
+          if (!responseText) {
+            return [];
+          }
+
+          const data = JSON.parse(responseText);
+          return Array.isArray(data) ? data : [];
+        } catch (error) {
+          console.error("Get FAQs error:", error);
+          return [];
+        }
+      },
+    },
 };
 
 export default api;
