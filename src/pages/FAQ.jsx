@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   Typography, 
@@ -6,38 +6,39 @@ import {
   AccordionSummary, 
   AccordionDetails,
   Button,
-  Box 
+  Box,
+  CircularProgress 
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import api from '../services/api';
 
 function FAQ() {
-  const faqData = [
-    {
-      question: "What is BabyCare Center?",
-      answer: "BabyCare Center is a comprehensive platform dedicated to supporting mothers throughout their pregnancy journey and early childcare. We provide tracking tools, expert advice, and a supportive community."
-    },
-    {
-      question: "How do I track my pregnancy progress?",
-      answer: "You can track your pregnancy progress through our week-by-week guide, which provides detailed information about your baby's development, expected changes, and important milestones."
-    },
-    {
-      question: "Is the information provided medically verified?",
-      answer: "Yes, all medical information on our platform is reviewed and verified by qualified healthcare professionals, including obstetricians and pediatricians."
-    },
-    {
-      question: "How can I join the community?",
-      answer: "You can join our community by creating a free account. This gives you access to forums, discussion groups, and the ability to connect with other parents."
-    },
-    {
-      question: "Are there any premium features?",
-      answer: "Yes, we offer premium membership plans that provide access to exclusive content, personalized advice, and additional tracking tools."
-    },
-    {
-      question: "How can I contact customer support?",
-      answer: "You can reach our customer support team through email at support@babycare.com or through the contact form in the Contact Us section."
-    }
-  ];
+  const [faqs, setFaqs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const data = await api.faq.getAllFaqs();
+        setFaqs(data);
+      } catch (error) {
+        console.error('Failed to fetch FAQs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFaqs();
+  }, []);
+
+  if (loading) {
+    return (
+      <Container sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <>
@@ -46,17 +47,20 @@ function FAQ() {
           Frequently Asked Questions
         </Typography>
         
-        {faqData.map((faq, index) => (
-          <Accordion key={index} sx={{ mb: 2 }}>
+        {faqs.map((faq) => (
+          <Accordion key={faq.id} sx={{ mb: 2 }}>
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
-              aria-controls={`panel${index}-content`}
-              id={`panel${index}-header`}
+              aria-controls={`panel${faq.id}-content`}
+              id={`panel${faq.id}-header`}
             >
               <Typography fontWeight="500">{faq.question}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography color="text.secondary">
+              <Typography 
+                color="text.secondary"
+                sx={{ whiteSpace: 'pre-line' }} // This will preserve line breaks in the answer
+              >
                 {faq.answer}
               </Typography>
             </AccordionDetails>
