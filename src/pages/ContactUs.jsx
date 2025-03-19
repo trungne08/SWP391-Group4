@@ -45,7 +45,7 @@ const ContactUs = () => {
           }
         }}
       >
-        Contact Us
+        Liên Hệ Với Chúng Tôi
       </Typography>
     
       <Typography 
@@ -58,7 +58,7 @@ const ContactUs = () => {
           fontWeight: 500
         }}
       >
-        Have questions? We'd love to hear from you.
+        Bạn có thắc mắc? Chúng tôi rất vui được lắng nghe bạn.
       </Typography>
     
       <Grid container justifyContent="center">
@@ -85,7 +85,7 @@ const ContactUs = () => {
                   textAlign: 'center'
                 }}
               >
-                Contact Information
+                Thông Tin Liên Hệ
               </Typography>
               
               <Box sx={{ 
@@ -104,7 +104,7 @@ const ContactUs = () => {
                   fontSize: '2rem'
                 }} />
                 <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
-                  3rd Floor, ABC Building, District 1, Ho Chi Minh City, Vietnam
+                  Tầng 3, Tòa nhà ABC, Quận 1, TP. Hồ Chí Minh, Việt Nam
                 </Typography>
               </Box>
     

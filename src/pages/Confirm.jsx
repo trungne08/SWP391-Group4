@@ -72,17 +72,17 @@ function Confirm() {
         icon={paymentStatus === 'success' ? 
           <CheckCircleOutlined style={{ color: '#52c41a' }} /> : 
           <CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
-        title={paymentStatus === 'success' ? "Payment Successful!" : "Payment Failed"}
+        title={paymentStatus === 'success' ? "Thanh Toán Thành Công!" : "Thanh Toán Thất Bại"}
         subTitle={paymentStatus === 'success' ? 
-          "Thank you for your purchase. Your transaction has been completed." :
-          "Sorry, the payment could not be completed. Please try again."}
+          "Cảm ơn bạn đã mua hàng. Giao dịch của bạn đã hoàn tất." :
+          "Xin lỗi, thanh toán không thể hoàn tất. Vui lòng thử lại."}
         extra={[
           <Button type="primary" key="home" onClick={handleBackHome}>
-            Back to Home
+            Về Trang Chủ
           </Button>,
           paymentStatus === 'success' && (
             <Button key="subscription" onClick={handleViewSubscription}>
-              View Subscription History
+              Xem Lịch Sử Đăng Ký
             </Button>
           )
         ]}
@@ -90,28 +90,28 @@ function Confirm() {
 
       {paymentStatus === 'success' && transactionDetails && (
         <Card style={{ marginTop: '24px' }}>
-          <Title level={4}>Payment Details</Title>
+          <Title level={4}>Chi Tiết Thanh Toán</Title>
           <Descriptions column={1}>
-            <Descriptions.Item label="Package">
+            <Descriptions.Item label="Gói Dịch Vụ">
               {transactionDetails.packageName}
             </Descriptions.Item>
-            <Descriptions.Item label="Amount">
+            <Descriptions.Item label="Số Tiền">
               {new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND'
               }).format(transactionDetails.amount)}
             </Descriptions.Item>
-            <Descriptions.Item label="Transaction ID">
+            <Descriptions.Item label="Mã Giao Dịch">
               {transactionDetails.transactionId}
             </Descriptions.Item>
-            <Descriptions.Item label="Bank">
+            <Descriptions.Item label="Ngân Hàng">
               {transactionDetails.bankCode}
             </Descriptions.Item>
-            <Descriptions.Item label="Payment Time">
-              {new Date(transactionDetails.paymentDate).toLocaleString()}
+            <Descriptions.Item label="Thời Gian Thanh Toán">
+              {new Date(transactionDetails.paymentDate).toLocaleString('vi-VN')}
             </Descriptions.Item>
-            <Descriptions.Item label="Subscription Period">
-              {`${new Date(transactionDetails.startDate).toLocaleDateString()} - ${new Date(transactionDetails.endDate).toLocaleDateString()}`}
+            <Descriptions.Item label="Thời Hạn Đăng Ký">
+              {`${new Date(transactionDetails.startDate).toLocaleDateString('vi-VN')} - ${new Date(transactionDetails.endDate).toLocaleDateString('vi-VN')}`}
             </Descriptions.Item>
           </Descriptions>
         </Card>

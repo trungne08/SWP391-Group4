@@ -42,10 +42,10 @@ function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState([]);
 
   const columns = [
-    { title: 'Username', dataIndex: 'name', key: 'name' },
-    { title: 'Full Name', dataIndex: 'fullName', key: 'fullName' },
+    { title: 'Tên đăng nhập', dataIndex: 'name', key: 'name' },
+    { title: 'Họ và tên', dataIndex: 'fullName', key: 'fullName' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Role', dataIndex: 'role', key: 'role' },
+    { title: 'Vai trò', dataIndex: 'role', key: 'role' },
   ];
 
   useEffect(() => {
@@ -105,7 +105,7 @@ function AdminDashboard() {
         position: 'relative',
         paddingBottom: '10px'
       }}>
-        Admin Dashboard
+        Bảng Điều Khiển Quản Trị
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -124,7 +124,7 @@ function AdminDashboard() {
             onClick={() => navigate('/admin/members')}
           >
             <Statistic 
-              title={<span style={{ color: '#fff' }}>Total Users</span>}
+              title={<span style={{ color: '#fff' }}>Tổng Người Dùng</span>}
               value={stats.totalUsers} 
               prefix={<UserOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
@@ -138,7 +138,7 @@ function AdminDashboard() {
             onClick={() => navigate('/admin/members')}
           >
             <Statistic 
-              title={<span style={{ color: '#fff' }}>Admin Users</span>}
+              title={<span style={{ color: '#fff' }}>Quản Trị Viên</span>}
               value={stats.adminUsers} 
               prefix={<TeamOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
@@ -149,7 +149,7 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ ...cardStyle, background: 'linear-gradient(135deg, #722ed1 0%, #8e44ad 100%)' }}>
             <Statistic 
-              title={<span style={{ color: '#fff' }}>Member Users</span>}
+              title={<span style={{ color: '#fff' }}>Thành Viên</span>}
               value={stats.memberUsers} 
               prefix={<TeamOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
@@ -160,7 +160,7 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ ...cardStyle, background: 'linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%)' }}>
             <Statistic 
-              title={<span style={{ color: '#fff' }}>Total Revenue</span>}
+              title={<span style={{ color: '#fff' }}>Tổng Doanh Thu</span>}
               value={stats.totalRevenue}
               prefix={<DollarOutlined style={{ ...iconStyle, background: 'rgba(255,255,255,0.2)', color: '#fff' }} />}
               loading={loading}
@@ -175,7 +175,7 @@ function AdminDashboard() {
       <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
           <Card 
-            title="Subscription Statistics" 
+            title="Thống Kê Đăng Ký" 
             style={{ 
               ...cardStyle, 
               cursor: 'default',
@@ -192,7 +192,7 @@ function AdminDashboard() {
                   <Statistic
                     title={packageName}
                     value={count}
-                    suffix="users"
+                    suffix="người dùng"
                     prefix={<RiseOutlined style={{ color: '#1890ff' }} />}
                   />
                 </Col>
@@ -203,7 +203,7 @@ function AdminDashboard() {
       </Row>
 
       <Card 
-        title="Recent Users" 
+        title="Người Dùng Gần Đây" 
         style={{ 
           ...cardStyle, 
           cursor: 'default' 

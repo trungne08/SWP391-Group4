@@ -88,19 +88,9 @@ function Baby() {
   const [fetusChartData, setFetusChartData] = useState({});
   // Add these state declarations at the top with other states
 
-  const [weightData, setWeightData] = useState({
-    labels: [],
-    datasets: [],
-  });
-  const [heightData, setHeightData] = useState({
-    labels: [],
-    datasets: [],
-  });
-  const [circumferenceData, setCircumferenceData] = useState({
-    labels: [],
-    datasets: [],
-  });
 
+  const [isConfirmFetusModalOpen, setIsConfirmFetusModalOpen] = useState(false);
+  const [selectedFetusIndex, setSelectedFetusIndex] = useState(null);
   const [pregnancyHistoryData, setPregnancyHistoryData] = useState([]);
   const [currentAvatar, setCurrentAvatar] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,35 +107,67 @@ function Baby() {
     checkupDate: "",
   });
   const [isEndPregnancyModalOpen, setIsEndPregnancyModalOpen] = useState(false);
+  const [isCancelPregnancyModalOpen, setCancelPregnancyModalOpen] = useState(false);
 
+  const handleEndPregnancy = () => {
+    setIsEndPregnancyModalOpen(true);
+  };
+
+  const handleCancelPregnancy = () => {
+    setCancelPregnancyModalOpen(true);  // Just open the modal
+  };
   const handlePregnancyListClick = () => {
     setIsPregnancyListModalOpen(true);
   };
 
-  // For completing pregnancy
-  const handleUpdateStatus = async (pregnancyId) => {
+  const handleFetusStatusUpdate = async (pregnancyId, fetusId) => {
     try {
-      await api.pregnancy.updatePregnancyStatus(pregnancyId, "COMPLETED");
-      message.success("Thai kỳ đã hoàn thành thành công");
+      await api.pregnancy.updatePregnancyStatus(pregnancyId, fetusId, "CANCEL");
       await fetchPregnancyData();
-      await fetchPregnancyHistory();
+      message.success("Đã cập nhật trạng thái thai nhi");
     } catch (error) {
-      console.error("Error completing pregnancy:", error);
-      message.error("Không thể hoàn thành thai kỳ");
+      console.error("Error updating fetus status:", error);
+      message.error("Không thể cập nhật trạng thái thai nhi");
     }
   };
 
-  const handleCancelPregnancy = async (pregnancyId) => {
+  const handleFetusModalConfirm = async () => {
     try {
-      await api.pregnancy.updatePregnancyStatus(pregnancyId, "CANCEL");
-      message.success("Đã kết thúc thai kỳ");
-      await fetchPregnancyData();
-      await fetchPregnancyHistory();
+      const fetusId = pregnancyData.fetuses[selectedFetusIndex].fetusId;
+      await api.pregnancy.updatePregnancyStatus(null, fetusId, "CANCEL");
+      message.success(`Đã cập nhật trạng thái thai nhi ${selectedFetusIndex + 1}`);
+      setIsConfirmFetusModalOpen(false);
+      setSelectedFetusIndex(null);
+      fetchPregnancyData(); // Refresh data
     } catch (error) {
-      console.error("Error canceling pregnancy:", error);
-      message.error("Không thể kết thúc thai kỳ");
+      console.error("Error updating fetus status:", error);
+      message.error("Không thể cập nhật trạng thái thai nhi");
     }
   };
+
+  const handleUpdateStatus = async (pregnancyId, fetusId) => {
+    try {
+      let response;
+      if (fetusId) {
+        // Update fetus status
+        response = await api.pregnancy.updatePregnancyStatus(pregnancyId, fetusId, "CANCEL");
+      } else {
+        // Update pregnancy status
+        response = await api.pregnancy.updatePregnancyStatus(pregnancyId, null, "COMPLETED");
+      }
+
+      if (response) {
+        await fetchPregnancyData();
+        await fetchPregnancyHistory();
+        message.success("Cập nhật trạng thái thành công");
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái:", error);
+      message.error("Không thể cập nhật trạng thái: " + error.message);
+    }
+  };
+
+
 
   const allFetusesCompleted = (pregnancies, pregnancyId) => {
     const pregnancy = pregnancies.find((p) => p.pregnancyId === pregnancyId);
@@ -161,6 +183,7 @@ function Baby() {
     }
     setIsEndPregnancyModalOpen(false);
   };
+
 
   const calculateDates = (weeks, days) => {
     if (!weeks || !days) return { pregnancyStart: null, dueDate: null };
@@ -770,8 +793,7 @@ function Baby() {
               alignItems: "center",
               gap: "16px",
               padding: "20px",
-              backgroundColor: "#fff",
-              borderRadius: "8px",
+
             }}
           >
             <span
@@ -873,39 +895,65 @@ function Baby() {
             <Space>
               <Button
                 type="primary"
-                danger
-                onClick={() => {
-                  Modal.confirm({
-                    title: "Xác nhận kết thúc thai kỳ",
-                    content:
-                      "Bạn có chắc chắn muốn kết thúc thai kỳ này không?",
-                    okText: "Xác nhận",
-                    cancelText: "Hủy",
-                    onOk: () =>
-                      handleCancelPregnancy(pregnancyData.pregnancyId), // Changed from pregnancy.pregnancyId
-                  });
-                }}
-              >
-                Kết thúc thai kỳ
-              </Button>
-
-              <Button
-                type="primary"
-                onClick={() => {
-                  Modal.confirm({
-                    title: "Xác nhận hoàn thành thai kỳ",
-                    content:
-                      "Bạn có chắc chắn muốn hoàn thành thai kỳ này không?",
-                    okText: "Xác nhận",
-                    cancelText: "Hủy",
-                    onOk: () => handleUpdateStatus(pregnancyData.pregnancyId), // Changed from pregnancy.pregnancyId
-                  });
+                onClick={handleEndPregnancy}
+                style={{
+                  marginTop: 10,
+                  background: "linear-gradient(45deg, #52c41a, #73d13d)",
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(82, 196, 26, 0.3)",
+                  transition: "all 0.3s ease"
                 }}
               >
                 Hoàn thành thai kỳ
               </Button>
+
+              <Button
+                type="primary"
+                danger
+                onClick={handleCancelPregnancy}  // This will now show the modal
+                style={{
+                  marginTop: 10,
+                  background: "linear-gradient(45deg, #ff4d4f, #ff7875)",
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(255, 77, 79, 0.3)",
+                  transition: "all 0.3s ease"
+                }}
+              >
+                Hủy thai kỳ hiện tại
+              </Button>
             </Space>
           )}
+          <Modal
+            title="Xác nhận hoàn thành thai kỳ"
+            open={isEndPregnancyModalOpen}
+            onOk={confirmEndPregnancy}
+            onCancel={() => setIsEndPregnancyModalOpen(false)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+          >
+            <p>Bạn có chắc chắn muốn hoàn thành thai kỳ này không?</p>
+          </Modal>
+
+          <Modal
+            title="Xác nhận hủy thai kỳ"
+            open={isCancelPregnancyModalOpen}
+            onOk={async () => {
+              try {
+                await api.pregnancy.updatePregnancyStatus(pregnancyData.pregnancyId, null, "CANCEL");  // Changed from "CANCEL" to "CANCEL"
+                message.success("Thai kỳ đã được hủy");
+                window.location.reload();
+              } catch (error) {
+                message.error("Không thể hủy thai kỳ");
+              }
+              setCancelPregnancyModalOpen(false);
+            }}
+            onCancel={() => setCancelPregnancyModalOpen(false)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+          >
+            <p>Bạn có chắc chắn muốn hủy thai kỳ này không? Hành động này không thể hoàn tác.</p>
+          </Modal>
+
         </Col>
 
         <Col xs={24} md={4} className="text-center">
@@ -948,10 +996,10 @@ function Baby() {
                 {pregnancyData?.totalFetuses === 1
                   ? "Đơn thai"
                   : pregnancyData?.totalFetuses === 2
-                  ? "Song thai"
-                  : pregnancyData?.totalFetuses > 2
-                  ? `${pregnancyData.totalFetuses} thai`
-                  : "Chưa có thông tin"}
+                    ? "Song thai"
+                    : pregnancyData?.totalFetuses > 2
+                      ? `${pregnancyData.totalFetuses} thai`
+                      : "Chưa có thông tin"}
               </div>
             </div>
 
@@ -962,8 +1010,7 @@ function Baby() {
                 alignItems: "center",
                 gap: "10px",
                 padding: "20px",
-                backgroundColor: "#fff",
-                borderRadius: "8px",
+
               }}
             >
               {numberOfFetuses > 1 && (
@@ -1038,27 +1085,8 @@ function Baby() {
                               danger
                               size="small"
                               onClick={() => {
-                                Modal.confirm({
-                                  title: `Xác nhận tạm biệt cục vàng {index + 1}
-                                  )}`,
-                                  content:
-                                    "Bạn có chắc chắn muốn tạm biệt cục vàng này không? Hành động này không thể hoàn tác.",
-                                  okText: "Xác nhận",
-                                  cancelText: "Hủy",
-                                  onOk: async () => {
-                                    try {
-                                      await handleUpdateStatus(
-                                        pregnancyData.pregnancyId,
-                                        pregnancyData.fetuses[index].fetusId
-                                      );
-                                      message.success(`Tạm biệt cục vàng `);
-                                    } catch (error) {
-                                      message.error(
-                                        "Không thể kết thúc thai nhi"
-                                      );
-                                    }
-                                  },
-                                });
+                                setSelectedFetusIndex(index);
+                                setIsConfirmFetusModalOpen(true);
                               }}
                             >
                               Tạm biệt cục vàng {index + 1}
@@ -1069,21 +1097,21 @@ function Baby() {
                             pregnancyData.fetuses[index].status === "ISSUE"
                               ? "error"
                               : pregnancyData.fetuses[index].status === "CANCEL"
-                              ? "default"
-                              : pregnancyData.fetuses[index].status ===
-                                "COMPLETED"
-                              ? "success"
-                              : "processing"
+                                ? "default"
+                                : pregnancyData.fetuses[index].status ===
+                                  "COMPLETED"
+                                  ? "success"
+                                  : "processing"
                           }
                         >
                           {pregnancyData.fetuses[index].status === "ISSUE"
                             ? "Em bé đang có vấn đề!!!! bạn xem thử ở các biểu đồ xem"
                             : pregnancyData.fetuses[index].status === "CANCEL"
-                            ? "Đã sảy thai"
-                            : pregnancyData.fetuses[index].status ===
-                              "COMPLETED"
-                            ? "Đã hoàn thành"
-                            : "Đang phát triển"}
+                              ? "Đã sảy thai"
+                              : pregnancyData.fetuses[index].status ===
+                                "COMPLETED"
+                                ? "Đã hoàn thành"
+                                : "Đang phát triển"}
                         </Tag>
                       </Space>
                     )}
@@ -1104,6 +1132,19 @@ function Baby() {
           </div>
         </Col>
       </Row>
+      <Modal
+        title={`Xác nhận tạm biệt cục vàng ${selectedFetusIndex + 1}`}
+        open={isConfirmFetusModalOpen}
+        onOk={handleFetusModalConfirm}
+        onCancel={() => {
+          setIsConfirmFetusModalOpen(false);
+          setSelectedFetusIndex(null);
+        }}
+        okText="Xác nhận"
+        cancelText="Hủy"
+      >
+        <p>Bạn có chắc chắn muốn tạm biệt cục vàng này không? Hành động này không thể hoàn tác.</p>
+      </Modal>
 
       <Col span={24}>
         <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
@@ -1147,19 +1188,19 @@ function Baby() {
                   fetus.status === "ISSUE"
                     ? "error"
                     : fetus.status === "CANCEL"
-                    ? "default"
-                    : fetus.status === "COMPLETED"
-                    ? "success"
-                    : "processing"
+                      ? "default"
+                      : fetus.status === "COMPLETED"
+                        ? "success"
+                        : "processing"
                 }
               >
                 {fetus.status === "ISSUE"
                   ? "Em bé đang có vấn đề!!!! bạn kiểm tra ở các biểu đồ xem"
                   : fetus.status === "CANCEL"
-                  ? "Đã sảy thai"
-                  : fetus.status === "COMPLETED"
-                  ? "Đã hoàn thành"
-                  : "Đang phát triển"}
+                    ? "Đã sảy thai"
+                    : fetus.status === "COMPLETED"
+                      ? "Đã hoàn thành"
+                      : "Đang phát triển"}
               </Tag>
             }
           >
@@ -1297,7 +1338,7 @@ function Baby() {
               console.error("Create pregnancy error:", error);
               message.error(
                 "Không thể tạo thai kỳ: " +
-                  (error.response?.data?.message || error.message)
+                (error.response?.data?.message || error.message)
               );
             }
           }}
@@ -2031,11 +2072,10 @@ function Baby() {
                 pregnancyHistoryData.map((pregnancy, index) => (
                   <Card
                     key={pregnancy.pregnancyId || index}
-                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${
-                      pregnancy.status === "ONGOING"
-                        ? "Đang mang thai"
-                        : "Đã kết thúc"
-                    }`}
+                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${pregnancy.status === "ONGOING"
+                      ? "Đang mang thai"
+                      : "Đã kết thúc"
+                      }`}
                     style={{ marginBottom: 16 }}
                     extra={
                       // ... existing code ...
@@ -2118,24 +2158,24 @@ function Baby() {
                           <strong>Ngày bắt đầu:</strong>{" "}
                           {pregnancy.startDate
                             ? new Date(pregnancy.startDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày dự sinh:</strong>{" "}
                           {pregnancy.dueDate
                             ? new Date(pregnancy.dueDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày khám gần nhất:</strong>{" "}
                           {pregnancy.examDate
                             ? new Date(pregnancy.examDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Chưa có"}
                         </p>
                       </Col>
@@ -2156,15 +2196,15 @@ function Baby() {
                               pregnancy.status === "ONGOING"
                                 ? "processing"
                                 : pregnancy.status === "COMPLETED"
-                                ? "success"
-                                : "default"
+                                  ? "success"
+                                  : "default"
                             }
                           >
                             {pregnancy.status === "ONGOING"
                               ? "Đang mang thai"
                               : pregnancy.status === "COMPLETED"
-                              ? "Đã hoàn thành"
-                              : "Đã kết thúc"}
+                                ? "Đã hoàn thành"
+                                : "Đã kết thúc"}
                           </Tag>
                         </p>
                       </Col>
@@ -2236,19 +2276,19 @@ function Baby() {
                                         fetus.status === "ISSUE"
                                           ? "error"
                                           : fetus.status === "CANCEL"
-                                          ? "default"
-                                          : fetus.status === "COMPLETED"
-                                          ? "success"
-                                          : "processing"
+                                            ? "default"
+                                            : fetus.status === "COMPLETED"
+                                              ? "success"
+                                              : "processing"
                                       }
                                     >
                                       {fetus.status === "ISSUE"
                                         ? "Có vấn đề"
                                         : fetus.status === "CANCEL"
-                                        ? "Đã sảy thai"
-                                        : fetus.status === "COMPLETED"
-                                        ? "Đã hoàn thành"
-                                        : "Đang phát triển"}
+                                          ? "Đã sảy thai"
+                                          : fetus.status === "COMPLETED"
+                                            ? "Đã hoàn thành"
+                                            : "Đang phát triển"}
                                     </Tag>
                                   </Col>
                                   <Col span={8}>

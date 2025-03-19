@@ -153,14 +153,14 @@ function FeePackage() {
             borderRadius: '2px'
           }
         }}>
-          Sign up for premium now!
+          Đăng Ký Gói Thành Viên Ngay!
         </Title>
         <Text style={{ 
           fontSize: '1.5rem', 
           color: '#666',
           fontWeight: 500
         }}>
-          Keep track of your baby anytime, anywhere
+          Theo dõi em bé của bạn mọi lúc, mọi nơi với những tính năng tiện ích và thú vị!
         </Text>
       </div>
 
@@ -272,7 +272,7 @@ function FeePackage() {
                     : '0 12px 20px rgba(255,105,180,0.4)'
                 }}
               >
-                Get Started
+                Bắt Đầu Ngay
               </Button>
             </Card>
           </Col>

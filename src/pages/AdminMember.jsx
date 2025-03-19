@@ -91,7 +91,7 @@ function AdminMember() {
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
-      <Title level={2}>User Management</Title>
+      <Title level={2}>Quản Lý Người Dùng</Title>
       {loading ? (
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <Spin size="large" />
@@ -99,7 +99,7 @@ function AdminMember() {
       ) : (
         <>
           <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-            <Title level={4} style={{ margin: 0 }}>User List</Title>
+            <Title level={4} style={{ margin: 0 }}>Danh Sách Người Dùng</Title>
           </Row>
           {members.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((member) => (
             <Card key={member.user_id} style={{ marginBottom: 16 }}>
@@ -109,15 +109,15 @@ function AdminMember() {
                   <Title level={5} style={{ marginTop: 0 }}>{member.username}</Title>
                   <Text>Email: {member.email}</Text>
                   <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-                    <Button size="small" onClick={() => { setSelectedMember(member); setDetailModalVisible(true); }}>View Details</Button>
-                    <Button size="small" type="primary" onClick={() => { setSelectedMember(member); setEditModalVisible(true); }}>Edit</Button>
-                    <Button size="small" danger type="primary" onClick={() => { setSelectedMember(member); setDeleteModalVisible(true); }}>Delete</Button>
+                    <Button size="small" onClick={() => { setSelectedMember(member); setDetailModalVisible(true); }}>Xem Chi Tiết</Button>
+                    <Button size="small" type="primary" onClick={() => { setSelectedMember(member); setEditModalVisible(true); }}>Chỉnh Sửa</Button>
+                    <Button size="small" danger type="primary" onClick={() => { setSelectedMember(member); setDeleteModalVisible(true); }}>Xóa</Button>
                   </div>
                 </div>
               </div>
             </Card>
           ))}
-          <Modal title="User Details" open={detailModalVisible} onCancel={() => setDetailModalVisible(false)} footer={null} width={600}>
+          <Modal title="Chi Tiết Người Dùng" open={detailModalVisible} onCancel={() => setDetailModalVisible(false)} footer={null} width={600}>
             {selectedMember && (
               <div style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
@@ -133,40 +133,40 @@ function AdminMember() {
                     <Text>{selectedMember.email}</Text>
                   </div>
                   <div>
-                    <Text strong>Full Name: </Text>
-                    <Text>{selectedMember.fullName || 'Not set'}</Text>
+                    <Text strong>Họ và tên: </Text>
+                    <Text>{selectedMember.fullName || 'Chưa cập nhật'}</Text>
                   </div>
                   <div>
-                    <Text strong>Phone Number: </Text>
-                    <Text>{selectedMember.phoneNumber || 'Not set'}</Text>
+                    <Text strong>Số điện thoại: </Text>
+                    <Text>{selectedMember.phoneNumber || 'Chưa cập nhật'}</Text>
                   </div>
                   <div>
-                    <Text strong>User ID: </Text>
+                    <Text strong>Mã người dùng: </Text>
                     <Text>{selectedMember.user_id}</Text>
                   </div>
                   <div>
-                    <Text strong>Status: </Text>
-                    <Text>{selectedMember.status || 'Active'}</Text>
+                    <Text strong>Trạng thái: </Text>
+                    <Text>{selectedMember.status || 'Đang hoạt động'}</Text>
                   </div>
                 </div>
               </div>
             )}
           </Modal>
-          <Modal title="Edit User" open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null}>
+          <Modal title="Chỉnh Sửa Người Dùng" open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null}>
             <Form form={editForm} onFinish={handleEditUser} layout="vertical">
-              <Form.Item name="fullName" label="Full Name" rules={[{ required: true, message: 'Please input full name!' }]}>
+              <Form.Item name="fullName" label="Họ và tên" rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}>
                 <Input />
               </Form.Item>
-              <Form.Item name="phoneNumber" label="Phone Number">
+              <Form.Item name="phoneNumber" label="Số điện thoại">
                 <Input />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" htmlType="submit" block>Update User</Button>
+                <Button type="primary" htmlType="submit" block>Cập Nhật</Button>
               </Form.Item>
             </Form>
           </Modal>
-          <Modal title="Confirm Delete" open={deleteModalVisible} onOk={handleDelete} onCancel={() => setDeleteModalVisible(false)} okText="Delete" cancelText="Cancel">
-            <p>Are you sure you want to delete member {selectedMember?.username}?</p>
+          <Modal title="Xác Nhận Xóa" open={deleteModalVisible} onOk={handleDelete} onCancel={() => setDeleteModalVisible(false)} okText="Xóa" cancelText="Hủy">
+            <p>Bạn có chắc chắn muốn xóa người dùng {selectedMember?.username}?</p>
           </Modal>
           <Row justify="center" style={{ marginTop: 24 }}>
             <Pagination current={currentPage} pageSize={pageSize} total={total} onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }} showSizeChanger />

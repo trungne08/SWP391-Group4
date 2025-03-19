@@ -63,20 +63,20 @@ function Payment() {
         onClick={handleBack}
         style={{ marginBottom: '24px' }}
       >
-        Back to Packages
+        Quay Lại Gói Dịch Vụ
       </Button>
 
       <Title level={2} style={{ textAlign: 'center', marginBottom: '16px' }}>
-        Payment Details
+        Chi Tiết Thanh Toán
       </Title>
 
       <Card>
         <div style={{ marginBottom: '24px' }}>
-          <Title level={4}>Package Information</Title>
-          <Text strong>Package Name: </Text>
+          <Title level={4}>Thông Tin Gói Dịch Vụ</Title>
+          <Text strong>Tên Gói: </Text>
           <Text>{packageDetails?.name || 'N/A'}</Text>
           <br />
-          <Text strong>Amount: </Text>
+          <Text strong>Số Tiền: </Text>
           <Text style={{ fontSize: '18px', color: '#52c41a' }}>
             {packageDetails?.price ? formatCurrency(packageDetails.price) : 'N/A'}
           </Text>
@@ -85,15 +85,15 @@ function Payment() {
         <Form onFinish={handlePayment} layout="vertical">
           <Form.Item
             name="orderDescription"
-            label="Order Description"
-            initialValue={`Payment for ${packageDetails?.name || 'subscription'}`}
-            rules={[{ required: true, message: 'Please enter order description' }]}
+            label="Mô Tả Đơn Hàng"
+            initialValue={`Thanh toán cho ${packageDetails?.name || 'gói dịch vụ'}`}
+            rules={[{ required: true, message: 'Vui lòng nhập mô tả đơn hàng' }]}
           >
             <Input.TextArea rows={3} />
           </Form.Item>
 
           <div style={{ textAlign: 'center' }}>
-            <Title level={4}>Payment Method</Title>
+            <Title level={4}>Phương Thức Thanh Toán</Title>
             <Button 
               type="primary" 
               size="large" 
@@ -101,7 +101,7 @@ function Payment() {
               htmlType="submit"
               loading={loading}
             >
-              Pay with VNPay
+              Thanh Toán với VNPay
             </Button>
           </div>
         </Form>
@@ -109,7 +109,7 @@ function Payment() {
 
       <div style={{ marginTop: '24px', textAlign: 'center' }}>
         <Text type="secondary">
-          You will be redirected to VNPay to complete your payment
+          Bạn sẽ được chuyển đến VNPay để hoàn tất thanh toán
         </Text>
       </div>
     </div>

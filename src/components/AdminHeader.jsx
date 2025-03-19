@@ -42,7 +42,7 @@ const AdminHeader = () => {
       {
         key: 'logout',
         icon: <LogoutOutlined />,
-        label: 'Logout',
+        label: 'Đăng Xuất',
         onClick: handleLogout,
       },
     ],
@@ -70,27 +70,27 @@ const AdminHeader = () => {
           {
             key: '/admin/dashboard',
             icon: <DashboardOutlined style={{ color: '#FFB6C1' }} />,
-            label: <Link to="/admin/dashboard">Dashboard</Link>,
+            label: <Link to="/admin/dashboard">Bảng Điều Khiển</Link>,
           },
           {
             key: '/admin/members',
             icon: <TeamOutlined style={{ color: '#FFB6C1' }} />,
-            label: <Link to="/admin/members">Members</Link>,
+            label: <Link to="/admin/members">Quản Lý Người Dùng</Link>,
           },
           {
             key: '/admin/membership',
             icon: <MoneyCollectOutlined style={{ color: '#FFB6C1' }} />,
-            label: <Link to="/admin/membership">Membership</Link>,
+            label: <Link to="/admin/membership">Quản Lý Gói Dịch Vụ</Link>,
           },
           {
             key: '/admin/blog',
             icon: <FileTextOutlined style={{ color: '#FFB6C1' }} />,
-            label: <Link to="/admin/blog">Blog</Link>,
+            label: <Link to="/admin/blog">Quản Lý Blog</Link>,
           },
           {
             key: '/',
             icon: <HomeOutlined style={{ color: '#FFB6C1' }} />,
-            label: <Link to="/">Back to Home</Link>,
+            label: <Link to="/">Về Trang Chủ</Link>,
           },
         ]}
       />

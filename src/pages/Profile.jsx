@@ -139,7 +139,7 @@ function Profile() {
     return (
       <Container maxWidth="sm">
         <Typography variant="h6" textAlign="center" mt={5}>
-          No user data available
+          Không có dữ liệu người dùng
         </Typography>
       </Container>
     );
@@ -178,7 +178,7 @@ function Profile() {
               onClick={handleEdit}
               sx={{ bgcolor: '#FF69B4', '&:hover': { bgcolor: '#FF1493' } }}
             >
-              Edit Profile
+              Chỉnh Sửa Hồ Sơ
             </Button>
             <Button
               variant="outlined"
@@ -193,7 +193,7 @@ function Profile() {
                 }
               }}
             >
-              Change Password
+              Đổi Mật Khẩu
             </Button>
           </Box>
         </Box>
@@ -203,16 +203,16 @@ function Profile() {
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary">
-              Username
+              Tên Đăng Nhập
             </Typography>
             <Typography variant="body1">{userData.username}</Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary">
-              Full Name
+              Họ và Tên
             </Typography>
             <Typography variant="body1">
-              {userData.fullName || 'Not set'}
+              {userData.fullName || 'Chưa cập nhật'}
             </Typography>
           </Grid>
           <Grid item xs={12}>
@@ -223,10 +223,10 @@ function Profile() {
           </Grid>
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary">
-              Phone Number
+              Số Điện Thoại
             </Typography>
             <Typography variant="body1">
-              {userData.phoneNumber || 'Not set'}
+              {userData.phoneNumber || 'Chưa cập nhật'}
             </Typography>
           </Grid>
         </Grid>
@@ -237,19 +237,19 @@ function Profile() {
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle>Chỉnh Sửa Hồ Sơ</DialogTitle>
           <DialogContent>
             <Box component="form" onSubmit={handleUpdate} sx={{ mt: 2 }}>
               <TextField
                 fullWidth
-                label="Avatar URL"
+                label="Đường dẫn ảnh đại diện"
                 value={formData.avatar}
                 onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
                 margin="normal"
               />
               <TextField
                 fullWidth
-                label="Full Name"
+                label="Họ và Tên"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 margin="normal"
@@ -257,19 +257,19 @@ function Profile() {
               />
               <TextField
                 fullWidth
-                label="Phone Number"
+                label="Số Điện Thoại"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 margin="normal"
               />
               <DialogActions>
-                <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
+                <Button onClick={() => setIsModalVisible(false)}>Hủy</Button>
                 <Button 
                   type="submit"
                   variant="contained"
                   sx={{ bgcolor: '#FF69B4', '&:hover': { bgcolor: '#FF1493' } }}
                 >
-                  Update
+                  Cập Nhật
                 </Button>
               </DialogActions>
             </Box>

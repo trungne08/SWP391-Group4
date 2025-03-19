@@ -98,7 +98,7 @@ function SubscriptionHistory() {
         color: '#1890ff',
         fontWeight: 'bold',
         fontSize: '2.5rem'
-      }}>Subscription History</Title>
+      }}>Lịch Sử Đăng Ký</Title>
       
       {subscriptions.length > 0 ? (
         subscriptions.map((subscription, index) => (
@@ -122,7 +122,7 @@ function SubscriptionHistory() {
             }}>{subscription.packageName}</Title>
             
             <Text style={{ fontSize: '16px', display: 'block', marginBottom: '10px' }}>
-              Status: <span style={{
+              Trạng thái: <span style={{
                 color: subscription.status === 'Active' ? '#52c41a' :
                        subscription.status === 'Expired' ? '#ff4d4f' : '#faad14',
                 fontWeight: 'bold',
@@ -130,18 +130,19 @@ function SubscriptionHistory() {
                 backgroundColor: subscription.status === 'Active' ? '#f6ffed' :
                                 subscription.status === 'Expired' ? '#fff1f0' : '#fffbe6',
                 borderRadius: '4px'
-              }}>{subscription.status}</span>
+              }}>{subscription.status === 'Active' ? 'Đang hoạt động' : 
+                   subscription.status === 'Expired' ? 'Đã hết hạn' : 'Đang chờ'}</span>
             </Text>
             
             <Text style={{ fontSize: '16px', display: 'block', marginBottom: '10px' }}>
-              Start Date: <span style={{ fontWeight: '500' }}>
-                {new Date(subscription.startDate).toLocaleDateString()}
+              Ngày bắt đầu: <span style={{ fontWeight: '500' }}>
+                {new Date(subscription.startDate).toLocaleDateString('vi-VN')}
               </span>
             </Text>
             
             <Text style={{ fontSize: '16px', display: 'block' }}>
-              End Date: <span style={{ fontWeight: '500' }}>
-                {new Date(subscription.endDate).toLocaleDateString()}
+              Ngày kết thúc: <span style={{ fontWeight: '500' }}>
+                {new Date(subscription.endDate).toLocaleDateString('vi-VN')}
               </span>
             </Text>
 
@@ -159,7 +160,7 @@ function SubscriptionHistory() {
                   fontSize: '18px',
                   textAlign: 'center'
                 }}>
-                  🎉 Special Offer: Upgrade to Premium with 50% OFF! 🎉
+                  🎉 Ưu đãi đặc biệt: Nâng cấp lên Premium với giá giảm 50%! 🎉
                 </Text>
                 <Button
                   type="primary"
@@ -185,7 +186,7 @@ function SubscriptionHistory() {
                     }
                   })}
                 >
-                  Upgrade to Premium (150,000 VNĐ/month)
+                  Nâng cấp lên Premium (150.000 VNĐ/tháng)
                 </Button>
               </div>
             )}
@@ -195,7 +196,7 @@ function SubscriptionHistory() {
         <Empty 
           description={
             <span style={{ fontSize: '16px', color: '#666' }}>
-              No subscription history found
+              Không tìm thấy lịch sử đăng ký
             </span>
           }
           style={{

@@ -159,7 +159,7 @@ const AdminMembership = () => {
           paddingBottom: '12px'
         }}
       >
-        Quản lý Gói Membership
+        Quản Lý Gói Thành Viên
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -188,7 +188,7 @@ const AdminMembership = () => {
             fontSize: '18px',
             fontWeight: 500
           }}>
-            Chỉnh sửa giá Membership
+            Chỉnh Sửa Giá Gói Thành Viên
           </div>
         }
         open={isModalVisible}
@@ -205,7 +205,7 @@ const AdminMembership = () => {
         >
           <Form.Item
             name="price"
-            label={<span style={{ fontSize: '16px' }}>Giá mới</span>}
+            label={<span style={{ fontSize: '16px' }}>Giá Mới</span>}
             rules={[
               { required: true, message: 'Vui lòng nhập giá' },
               { 
@@ -243,7 +243,7 @@ const AdminMembership = () => {
                 fontSize: '16px'
               }}
             >
-              Cập nhật
+              Cập Nhật
             </Button>
           </Form.Item>
         </Form>

@@ -27,29 +27,29 @@ const Footer = () => {
         </div>
 
         <div className="footer-column">
-          <h4>Policies & Terms</h4>
+          <h4>Điều Khoản & Chính Sách</h4>
           <ul>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Refund Policy</a></li>
+            <li><a href="#">Chính Sách Bảo Mật</a></li>
+            <li><a href="#">Điều Khoản Dịch Vụ</a></li>
+            <li><a href="#">Chính Sách Hoàn Tiền</a></li>
           </ul>
         </div>
 
         <div className="footer-column">
-          <h4>Contact Information</h4>
+          <h4>Thông Tin Liên Hệ</h4>
           <p>✉️ support@thaikycare.com</p>
           <p>📞 (+84) 987 654 321</p>
-          <p>📍 3rd Floor, ABC Building<br/>123 XYZ Street, District 1<br/>Ho Chi Minh City, Vietnam</p>
+          <p>📍 Tầng 3, Tòa nhà ABC<br/>123 Đường XYZ, Quận 1<br/>Thành phố Hồ Chí Minh, Việt Nam</p>
         </div>
 
         <div className="footer-column">
-          <h4>Quick Links</h4>
+          <h4>Liên Kết Nhanh</h4>
           <ul>
-            <li><Link to="/about">About Us</Link></li>
-            <li><Link to="/membership">Membership Plans</Link></li>
-            <li><Link to="/blog">Experience Blog</Link></li>
-            <li><Link to="/faq">FAQ</Link></li>
-            <li><Link to="/contact">Contact Us</Link></li>
+            <li><Link to="/about">Về Chúng Tôi</Link></li>
+            <li><Link to="/membership">Gói Thành Viên</Link></li>
+            <li><Link to="/blog">Blog Chia Sẻ</Link></li>
+            <li><Link to="/faq">Hỏi Đáp</Link></li>
+            <li><Link to="/contact">Liên Hệ</Link></li>
           </ul>
         </div>
       </div>

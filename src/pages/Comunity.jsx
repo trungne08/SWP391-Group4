@@ -297,7 +297,7 @@ function Comunity() {
             textShadow: "1px 1px 3px rgba(0,0,0,0.3)",
             letterSpacing: "1px"
           }}>
-            52+ million users every month
+            Nơi mọi người chia sẻ những câu chuyện
           </Text>
         </div>
       </div>

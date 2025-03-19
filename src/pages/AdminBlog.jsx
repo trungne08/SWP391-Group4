@@ -135,32 +135,23 @@ function AdminBlog() {
     <div style={pageStyle}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Title 
-          level={2} 
-          style={{
-            color: '#1a3353',
-            marginBottom: 0,
-            position: 'relative',
-            paddingBottom: '10px'
-          }}
-        >
-          Blog Management
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: '50px',
-            height: '3px',
-            background: '#1890ff',
-            borderRadius: '2px'
-          }}/>
-        </Title>
+            level={2} 
+            style={{
+              color: '#1a3353',
+              marginBottom: 0,
+              position: 'relative',
+              paddingBottom: '10px'
+            }}
+          >
+            Quản Lý Blog
+          </Title>
         <Button 
           type="primary" 
           onClick={() => showModal()}
           style={buttonStyle}
           icon={<PlusOutlined />}
         >
-          Add Blog
+          Thêm Blog Mới
         </Button>
       </Row>
 
@@ -189,7 +180,7 @@ function AdminBlog() {
                     fontSize: '14px'
                   }}
                 >
-                  Posted on: {blog.postedAt}
+                  Đăng lúc: {blog.postedAt}
                 </Text>
               </div>
               <div style={{ 
@@ -230,7 +221,7 @@ function AdminBlog() {
                   style={buttonStyle}
                   icon={<EditOutlined />}
                 >
-                  Edit
+                  Sửa
                 </Button>
                 <Button 
                   danger 
@@ -238,7 +229,7 @@ function AdminBlog() {
                   style={buttonStyle}
                   icon={<DeleteOutlined />}
                 >
-                  Delete
+                  Xóa
                 </Button>
               </div>
             </Card>
@@ -255,7 +246,7 @@ function AdminBlog() {
             fontSize: '18px',
             fontWeight: 500
           }}>
-            {editingBlog ? "Edit Blog" : "Add New Blog"}
+            {editingBlog ? "Chỉnh Sửa Blog" : "Thêm Blog Mới"}
           </div>
         }
         open={isModalVisible}
@@ -277,8 +268,8 @@ function AdminBlog() {
         >
           <Form.Item
             name="title"
-            label={<span style={{ fontSize: '16px' }}>Title</span>}
-            rules={[{ required: true, message: 'Please input the title!' }]}
+            label={<span style={{ fontSize: '16px' }}>Tiêu đề</span>}
+            rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
           >
             <Input 
               style={{ 
@@ -290,8 +281,8 @@ function AdminBlog() {
           </Form.Item>
           <Form.Item
             name="content"
-            label={<span style={{ fontSize: '16px' }}>Content</span>}
-            rules={[{ required: true, message: 'Please input the content!' }]}
+            label={<span style={{ fontSize: '16px' }}>Nội dung</span>}
+            rules={[{ required: true, message: 'Vui lòng nhập nội dung!' }]}
           >
             <TextArea 
               rows={6}
@@ -303,10 +294,10 @@ function AdminBlog() {
           </Form.Item>
           <Form.Item
             name="imageUrls"
-            label={<span style={{ fontSize: '16px' }}>Image URL</span>}
+            label={<span style={{ fontSize: '16px' }}>Đường dẫn hình ảnh</span>}
           >
             <Input 
-              placeholder="Enter image URL"
+              placeholder="Nhập đường dẫn hình ảnh"
               style={{ 
                 height: '40px',
                 borderRadius: '6px',
