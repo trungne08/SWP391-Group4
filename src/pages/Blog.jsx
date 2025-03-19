@@ -1,11 +1,85 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Row, Col, Card, message } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
-import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Box,
+  Fade,
+  Grow,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import api from '../services/api';
+import { Alert, Snackbar } from '@mui/material';  // Thêm import này
 
-const { Title, Text, Paragraph } = Typography;
-const { Meta } = Card;
+// Styled Components
+const StyledCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  borderRadius: '16px',
+  overflow: 'hidden',
+  transition: 'all 0.3s ease',
+  border: 'none',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
+  }
+}));
+
+const StyledCardMedia = styled(CardMedia)({
+  height: 240,
+  position: 'relative',
+  overflow: 'hidden',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '30%',
+    background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)',
+  }
+});
+
+const BlogTitle = styled(Typography)(({ theme }) => ({
+  fontSize: '2.5rem',
+  fontWeight: 700,
+  textAlign: 'center',
+  marginBottom: theme.spacing(6),
+  color: '#2c3e50',
+  position: 'relative',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    bottom: '-16px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '80px',
+    height: '4px',
+    background: 'linear-gradient(45deg, #FF69B4, #FFB6C1)',
+    borderRadius: '2px',
+  }
+}));
+
+const ShowMoreButton = styled(Button)(({ theme }) => ({
+  marginTop: theme.spacing(4),
+  padding: '12px 32px',
+  borderRadius: '30px',
+  background: 'linear-gradient(45deg, #FF69B4, #FFB6C1)',
+  color: 'white',
+  fontWeight: 600,
+  '&:hover': {
+    background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 6px 20px rgba(255,105,180,0.4)',
+  }
+}));
 
 function Blog() {
   const navigate = useNavigate();
@@ -13,6 +87,11 @@ function Blog() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Thêm states cho alert
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  
+  // Thay đổi trong useEffect
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
@@ -20,7 +99,8 @@ function Blog() {
         setBlogs(blogsData);
       } catch (error) {
         console.error("Failed to fetch blogs:", error);
-        message.error("Không thể tải danh sách blog");
+        setAlertMessage("Không thể tải danh sách blog");
+        setAlertOpen(true);
       } finally {
         setLoading(false);
       }
@@ -30,154 +110,87 @@ function Blog() {
   }, []);
 
   return (
-    <div style={{
-      padding: "40px 20px",
-      maxWidth: "1200px",
-      margin: "0 auto",
-      background: "#fff"
-    }}>
-      <Title 
-        level={1} 
-        style={{
-          textAlign: "center",
-          marginBottom: "50px",
-          position: "relative",
-          color: "#2c3e50"
-        }}
-      >
-        Our Latest Blogs
-        <div style={{
-          width: "80px",
-          height: "4px",
-          background: "#1890ff",
-          margin: "20px auto 0",
-          borderRadius: "2px"
-        }}></div>
-      </Title>
+    <Container maxWidth="lg" sx={{ py: 8 }}>
+      <Fade in timeout={1000}>
+        <BlogTitle variant="h1">
+          Pregnancy Journey Blog
+        </BlogTitle>
+      </Fade>
 
-      <Row gutter={[24, 24]}>
+      <Grid container spacing={4}>
         {(isExpanded ? blogs : blogs.slice(0, 6)).map((blog, index) => (
-          <Col xs={24} sm={12} md={8} key={blog.blogId || index}>
-            <Card
-              hoverable
-              onClick={() => navigate(`/blog/${blog.blogId}`)}
-              style={{
-                borderRadius: "12px",
-                overflow: "hidden",
-                transition: "all 0.3s ease",
-                border: "none",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                transform: "translateY(0)",
-                ":hover": {
-                  transform: "translateY(-5px)",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.12)"
-                }
-              }}
-              cover={
-                blog.images && blog.images[0]?.imageUrl ? (
-                  <div style={{
-                    height: "220px",
-                    overflow: "hidden"
+          <Grid item xs={12} sm={6} md={4} key={blog.blogId || index}>
+            <Grow in timeout={500 * (index % 3 + 1)}>
+              <StyledCard onClick={() => navigate(`/blog/${blog.blogId}`)}>
+                <StyledCardMedia
+                  image={blog.images?.[0]?.imageUrl || '/fallback-image.jpg'}
+                  title={blog.title}
+                />
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Typography variant="h5" gutterBottom sx={{ 
+                    fontWeight: 600,
+                    color: '#2c3e50',
+                    mb: 2
                   }}>
-                    <img
-                      alt={blog.title}
-                      src={blog.images[0].imageUrl}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        transition: "transform 0.3s ease",
-                        ":hover": {
-                          transform: "scale(1.05)"
-                        }
-                      }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/fallback-image.jpg';
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div style={{
-                    height: "220px",
-                    background: "linear-gradient(45deg, #f5f5f5, #e0e0e0)"
-                  }}></div>
-                )
-              }
-            >
-              <Meta
-                title={<div style={{
-                  fontSize: "18px",
-                  fontWeight: "600",
-                  marginBottom: "8px",
-                  color: "#2c3e50"
-                }}>{blog.title}</div>}
-                description={
-                  <div>
-                    <Text style={{
-                      color: "#666",
-                      fontSize: "14px",
-                      display: "block",
-                      marginBottom: "8px"
-                    }}>
-                      {new Date(blog.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </Text>
-                    <Paragraph 
-                      ellipsis={{ rows: 3 }}
-                      style={{
-                        color: "#666",
-                        marginBottom: "16px"
-                      }}
-                    >
-                      {blog.content}
-                    </Paragraph>
-                    <div style={{
-                      color: "#1890ff",
-                      fontWeight: "500",
-                      transition: "all 0.3s ease",
-                      ":hover": {
-                        color: "#40a9ff",
-                        paddingLeft: "5px"
-                      }
-                    }}>
-                      Read More →
-                    </div>
-                  </div>
-                }
-              />
-            </Card>
-          </Col>
+                    {blog.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {new Date(blog.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      mb: 2
+                    }}
+                  >
+                    {blog.content}
+                  </Typography>
+                  <Box sx={{ 
+                    color: '#FF69B4',
+                    fontWeight: 500,
+                    '&:hover': { pl: 1 },
+                    transition: 'all 0.3s ease'
+                  }}>
+                    Read More →
+                  </Box>
+                </CardContent>
+              </StyledCard>
+            </Grow>
+          </Grid>
         ))}
-      </Row>
+      </Grid>
 
       {blogs.length > 6 && (
-        <div style={{ textAlign: "center", marginTop: "40px" }}>
-          <button 
-            onClick={() => setIsExpanded(!isExpanded)}
-            style={{
-              padding: "10px 30px",
-              fontSize: "16px",
-              color: "#fff",
-              background: "#1890ff",
-              border: "none",
-              borderRadius: "25px",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-              ":hover": {
-                background: "#40a9ff",
-                boxShadow: "0 4px 12px rgba(24,144,255,0.3)"
-              }
-            }}
-          >
+        <Box sx={{ textAlign: 'center' }}>
+          <ShowMoreButton onClick={() => setIsExpanded(!isExpanded)}>
             {isExpanded ? "Show Less" : "Show More"}
-          </button>
-        </div>
+          </ShowMoreButton>
+        </Box>
       )}
-    </div>
+      
+      <Snackbar
+        open={alertOpen}
+        autoHideDuration={6000}
+        onClose={() => setAlertOpen(false)}
+      >
+        <Alert 
+          onClose={() => setAlertOpen(false)} 
+          severity="error" 
+          sx={{ width: '100%' }}
+        >
+          {alertMessage}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 }
 

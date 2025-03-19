@@ -1,47 +1,64 @@
 import React, { useState, useEffect } from "react";
-import { Card, Avatar, Button, Descriptions, Divider, Modal, Form, Input, message, Spin, Dropdown } from "antd";
-import { UserOutlined, EditOutlined, LockOutlined, CameraOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import {
+  Container,
+  Paper,
+  Avatar,
+  Button,
+  Typography,
+  Grid,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Box,
+  CircularProgress,
+  Alert,
+  Snackbar,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import {
+  Edit as EditIcon,
+  Lock as LockIcon,
+  PhotoCamera as CameraIcon,
+  Person as PersonIcon,
+} from "@mui/icons-material";
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: theme.spacing(2),
+  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+}));
+
 function Profile() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [form] = Form.useForm();
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const [isAvatarModalVisible, setIsAvatarModalVisible] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phoneNumber: '',
+    avatar: ''
+  });
+  const [alertState, setAlertState] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
-  const handleEdit = () => {
-    if (!userData) return;
-    
-    form.setFieldsValue({
-      fullName: userData.fullName || '',
-      phoneNumber: userData.phoneNumber || '',
-      avatar: userData.avatar || ''
+  const showAlert = (message, severity = 'success') => {
+    setAlertState({
+      open: true,
+      message,
+      severity
     });
-    setAvatarUrl(userData.avatar || '');
-    setIsModalVisible(true);
-  };
-
-  const avatarMenuItems = {
-    items: [
-      {
-        key: '1',
-        label: 'View Profile Picture',
-        icon: <UserOutlined />,
-        onClick: () => setIsAvatarModalVisible(true),
-      },
-      {
-        key: '2',
-        label: 'Change Profile Picture',
-        icon: <CameraOutlined />,
-        onClick: handleEdit,
-      },
-    ],
   };
 
   useEffect(() => {
@@ -60,178 +77,242 @@ function Profile() {
         
         if (profileData) {
           setUserData(profileData);
+          setFormData({
+            fullName: profileData.fullName || '',
+            phoneNumber: profileData.phoneNumber || '',
+            avatar: profileData.avatar || ''
+          });
         } else {
           setUserData(storedUser);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
-        message.error('Failed to load profile data');
+        showAlert('Failed to load profile data', 'error');
         navigate('/login');
       } finally {
         setLoading(false);
       }
     };
+
     fetchUserData();
   }, [navigate]);
 
-  const handleUpdate = async (values) => {
+  const handleEdit = () => {
+    if (!userData) return;
+    setIsModalVisible(true);
+  };
+
+  const handleUpdate = async (event) => {
+    event.preventDefault();
     try {
       setLoading(true);
       const updateData = {
-        fullName: values.fullName?.trim(),
-        phoneNumber: values.phoneNumber?.trim(),
-        avatar: values.avatar?.trim()
+        fullName: formData.fullName.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        avatar: formData.avatar.trim()
       };
       
       const response = await api.user.updateProfile(updateData);
       
       if (response) {
         setUserData(response);
-        message.success('Profile updated successfully');
+        showAlert('Profile updated successfully');
         setIsModalVisible(false);
       }
     } catch (error) {
       console.error('Update error:', error);
-      message.error('Failed to update profile');
+      showAlert('Failed to update profile', 'error');
     } finally {
       setLoading(false);
     }
   };
+
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Spin size="large" />
-      </div>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+        <CircularProgress sx={{ color: '#FF69B4' }} />
+      </Box>
     );
   }
+
   if (!userData) {
-    return <div style={{ textAlign: 'center', marginTop: '50px' }}>No user data available</div>;
+    return (
+      <Container maxWidth="sm">
+        <Typography variant="h6" textAlign="center" mt={5}>
+          No user data available
+        </Typography>
+      </Container>
+    );
   }
+
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
-      <Card style={{ width: 600, borderRadius: "8px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}>
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <Dropdown menu={avatarMenuItems} trigger={['click']}>
-            <div style={{ display: 'inline-block', position: 'relative', cursor: 'pointer' }}>
-              <Avatar 
-                size={100} 
-                src={userData.avatar || null}
-                icon={!userData.avatar && <UserOutlined />}
-                style={{ marginBottom: "16px" }}
-              />
-              <div style={{
-                position: 'absolute',
-                bottom: 16,
-                right: 0,
-                background: '#fff',
-                borderRadius: '50%',
-                padding: 4,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }}>
-                <CameraOutlined style={{ fontSize: '16px' }} />
-              </div>
-            </div>
-          </Dropdown>
-          <h2 style={{ margin: "8px 0" }}>{userData.fullName || userData.username}</h2>
-          <p style={{ color: "#666" }}>{userData.email}</p>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-            <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+    <Container maxWidth="md" sx={{ py: 6 }}>
+      <StyledPaper>
+        <Box textAlign="center" mb={4}>
+          <Avatar
+            src={userData.avatar}
+            sx={{
+              width: 120,
+              height: 120,
+              margin: '0 auto',
+              cursor: 'pointer',
+              border: '4px solid white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => setIsAvatarModalVisible(true)}
+          >
+            {!userData.avatar && <PersonIcon fontSize="large" />}
+          </Avatar>
+
+          <Typography variant="h4" sx={{ mt: 2, color: '#2c3e50' }}>
+            {userData.fullName || userData.username}
+          </Typography>
+          <Typography color="text.secondary" mb={3}>
+            {userData.email}
+          </Typography>
+
+          <Box display="flex" gap={2} justifyContent="center">
+            <Button
+              variant="contained"
+              startIcon={<EditIcon />}
+              onClick={handleEdit}
+              sx={{ bgcolor: '#FF69B4', '&:hover': { bgcolor: '#FF1493' } }}
+            >
               Edit Profile
             </Button>
-            <Button icon={<LockOutlined />} onClick={() => navigate('/change-password')}>
+            <Button
+              variant="outlined"
+              startIcon={<LockIcon />}
+              onClick={() => navigate('/change-password')}
+              sx={{ 
+                color: '#FF69B4', 
+                borderColor: '#FF69B4',
+                '&:hover': { 
+                  borderColor: '#FF1493',
+                  color: '#FF1493'
+                }
+              }}
+            >
               Change Password
             </Button>
-          </div>
-        </div>
-        <Divider />
-        <Descriptions title="Account Information" column={1} bordered>
-          <Descriptions.Item label="Username">{userData.username}</Descriptions.Item>
-          <Descriptions.Item label="Full Name">{userData.fullName || 'Not set'}</Descriptions.Item>
-          <Descriptions.Item label="Email">{userData.email}</Descriptions.Item>
-          <Descriptions.Item label="Phone Number">{userData.phoneNumber || 'Not set'}</Descriptions.Item>
-        </Descriptions>
-        <Modal
-          title="Edit Profile"
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Username
+            </Typography>
+            <Typography variant="body1">{userData.username}</Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Full Name
+            </Typography>
+            <Typography variant="body1">
+              {userData.fullName || 'Not set'}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Email
+            </Typography>
+            <Typography variant="body1">{userData.email}</Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Phone Number
+            </Typography>
+            <Typography variant="body1">
+              {userData.phoneNumber || 'Not set'}
+            </Typography>
+          </Grid>
+        </Grid>
+
+        <Dialog
           open={isModalVisible}
-          onCancel={() => setIsModalVisible(false)}
-          footer={null}
+          onClose={() => setIsModalVisible(false)}
+          maxWidth="sm"
+          fullWidth
         >
-          <Form
-            form={form}
-            onFinish={handleUpdate}
-            layout="vertical"
-          >
-            <Form.Item
-              name="avatar"
-              label="Avatar URL"
-              rules={[
-                { type: 'url', message: 'Please enter a valid URL!' }
-              ]}
-            >
-              <Input 
-                placeholder="Enter image URL"
-                onChange={(e) => setAvatarUrl(e.target.value)}
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogContent>
+            <Box component="form" onSubmit={handleUpdate} sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Avatar URL"
+                value={formData.avatar}
+                onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
+                margin="normal"
               />
-            </Form.Item>
-            {avatarUrl && (
-              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <Avatar 
-                  size={100} 
-                  src={avatarUrl}
-                  icon={!avatarUrl && <UserOutlined />}
-                />
-              </div>
-            )}
-            <Form.Item
-              name="fullName"
-              label="Full Name"
-              rules={[
-                { required: true, message: 'Please input your full name!' },
-                { max: 50, message: 'Full name cannot exceed 50 characters!' }
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="phoneNumber"
-              label="Phone Number"
-              rules={[
-                { pattern: /^\d{10}$/, message: 'Please enter a valid 10-digit phone number!' }
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit" block loading={loading}>
-                Update Profile
-              </Button>
-            </Form.Item>
-          </Form>
-        </Modal>
-        {/* Add Avatar View Modal */}
-        <Modal
-          title="Profile Picture"
+              <TextField
+                fullWidth
+                label="Full Name"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                margin="normal"
+                required
+              />
+              <TextField
+                fullWidth
+                label="Phone Number"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                margin="normal"
+              />
+              <DialogActions>
+                <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
+                <Button 
+                  type="submit"
+                  variant="contained"
+                  sx={{ bgcolor: '#FF69B4', '&:hover': { bgcolor: '#FF1493' } }}
+                >
+                  Update
+                </Button>
+              </DialogActions>
+            </Box>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
           open={isAvatarModalVisible}
-          onCancel={() => setIsAvatarModalVisible(false)}
-          footer={null}
+          onClose={() => setIsAvatarModalVisible(false)}
+          maxWidth="md"
         >
-          <div style={{ textAlign: 'center' }}>
+          <DialogContent>
             <img
-              src={userData.avatar || ''}
+              src={userData.avatar}
               alt="Profile"
               style={{
                 maxWidth: '100%',
-                maxHeight: '500px',
+                maxHeight: '70vh',
                 objectFit: 'contain'
               }}
               onError={(e) => {
                 e.target.src = 'https://via.placeholder.com/400?text=No+Image';
               }}
             />
-          </div>
-        </Modal>
-      </Card>
-    </div>
+          </DialogContent>
+        </Dialog>
+
+        <Snackbar
+          open={alertState.open}
+          autoHideDuration={6000}
+          onClose={() => setAlertState({ ...alertState, open: false })}
+        >
+          <Alert
+            onClose={() => setAlertState({ ...alertState, open: false })}
+            severity={alertState.severity}
+            sx={{ width: '100%' }}
+          >
+            {alertState.message}
+          </Alert>
+        </Snackbar>
+      </StyledPaper>
+    </Container>
   );
 }
+
 export default Profile;
