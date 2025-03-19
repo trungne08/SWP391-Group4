@@ -71,23 +71,49 @@ const Header = () => {
           </li>
           <div className="nav-links">
             <li>
-              <Link to="/" className={location.pathname === "/" ? "active" : ""}>Home</Link>
+              <Link 
+                to="/" 
+                className={location.pathname === "/" ? "active" : ""}
+                style={{ textDecoration: 'none' }}  // Add this line
+              >
+                Home
+              </Link>
             </li>
             <li>
-              <Link to="/comunity" className={location.pathname === "/comunity" ? "active" : ""}>Community</Link>
+              <Link 
+                to="/comunity" 
+                className={location.pathname === "/comunity" ? "active" : ""}
+                style={{ textDecoration: 'none' }}  // Add this line
+              >
+                Community
+              </Link>
             </li>
             <li>
-              <Link to="/blog" className={location.pathname === "/blog" ? "active" : ""}>Blog</Link>
-
-            </li> 
-
-      
-
-            <li>
-              <Link to="/baby" className={location.pathname === "/baby" ? "active" : ""}>Baby</Link>
+              <Link 
+                to="/blog" 
+                className={location.pathname === "/blog" ? "active" : ""}
+                style={{ textDecoration: 'none' }}  // Add this line
+              >
+                Blog
+              </Link>
             </li>
             <li>
-              <Link to="/faq" className={location.pathname === "/faq" ? "active" : ""}>FAQ</Link>
+              <Link 
+                to="/baby" 
+                className={location.pathname === "/baby" ? "active" : ""}
+                style={{ textDecoration: 'none' }}  // Add this line
+              >
+                Baby
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/faq" 
+                className={location.pathname === "/faq" ? "active" : ""}
+                style={{ textDecoration: 'none' }}  // Add this line
+              >
+                FAQ
+              </Link>
             </li>
           </div>
           <li className="nav-avatar">
