@@ -144,7 +144,7 @@ const api = {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           mode: "cors",
-          credentials: "include",
+          credentials: "include"
         });
 
         const responseText = await response.text();
@@ -271,10 +271,10 @@ const api = {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
-
-        const tokenData = JSON.parse(atob(token.split(".")[1]));
-        const userId = tokenData.id;
-
+    
+        // Sử dụng userId được truyền vào hoặc lấy từ token nếu không có
+        const userId = data.user_id || JSON.parse(atob(token.split(".")[1])).id;
+    
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
           method: "PUT",
           headers: {
@@ -286,17 +286,17 @@ const api = {
           body: JSON.stringify({
             fullName: data.fullName,
             phoneNumber: data.phoneNumber,
-            avatar: data.avatar,
+            avatar: data.avatar
           }),
         });
-
+    
         const responseText = await response.text();
         console.log("Update profile response:", responseText);
-
+    
         if (!response.ok) {
           throw new Error(responseText || "Failed to update profile");
         }
-
+    
         try {
           return JSON.parse(responseText);
         } catch (e) {
