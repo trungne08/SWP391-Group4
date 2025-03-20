@@ -28,25 +28,25 @@ const Register = () => {
 
     // Basic validation
     if (!formData.username || !formData.email || !formData.password) {
-      setError('Please fill in all required fields');
+      setError('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      setError('Vui lòng nhập địa chỉ email hợp lệ');
       return;
     }
 
     // Password validation
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Mật khẩu xác nhận không khớp');
       return;
     }
 
@@ -68,9 +68,9 @@ const Register = () => {
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else if (err.message?.includes('Failed to fetch') || err.message?.includes('Network Error')) {
-        setError('Unable to connect to server. Please try again later.');
+        setError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
       } else {
-        setError('Registration failed. Please try again.');
+        setError('Đăng ký thất bại. Vui lòng thử lại.');
       }
     }
   };
@@ -80,8 +80,8 @@ const Register = () => {
       <Box sx={{ mt: 8, mb: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
-            Create Account<br />
-            Join Baby Care
+            Tạo Tài Khoản<br />
+            Tham Gia Pregnancy Tracking
           </Typography>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <form onSubmit={handleSubmit} noValidate>
@@ -90,7 +90,7 @@ const Register = () => {
               required
               fullWidth
               id="username"
-              label="Username"
+              label="Tên đăng nhập"
               name="username"
               autoComplete="username"
               autoFocus
@@ -103,7 +103,7 @@ const Register = () => {
               required
               fullWidth
               id="email"
-              label="Email Address"
+              label="Địa chỉ email"
               name="email"
               type="email"
               autoComplete="email"
@@ -116,7 +116,7 @@ const Register = () => {
               required
               fullWidth
               name="password"
-              label="Password"
+              label="Mật khẩu"
               type="password"
               id="password"
               value={formData.password}
@@ -128,7 +128,7 @@ const Register = () => {
               required
               fullWidth
               name="confirmPassword"
-              label="Confirm Password"
+              label="Xác nhận mật khẩu"
               type="password"
               id="confirmPassword"
               value={formData.confirmPassword}
@@ -141,12 +141,12 @@ const Register = () => {
               variant="contained"
               sx={{ mt: 3, mb: 2, bgcolor: 'black', '&:hover': { bgcolor: '#333' } }}
             >
-              Register
+              Đăng ký
             </Button>
             <Typography variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
-              Already have an account?{' '}
+              Đã có tài khoản?{' '}
               <Link to="/login" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'bold' }}>
-                Sign in here
+                Đăng nhập tại đây
               </Link>
             </Typography>
           </form>

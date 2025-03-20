@@ -1,81 +1,102 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Box, Container, TextField, Button, Typography, Paper, Alert } from '@mui/material';
-import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Box,
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Alert,
+} from "@mui/material";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value.trim()
+      [name]: value.trim(),
     }));
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     try {
-      console.log('Attempting login...');
+      console.log("Attempting login...");
       const response = await api.auth.login(formData);
-      
+
       if (response) {
-        localStorage.setItem('token', response.token);
+        localStorage.setItem("token", response.token);
         const userData = {
           user_id: response.user_id,
           username: response.username,
           email: response.email,
           fullName: response.fullName, // Thêm fullName, nếu không có thì dùng username
-          role: response.role
+          role: response.role,
         };
         // Log để debug
-        console.log('User Data:', userData);
-        
-        localStorage.setItem('user', JSON.stringify(userData));
+        console.log("User Data:", userData);
+
+        localStorage.setItem("user", JSON.stringify(userData));
         login(userData);
-        
-        if (response.role === 'MEMBER') {
-          navigate('/', { replace: true });
-        } else if (response.role === 'ADMIN') {
-          navigate('/admin', { replace: true });
+
+        if (response.role === "MEMBER") {
+          navigate("/", { replace: true });
+        } else if (response.role === "ADMIN") {
+          navigate("/admin", { replace: true });
         }
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || 'Invalid email or password');
+      console.error("Login error:", err);
+      setError(err.message || "Invalid email or password");
     }
   };
   return (
     <Container component="main" maxWidth="xs">
-      <Box sx={{ mt: 8, mb: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
-            Welcome Pregnancy Tracking!<br />
-            Login to continue
+      <Box
+        sx={{
+          mt: 8,
+          mb: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Paper elevation={3} sx={{ p: 4, width: "100%" }}>
+          <Typography
+            component="h1"
+            variant="h5"
+            sx={{ textAlign: "center", mb: 3 }}
+          >
+            Chào mừng đến với Pregnancy Tracking!
+            <br />
+            Đăng nhập để bắt đầu!
           </Typography>
-          
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
-          
+
           <form onSubmit={handleSubmit} noValidate>
             <TextField
               margin="normal"
               required
               fullWidth
               id="email"
-              label="Email Address"
+              label="Địa chỉ Email"
               name="email"
               autoComplete="email"
               autoFocus
@@ -89,7 +110,7 @@ const Login = () => {
               required
               fullWidth
               name="password"
-              label="Password"
+              label="Mật Khẩu"
               type="password"
               id="password"
               autoComplete="current-password"
@@ -101,15 +122,34 @@ const Login = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, bgcolor: 'black', '&:hover': { bgcolor: '#333' } }}
+              sx={{
+                mt: 3,
+                mb: 2,
+                bgcolor: "black",
+                "&:hover": { bgcolor: "#333" },
+              }}
             >
-              Sign In
+              Đăng nhập
             </Button>
-            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box
+              sx={{
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+              }}
+            >
               <Typography variant="body2" sx={{ mt: 1 }}>
-                Don't have an account?{' '}
-                <Link to="/register" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'bold' }}>
-                  Register here
+              Chưa có tài khoản?{" "}
+                <Link
+                  to="/register"
+                  style={{
+                    textDecoration: "underline",
+                    color: "black",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Đăng ký tại đây
                 </Link>
               </Typography>
             </Box>
