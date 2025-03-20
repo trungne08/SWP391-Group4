@@ -67,7 +67,8 @@ const Reminder = () => {
 
   const reminderTypes = [
     { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai', icon: <MedicineBoxOutlined /> },
-    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế', icon: <MedicineBoxOutlined /> }
+    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế', icon: <MedicineBoxOutlined /> },
+    { value: 'HEALTH_ALERT', label: 'Cảnh báo sức khỏe thai nhi', icon: <FileSearchOutlined /> }
   ];
 
   const handleEdit = (reminder) => {
@@ -144,12 +145,19 @@ const Reminder = () => {
         type: reminder.type,
         title: reminder.type === 'MEDICAL_TASK' && reminder.tasks[0] 
           ? reminder.tasks[0].taskName 
+          : reminder.type === 'HEALTH_ALERT' && reminder.healthAlerts[0]
+          ? `Cảnh báo: ${
+              reminder.healthAlerts[0].healthType === 'LOW_HEIGHT' ? 'Chiều cao thai nhi thấp' :
+              reminder.healthAlerts[0].healthType === 'HIGH_HEIGHT' ? 'Chiều cao thai nhi cao' :
+              reminder.healthAlerts[0].healthType
+            }`
           : reminderTypes.find(t => t.value === reminder.type)?.label || reminder.type,
         date: dayjs(reminder.reminderDate),
-        status: reminder.status,  // Use reminder.status, not reminder.tasks.status
+        status: reminder.status,
         createdAt: dayjs(reminder.createdAt),
         pregnancyId: reminder.pregnancyId,
-        tasks: reminder.tasks || []
+        tasks: reminder.tasks || [],
+        healthAlerts: reminder.healthAlerts || []
       }));
       setReminders(formattedReminders);
     } catch (error) {
@@ -233,7 +241,8 @@ const Reminder = () => {
             <Badge 
               status={
                 reminder.type === 'APPOINTMENT' ? 'processing' :
-                reminder.type === 'MEDICAL_TASK' ? 'warning' : 'default'
+                reminder.type === 'MEDICAL_TASK' ? 'warning' :
+                reminder.type === 'HEALTH_ALERT' ? 'error' : 'default'
               } 
               text={
                 <span style={{ fontSize: '11px' }}>
@@ -490,8 +499,27 @@ const Reminder = () => {
                   <p><strong>Mô tả:</strong> {selectedReminder.tasks[0].notes || 'Không có mô tả'}</p>
                 </div>
               )}
+
+              {selectedReminder.type === 'HEALTH_ALERT' && selectedReminder.healthAlerts && selectedReminder.healthAlerts.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h3>Thông tin cảnh báo</h3>
+                  <p><strong>Loại cảnh báo:</strong> {
+                    selectedReminder.healthAlerts[0].healthType === 'LOW_HEIGHT' ? 'Chiều cao thai nhi thấp' : 
+                    selectedReminder.healthAlerts[0].healthType === 'HIGH_HEIGHT' ? 'Chiều cao thai nhi cao' :
+                    selectedReminder.healthAlerts[0].healthType
+                  }</p>
+                  <p><strong>Mức độ:</strong> {
+                    selectedReminder.healthAlerts[0].severity === 'MEDIUM' ? 'Trung bình' :
+                    selectedReminder.healthAlerts[0].severity === 'HIGH' ? 'Cao' : 'Thấp'
+                  }</p>
+                  <p><strong>Nguồn:</strong> {
+                    selectedReminder.healthAlerts[0].source === 'PREGNANCY_RECORDS' ? 'Hồ sơ thai kỳ' :
+                    selectedReminder.healthAlerts[0].source
+                  }</p>
+                  <p><strong>Ghi chú:</strong> {selectedReminder.healthAlerts[0].notes || 'Không có ghi chú'}</p>
+                </div>
+              )}
             </div>
-            {/* Removed the extra close button div here */}
           </div>
         )}
       </Modal>

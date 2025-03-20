@@ -130,29 +130,36 @@ function Baby() {
       message.error("Không thể cập nhật trạng thái thai nhi");
     }
   };
-
   const handleFetusModalConfirm = async () => {
     try {
-      const fetusId = pregnancyData.fetuses[selectedFetusIndex].fetusId;
-      await api.pregnancy.updatePregnancyStatus(null, fetusId, "CANCEL");
-      message.success(`Đã cập nhật trạng thái thai nhi ${selectedFetusIndex + 1}`);
-      setIsConfirmFetusModalOpen(false);
-      setSelectedFetusIndex(null);
-      fetchPregnancyData(); // Refresh data
+      if (selectedFetusIndex !== null && pregnancyData?.fetuses) {
+        const fetusId = pregnancyData.fetuses[selectedFetusIndex].fetusId;
+        console.log("Attempting to cancel fetus:", fetusId);
+        
+        const result = await api.pregnancy.updatePregnancyStatus(
+          pregnancyData.pregnancyId,
+          fetusId,
+          'CANCEL'
+        );
+
+        if (result) {
+          await fetchPregnancyData(); // Refresh data
+          message.success(`Đã cập nhật trạng thái thai nhi ${selectedFetusIndex + 1}`);
+          setIsConfirmFetusModalOpen(false);
+          setSelectedFetusIndex(null);
+        }
+      }
     } catch (error) {
-      console.error("Error updating fetus status:", error);
-      message.error("Không thể cập nhật trạng thái thai nhi");
+      console.error('Error updating fetus status:', error);
+      message.error('Không thể cập nhật trạng thái thai nhi: ' + (error.message || 'Unknown error'));
     }
   };
-
   const handleUpdateStatus = async (pregnancyId, fetusId) => {
     try {
       let response;
       if (fetusId) {
-        // Update fetus status
         response = await api.pregnancy.updatePregnancyStatus(pregnancyId, fetusId, "CANCEL");
       } else {
-        // Update pregnancy status
         response = await api.pregnancy.updatePregnancyStatus(pregnancyId, null, "COMPLETED");
       }
 
@@ -364,39 +371,6 @@ function Baby() {
     colors: getIconColor(index),
     hoverAnimation: "all 0.3s ease",
   }));
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Get current pregnancy data
-        const pregnancy = await api.pregnancy.getCurrentPregnancy();
-        console.log("Fetched pregnancy data:", pregnancy);
-  
-        if (!pregnancy) {
-          console.log("No pregnancy data found");
-          setError("Không tìm thấy thông tin thai kỳ");
-          return;
-        }
-  
-        setPregnancyData(pregnancy);
-  
-        // Get standard data for comparison
-        if (pregnancy.totalFetuses) {
-          const standards = await api.standards.getPregnancyStandards(pregnancy.totalFetuses);
-          console.log("Fetched standards:", standards);
-          setStandardData(standards);
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(err.message || "Có lỗi xảy ra khi tải dữ liệu");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const fetchPregnancyData = async () => {
@@ -1112,7 +1086,8 @@ function Baby() {
                       <Space direction="vertical" size="small">
                         {numberOfFetuses > 1 &&
                           pregnancyData.status === "ONGOING" &&
-                          pregnancyData.fetuses[index].status === "ACTIVE" && (
+                          (pregnancyData.fetuses[index].status === "ACTIVE" ||
+                            pregnancyData.fetuses[index].status === "ISSUE") && (
                             <Button
                               type="primary"
                               danger
@@ -1125,27 +1100,6 @@ function Baby() {
                               Tạm biệt cục vàng {index + 1}
                             </Button>
                           )}
-                        <Tag
-                          color={
-                            pregnancyData.fetuses[index].status === "ISSUE"
-                              ? "error"
-                              : pregnancyData.fetuses[index].status === "CANCEL"
-                                ? "default"
-                                : pregnancyData.fetuses[index].status ===
-                                  "COMPLETED"
-                                  ? "success"
-                                  : "processing"
-                          }
-                        >
-                          {pregnancyData.fetuses[index].status === "ISSUE"
-                            ? "Em bé đang có vấn đề!!!! bạn xem thử ở các biểu đồ xem"
-                            : pregnancyData.fetuses[index].status === "CANCEL"
-                              ? "Đã sảy thai"
-                              : pregnancyData.fetuses[index].status ===
-                                "COMPLETED"
-                                ? "Đã hoàn thành"
-                                : "Đang phát triển"}
-                        </Tag>
                       </Space>
                     )}
                   </div>
@@ -1413,156 +1367,136 @@ function Baby() {
       </Modal>
 
       <Modal
-        title="Tạo bản ghi thai nhi"
-        open={isCreateFetusRecordModalOpen}
-        onCancel={() => setIsCreateFetusRecordModalOpen(false)}
-        footer={null}
-      >
-        <Form
-          onFinish={async (values) => {
-            try {
-              // Handle both fetuses if multiple fetuses exist
-              const promises = [];
+  title="Tạo bản ghi thai nhi"
+  open={isCreateFetusRecordModalOpen}
+  onCancel={() => setIsCreateFetusRecordModalOpen(false)}
+  footer={null}
+>
+  <Form
+    onFinish={async (values) => {
+      try {
+        const promises = [];
 
-              // First fetus (always exists)
-              const firstFetusData = {
-                fetalWeight: `${values.weight1 || 0}`,
-                femurLength: `${values.height1 || 0}`,
-                headCircumference: `${values.headCircumference1 || 0}`,
-                examDate: pregnancyData.examDate,
-                gestationalWeeks: pregnancyData.gestationalWeeks,
-                gestationalDays: pregnancyData.gestationalDays,
-              };
-              promises.push(
-                api.fetus.createFetusRecord(
-                  pregnancyData.fetuses[0].fetusId,
-                  firstFetusData
-                )
-              );
+        // First fetus (only if not cancelled)
+        if (pregnancyData?.fetuses[0]?.status !== "CANCEL") {
+          const firstFetusData = {
+            fetalWeight: `${values.weight1 || 0}`,
+            femurLength: `${values.height1 || 0}`,
+            headCircumference: `${values.headCircumference1 || 0}`,
+            examDate: pregnancyData.examDate,
+            gestationalWeeks: pregnancyData.gestationalWeeks,
+            gestationalDays: pregnancyData.gestationalDays,
+          };
+          promises.push(
+            api.fetus.createFetusRecord(
+              pregnancyData.fetuses[0].fetusId,
+              firstFetusData
+            )
+          );
+        }
 
-              // Second fetus (if exists)
-              if (pregnancyData?.fetuses?.length > 1 && values.weight2) {
-                const secondFetusData = {
-                  fetalWeight: `${values.weight2 || 0}`,
-                  femurLength: `${values.height2 || 0}`,
-                  headCircumference: `${values.headCircumference2 || 0}`,
-                  examDate: pregnancyData.examDate,
-                  gestationalWeeks: pregnancyData.gestationalWeeks,
-                  gestationalDays: pregnancyData.gestationalDays,
-                };
-                promises.push(
-                  api.fetus.createFetusRecord(
-                    pregnancyData.fetuses[1].fetusId,
-                    secondFetusData
-                  )
-                );
-              }
+        // Second fetus (only if exists and not cancelled)
+        if (pregnancyData?.fetuses?.length > 1 && 
+            values.weight2 && 
+            pregnancyData.fetuses[1]?.status !== "CANCEL") {
+          const secondFetusData = {
+            fetalWeight: `${values.weight2 || 0}`,
+            femurLength: `${values.height2 || 0}`,
+            headCircumference: `${values.headCircumference2 || 0}`,
+            examDate: pregnancyData.examDate,
+            gestationalWeeks: pregnancyData.gestationalWeeks,
+            gestationalDays: pregnancyData.gestationalDays,
+          };
+          promises.push(
+            api.fetus.createFetusRecord(
+              pregnancyData.fetuses[1].fetusId,
+              secondFetusData
+            )
+          );
+        }
 
-              await Promise.all(promises);
-              message.success("Tạo bản ghi thai nhi thành công");
-              setIsCreateFetusRecordModalOpen(false);
-              fetchPregnancyData();
-            } catch (error) {
-              console.error("Create fetus record error:", error);
-              message.error("Không thể tạo bản ghi thai nhi: " + error.message);
-            }
-          }}
-        >
-          {/* First Fetus Form */}
-          <Card title={`Thai A`} style={{ marginBottom: 16 }}>
-            <Form.Item
-              label="Cân nặng (g)"
-              name="weight1"
-              rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
-            >
-              <InputNumber
-                min={0}
-                step={0.1}
-                precision={1}
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
+        if (promises.length === 0) {
+          message.warning("Không có thai nhi nào để tạo bản ghi");
+          setIsCreateFetusRecordModalOpen(false);
+          return;
+        }
 
-            <Form.Item
-              label="Chiều dài (cm)"
-              name="height1"
-              rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
-            >
-              <InputNumber
-                min={0}
-                step={0.1}
-                precision={1}
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
+        await Promise.all(promises);
+        message.success("Tạo bản ghi thai nhi thành công");
+        setIsCreateFetusRecordModalOpen(false);
+        fetchPregnancyData();
+      } catch (error) {
+        console.error("Create fetus record error:", error);
+        message.error("Không thể tạo bản ghi thai nhi: " + error.message);
+      }
+    }}
+  >
+    {/* First Fetus Form - Only show if not cancelled */}
+ {/* First Fetus Form - Only show if not cancelled */}
+{pregnancyData?.fetuses[0]?.status !== "CANCEL" && (
+  <Card title={`Thai A`} style={{ marginBottom: 16 }}>
+    <Form.Item
+      label="Cân nặng (g)"
+      name="weight1"
+      rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
+    >
+      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
+    </Form.Item>
 
-            <Form.Item
-              label="Chu vi đầu (mm)"
-              name="headCircumference1"
-              rules={[{ required: true, message: "Vui lòng nhập chu vi đầu" }]}
-            >
-              <InputNumber
-                min={0}
-                step={0.1}
-                precision={1}
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
-          </Card>
+    <Form.Item
+      label="Chiều dài (cm)"
+      name="height1"
+      rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
+    >
+      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
+    </Form.Item>
 
-          {/* Second Fetus Form (only show if multiple fetuses) */}
-          {pregnancyData?.fetuses?.length > 1 && (
-            <Card title={`Thai B`} style={{ marginBottom: 16 }}>
-              <Form.Item
-                label="Cân nặng (g)"
-                name="weight2"
-                rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
-              >
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  precision={1}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
+    <Form.Item
+      label="Chu vi đầu (mm)"
+      name="headCircumference1"
+      rules={[{ required: true, message: "Vui lòng nhập chu vi đầu" }]}
+    >
+      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
+    </Form.Item>
+  </Card>
+)}
 
-              <Form.Item
-                label="Chiều dài (cm)"
-                name="height2"
-                rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
-              >
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  precision={1}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
+{/* Second Fetus Form - Only show if exists and not cancelled */}
+{pregnancyData?.fetuses?.length > 1 && pregnancyData.fetuses[1]?.status !== "CANCEL" && (
+  <Card title={`Thai B`} style={{ marginBottom: 16 }}>
+    <Form.Item
+      label="Cân nặng (g)"
+      name="weight2"
+      rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
+    >
+      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
+    </Form.Item>
 
-              <Form.Item
-                label="Chu vi đầu (mm)"
-                name="headCircumference2"
-                rules={[
-                  { required: true, message: "Vui lòng nhập chu vi đầu" },
-                ]}
-              >
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  precision={1}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Card>
-          )}
+    <Form.Item
+      label="Chiều dài (cm)"
+      name="height2"
+      rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
+    >
+      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
+    </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              Tạo bản ghi
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
+    <Form.Item
+      label="Chu vi đầu (mm)"
+      name="headCircumference2"
+      rules={[{ required: true, message: "Vui lòng nhập chu vi đầu" }]}
+    >
+      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
+    </Form.Item>
+  </Card>
+)}
+
+<Form.Item>
+  <Button type="primary" htmlType="submit" block>
+    Tạo bản ghi
+  </Button>
+</Form.Item>
+  </Form>
+</Modal>
 
       {!pregnancyData ? (
         <Row justify="center" align="middle" style={{ minHeight: "30vh" }}>
@@ -1824,6 +1758,7 @@ function Baby() {
           {/* Weight Charts */}
           <Row>
             {pregnancyData?.fetuses?.map((fetus, index) => (
+               fetus.status !== "CANCEL" && (
               <Col
                 span={20}
                 offset={2}
@@ -1891,12 +1826,14 @@ function Baby() {
                   </div>
                 </Card>
               </Col>
+               )
             ))}
           </Row>
 
           {/* Height Charts */}
           <Row>
             {pregnancyData?.fetuses?.map((fetus, index) => (
+               fetus.status !== "CANCEL" && (
               <Col
                 span={20}
                 offset={2}
@@ -1964,12 +1901,14 @@ function Baby() {
                   </div>
                 </Card>
               </Col>
+               )
             ))}
           </Row>
 
           {/* Head Circumference Charts */}
           <Row>
             {pregnancyData?.fetuses?.map((fetus, index) => (
+               fetus.status !== "CANCEL" && (
               <Col
                 span={20}
                 offset={2}
@@ -2037,6 +1976,7 @@ function Baby() {
                   </div>
                 </Card>
               </Col>
+               )
             ))}
           </Row>
 

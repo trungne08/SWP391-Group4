@@ -544,6 +544,35 @@ const api = {
         };
       }
     },
+
+    updatePackagePrice: async (packageId, price) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/membership/packages/${packageId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ price: parseInt(price) }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to update package price");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Error updating package price:", error);
+        throw error;
+      }
+    },
   },
   community: {
     createPost: async (postData) => {
@@ -1298,6 +1327,16 @@ const api = {
         let endpoint;
         if (fetusId) {
           endpoint = `${API_BASE_URL}/api/pregnancies/fetus/${fetusId}/status?status=${status}`;
+          
+          // After updating fetus status, check if all fetuses are canceled
+          const pregnancy = await api.pregnancy.getOngoingPregnancy();
+          if (pregnancy && pregnancy.fetuses) {
+            const allCanceled = pregnancy.fetuses.every(fetus => fetus.status === 'CANCEL');
+            if (allCanceled) {
+              // Update pregnancy status to COMPLETED if all fetuses are canceled
+              return await api.pregnancy.updatePregnancyStatus(pregnancyId, null, 'COMPLETED');
+            }
+          }
         } else {
           endpoint = `${API_BASE_URL}/api/pregnancies/${pregnancyId}/status?status=${status}`;
         }
@@ -1315,14 +1354,16 @@ const api = {
           throw new Error(errorText || `Could not update status to ${status}`);
         }
 
-        // Check if there's actually content before trying to parse JSON
         const text = await response.text();
-        return text ? JSON.parse(text) : true; // Return true if no content
+        return text ? JSON.parse(text) : true;
       } catch (error) {
         console.error(`Update status error:`, error);
         throw error;
       }
     },
+
+
+
     // For individual fetus status update (keep existing method)
     updateFetusStatus: async (pregnancyId, fetusId, status) => {
       try {

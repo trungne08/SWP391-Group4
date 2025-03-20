@@ -291,7 +291,7 @@ function Comunity() {
             fontWeight: "bold",
             letterSpacing: "2px"
           }}>
-            Community
+            Cộng Đồng
           </Title>
           <Text style={{ 
             color: "#fff", 
@@ -300,7 +300,7 @@ function Comunity() {
             textShadow: "1px 1px 3px rgba(0,0,0,0.3)",
             letterSpacing: "1px"
           }}>
-            52+ million users every month
+            Chia sẽ hành trình làm mẹ của bạn!
           </Text>
         </div>
       </div>

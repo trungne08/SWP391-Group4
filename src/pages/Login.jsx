@@ -59,7 +59,7 @@ const Login = () => {
       <Box sx={{ mt: 8, mb: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" sx={{ textAlign: 'center', mb: 3 }}>
-            Welcome BabyCareCenter!<br />
+            Welcome Pregnancy Tracking!<br />
             Login to continue
           </Typography>
           

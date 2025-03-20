@@ -56,7 +56,7 @@ const AdminHeader = () => {
           className="logo-icon"
           style={{ color: '#FF69B4', fontSize: '24px' }}
         />
-        <span className="logo-text">BaBy Care</span>
+        <span className="logo-text">Pregnancy Tracking</span>
       </div>
       
       <Menu
