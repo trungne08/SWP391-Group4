@@ -184,13 +184,15 @@ const HomePage = () => {
               WebkitTextFillColor: "transparent",
               fontFamily: "'Comfortaa', cursive",
               position: 'relative',
+              paddingBottom: '20px', // Thêm padding phía dưới
+              lineHeight: '1.5', // Điều chỉnh chiều cao dòng
               '&::after': {
                 content: '""',
                 position: 'absolute',
-                bottom: '-10px',
+                bottom: '0', // Điều chỉnh vị trí của gạch chân
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: '100px',
+                width: '150px', // Tăng độ rộng của gạch chân
                 height: '3px',
                 background: 'linear-gradient(45deg, #FF69B4 30%, #FFB6C1 90%)',
                 borderRadius: '10px',
