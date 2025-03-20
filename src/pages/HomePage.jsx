@@ -1,27 +1,156 @@
 import React, { useState, useEffect } from "react";
-import { Box, Container, Typography, Grid, Paper, Fade, Slide } from "@mui/material";
+import { Box, Container, Typography, Grid, Paper, Fade, Slide, Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 
 const HomePage = () => {
   const [blogs, setBlogs] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [openPopup, setOpenPopup] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [dueReminders, setDueReminders] = useState({ overdue: [], today: [] });
+
+  const handleClosePopup = () => {
+    setOpenPopup(false);
+  };
 
   useEffect(() => {
     setIsVisible(true);
-    const fetchBlogs = async () => {
+    const checkAuthAndShowPopup = async () => {
       try {
-        const blogsData = await api.blog.getAllBlogs();
-        setBlogs(blogsData.slice(0, 3)); 
+        const token = localStorage.getItem('token');
+        if (token) {
+          setIsLoggedIn(true);
+          setOpenPopup(true);  // This should trigger the popup
+          
+          try {
+            const remindersData = await api.reminders.getAllReminders();
+            console.log("Reminders data received:", remindersData); // Add logging
+
+            if (Array.isArray(remindersData)) {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              const overdue = remindersData.filter(reminder => {
+                const reminderDate = new Date(reminder.reminderDate);
+                reminderDate.setHours(0, 0, 0, 0);
+                return reminderDate < today;
+              });
+
+              const todayReminders = remindersData.filter(reminder => {
+                const reminderDate = new Date(reminder.reminderDate);
+                reminderDate.setHours(0, 0, 0, 0);
+                return reminderDate.getTime() === today.getTime();
+              });
+
+              setDueReminders({ overdue, today: todayReminders });
+            }
+          } catch (reminderError) {
+            console.error("Failed to fetch reminders:", reminderError);
+          }
+        } else {
+          console.log("No token found, popup won't show"); // Add logging
+        }
       } catch (error) {
-        console.error("Failed to fetch blogs:", error);
+        console.error("Auth check failed:", error);
       }
     };
-    fetchBlogs();
+
+    checkAuthAndShowPopup();
   }, []);
+
+  const fetchBlogs = async () => {
+    try {
+      const blogsData = await api.blog.getAllBlogs();
+      setBlogs(blogsData.slice(0, 3)); 
+    } catch (error) {
+      console.error("Failed to fetch blogs:", error);
+    }
+  };
+
+  // Remove these lines as they're causing the error
+  // checkAuthAndShowPopup();
+  // fetchBlogs();
 
   return (
     <Box sx={{ background: 'linear-gradient(180deg, #fff1f9 0%, #fff 100%)' }}>
+      {/* Welcome Popup */}
+      <Dialog
+        open={openPopup}
+        onClose={handleClosePopup}
+        aria-labelledby="welcome-dialog-title"
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            padding: '20px',
+            background: 'linear-gradient(145deg, #fff5f8, #fff)',
+            maxWidth: '500px',
+            width: '90%',
+          }
+        }}
+      >
+        <DialogTitle 
+          id="welcome-dialog-title"
+          sx={{
+            textAlign: 'center',
+            color: '#FF69B4',
+            fontFamily: "'Comfortaa', cursive",
+            fontWeight: 'bold',
+          }}
+        >
+          Chào Mừng Đến Với Pregnancy Tracking
+        </DialogTitle>
+        <DialogContent>
+          <Typography 
+            sx={{ 
+              textAlign: 'center',
+              mb: 2,
+              fontFamily: "'Quicksand', sans-serif",
+            }}
+          >
+            Chúng tôi sẽ đồng hành cùng bạn trong hành trình làm mẹ tuyệt vời này! 🌸
+          </Typography>
+          </DialogContent>
+        {/* Existing DialogActions */}
+        <DialogActions sx={{ justifyContent: 'center', flexDirection: 'column', pb: 2 }}>
+          <Button 
+            onClick={handleClosePopup}
+            sx={{
+              background: 'linear-gradient(45deg, #FF69B4 30%, #FFB6C1 90%)',
+              color: 'white',
+              padding: '10px 30px',
+              borderRadius: '25px',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #FF1493 30%, #FF69B4 90%)',
+              }
+            }}
+          >
+            Bắt Đầu Khám Phá
+          </Button>
+          
+          <Link 
+            to="/reminder"
+            style={{ 
+              textDecoration: 'none',
+              marginTop: '15px',
+              textAlign: 'center',
+            }}
+          >
+            <Typography
+              sx={{
+                color: '#FF69B4',
+                fontSize: '0.9rem',
+                '&:hover': {
+                  textDecoration: 'underline',
+                }
+              }}
+            >
+              Hôm nay có {dueReminders.today.length} nhắc nhở đến hạn và {dueReminders.overdue.length} nhắc nhở quá hạn
+            </Typography>
+          </Link>
+        </DialogActions>
+      </Dialog>
+
       <Fade in={isVisible} timeout={1500}>
         <Box
           sx={{
