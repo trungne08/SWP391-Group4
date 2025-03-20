@@ -1004,19 +1004,24 @@ const api = {
         const response = await fetch(`${API_BASE_URL}/api/blogs`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
           mode: "cors",
           credentials: "include",
         });
 
+        console.log("Blog API Response:", response.status);
         const responseText = await response.text();
-        console.log("Raw blogs response:", responseText);
+        console.log("Blog data:", responseText);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch blogs: ${response.status}`);
+        }
+
+        if (!responseText.trim()) {
+          return [];
         }
 
         const data = JSON.parse(responseText);
@@ -1327,14 +1332,20 @@ const api = {
         let endpoint;
         if (fetusId) {
           endpoint = `${API_BASE_URL}/api/pregnancies/fetus/${fetusId}/status?status=${status}`;
-          
+
           // After updating fetus status, check if all fetuses are canceled
           const pregnancy = await api.pregnancy.getOngoingPregnancy();
           if (pregnancy && pregnancy.fetuses) {
-            const allCanceled = pregnancy.fetuses.every(fetus => fetus.status === 'CANCEL');
+            const allCanceled = pregnancy.fetuses.every(
+              (fetus) => fetus.status === "CANCEL"
+            );
             if (allCanceled) {
               // Update pregnancy status to COMPLETED if all fetuses are canceled
-              return await api.pregnancy.updatePregnancyStatus(pregnancyId, null, 'COMPLETED');
+              return await api.pregnancy.updatePregnancyStatus(
+                pregnancyId,
+                null,
+                "COMPLETED"
+              );
             }
           }
         } else {
@@ -1345,8 +1356,8 @@ const api = {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
@@ -1361,8 +1372,6 @@ const api = {
         throw error;
       }
     },
-
-
 
     // For individual fetus status update (keep existing method)
     updateFetusStatus: async (pregnancyId, fetusId, status) => {

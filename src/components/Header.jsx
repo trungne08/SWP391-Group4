@@ -27,6 +27,7 @@ const Header = () => {
   }, [user]);
 
   const handleLogout = () => {
+    sessionStorage.removeItem('welcomePopupShown'); // Add this line
     logout();
   };
 

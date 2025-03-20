@@ -10,18 +10,21 @@ const HomePage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dueReminders, setDueReminders] = useState({ overdue: [], today: [] });
 
-  const handleClosePopup = () => {
-    setOpenPopup(false);
-  };
+  // Thêm state mới để kiểm tra đã hiện popup chưa
+  const [hasShownPopup, setHasShownPopup] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
     const checkAuthAndShowPopup = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (token) {
+        const popupShown = sessionStorage.getItem('welcomePopupShown'); // Đổi từ localStorage sang sessionStorage
+        
+        if (token && !popupShown) {
           setIsLoggedIn(true);
-          setOpenPopup(true);  // This should trigger the popup
+          setOpenPopup(true);
+          // Lưu trạng thái vào sessionStorage thay vì localStorage
+          sessionStorage.setItem('welcomePopupShown', 'true');
           
           try {
             const remindersData = await api.reminders.getAllReminders();
@@ -48,8 +51,6 @@ const HomePage = () => {
           } catch (reminderError) {
             console.error("Failed to fetch reminders:", reminderError);
           }
-        } else {
-          console.log("No token found, popup won't show"); // Add logging
         }
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -57,7 +58,26 @@ const HomePage = () => {
     };
 
     checkAuthAndShowPopup();
+    fetchBlogs();
   }, []);
+
+  // Sửa lại hàm handleClosePopup
+  const handleClosePopup = () => {
+    setOpenPopup(false);
+    sessionStorage.setItem('welcomePopupShown', 'true'); // Đảm bảo lưu trạng thái khi đóng
+  };
+
+  const handleLogout = () => {
+    // Xóa token và thông tin người dùng
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Xóa trạng thái popup
+    sessionStorage.removeItem('welcomePopupShown');
+    // Reset các state
+    setOpenPopup(false);
+    setIsLoggedIn(false);
+    setDueReminders({ overdue: [], today: [] });
+  };
 
   const fetchBlogs = async () => {
     try {
