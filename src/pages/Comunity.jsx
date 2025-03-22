@@ -254,7 +254,7 @@ function Comunity() {
 
         console.log("Sending chart data with isAnonymous:", isAnonymous); // Log để kiểm tra
         await api.growth.shareChart(fetusId, chartData);
-        message.success("Chart shared successfully");
+        message.success("Chia sẻ biểu đồ thành công");
       } else {
         const mediaUrls = [
           ...(values.mediaUrls ? [values.mediaUrls] : []),
@@ -268,20 +268,20 @@ function Comunity() {
         };
 
         await api.community.createPost(postData);
-        message.success("Post created successfully");
+        message.success("Đăng bài thành công");
       }
 
-      await Promise.all([
-        form.resetFields(),
-        setIsModalVisible(false),
-        setIsChartModalVisible(false),
-        setImageUrls([]),
-        fetchPosts(),
-      ]);
+      // Reset và đóng form
+      form.resetFields();
+      setImageUrls([]);
+      setIsQuestionModalVisible(false); // Đóng modal câu hỏi
+      setIsChartModalVisible(false);    // Đóng modal biểu đồ
+      await fetchPosts(); // Cập nhật lại danh sách bài viết
+
     } catch (error) {
       console.error("Error details:", error.response?.data || error.message);
       message.error(
-        postType === "chart" ? "Failed to share chart" : "Failed to create post"
+        postType === "chart" ? "Lỗi khi chia sẻ biểu đồ" : "Lỗi khi đăng bài"
       );
     }
   };
