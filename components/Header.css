@@ -1,0 +1,133 @@
+.container-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 40px; /* Giảm padding từ 80px xuống 10px */
+  background: linear-gradient(to right, #FFE4E1, #FFF0F5);
+  box-shadow: 0 2px 15px rgba(255, 182, 193, 0.2);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+body {
+  padding-top: 60px; /* Giảm padding-top của body xuống tương ứng */
+}
+
+.navbar {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.nav-list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-icon a {
+  color: #FF69B4 !important;
+  font-size: 32px;
+  transition: all 0.3s ease-in-out;
+}
+
+.nav-icon a:hover {
+  color: #FF1493 !important;
+  transform: scale(1.1) rotate(5deg) !important;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+}
+
+.nav-links li {
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #666;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 8px 0;
+  margin: 0 16px;
+  transition: all 0.3s ease;
+  font-family: 'Quicksand', sans-serif;
+  position: relative;
+}
+
+.nav-links a:hover {
+  color: #666;
+  background: none;
+  transform: none;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px; /* Giảm độ dày của gạch chân */
+  bottom: 0;
+  left: 0;
+  background: #333; /* Đổi màu gạch chân thành đen nhạt */
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  width: 100%;
+}
+
+.nav-links a.active {
+  color: #333; /* Màu chữ khi active cũng đen nhạt */
+  background: none;
+  box-shadow: none;
+}
+
+.nav-avatar {
+  display: flex;
+  align-items: center;
+}
+
+/* Style cho buttons */
+.nav-avatar .ant-btn {
+  border-radius: 20px;
+  height: 38px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.nav-avatar .ant-btn-primary {
+  background: linear-gradient(45deg, #FF69B4, #FFB6C1);
+  border: none;
+}
+
+.nav-avatar .ant-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+}
+
+/* Dropdown menu style */
+.ant-dropdown .ant-menu {
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
+}
+
+.ant-dropdown .ant-menu-item {
+  border-radius: 8px;
+  margin: 4px 0;
+  padding: 10px 16px;
+}
+
+.ant-dropdown .ant-menu-item:hover {
+  background: linear-gradient(45deg, #FFE4E1, #FFF0F5);
+  color: #FF69B4;
+}
