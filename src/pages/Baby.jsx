@@ -1,1872 +1,532 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  Avatar,
-  Typography,
-  Row,
-  Col,
-  Modal,
-  Input,
-  Button,
-  Table,
-  Select,
-  Tooltip,
-  Card,
-  message,
-  Empty,
-  Divider,
-  Tag,
-  Statistic,
-  Result,
-  Space,
-  Form,
-  InputNumber,
-} from "antd";
+import React, { useState, useEffect } from 'react';
+import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox, message, Modal } from 'antd';
+import { ClockCircleOutlined, MedicineBoxOutlined, FileSearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+// Remove one of these duplicate imports
+import api from '../services/api';
 
-import { UserOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Line } from "react-chartjs-2";
-import {
-  faWeightScale,
-  faRuler,
-  faCircleNotch,
-  faNewspaper,
-  faCalendarDays,
-  faList,
-} from "@fortawesome/free-solid-svg-icons";
+const { Option } = Select;
 
-import { weightData, heightData, circumferenceData } from "../data/chartData";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title as ChartTitle,
-  Tooltip as ChartTooltip,
-  Legend,
-} from "chart.js";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+const Reminder = () => {
+  const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [pregnancyId, setPregnancyId] = useState(null);
+  const [form] = Form.useForm();
+  const [editingReminder, setEditingReminder] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+  const [selectedReminder, setSelectedReminder] = useState(null);  // Add this line
 
-import axios from "axios";
-import api from "../services/api"; // Import toàn bộ object api
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ChartTitle,
-  ChartTooltip,
-  Legend
-);
-
-const { Title } = Typography;
-axios.defaults.withCredentials = true;
-const { Text } = Typography;
-
-function Baby() {
-  const navigate = useNavigate();
-  const weightRef = useRef(null);
-  const heightRef = useRef(null);
-  const circumferenceRef = useRef(null);
-  const vaccinationRef = useRef(null);
-
-  // State management
-  const [pregnancyData, setPregnancyData] = useState(null);
-  const [standardData, setStandardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isPregnancyActive, setIsPregnancyActive] = useState(true);
-  const [isPregnancyListModalOpen, setIsPregnancyListModalOpen] =
-    useState(false);
-  const [isCreatePregnancyModalOpen, setIsCreatePregnancyModalOpen] =
-    useState(false);
-  const [isCreateFetusRecordModalOpen, setIsCreateFetusRecordModalOpen] =
-    useState(false);
-  const [fetusRecords, setFetusRecords] = useState([]);
-  const [standards, setStandards] = useState(null);
-  const [fetusChartData, setFetusChartData] = useState({});
-  // Add these state declarations at the top with other states
-
-  const [weightData, setWeightData] = useState({
-    labels: [],
-    datasets: [],
-  });
-  const [heightData, setHeightData] = useState({
-    labels: [],
-    datasets: [],
-  });
-  const [circumferenceData, setCircumferenceData] = useState({
-    labels: [],
-    datasets: [],
-  });
-
-  const [pregnancyHistoryData, setPregnancyHistoryData] = useState([]);
-  const [currentAvatar, setCurrentAvatar] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState("");
-  const [selectedDay, setSelectedDay] = useState("");
-  const [pregnancyStartDate, setPregnancyStartDate] = useState(null);
-  const [numberOfFetuses, setNumberOfFetuses] = useState(1);
-  const [dueDate, setDueDate] = useState(null);
-  const [pregnancyNumber, setPregnancyNumber] = useState(1);
-  const [formData, setFormData] = useState({
-    weight: "",
-    height: "",
-    circumference: "",
-    checkupDate: "",
-  });
-  const [isEndPregnancyModalOpen, setIsEndPregnancyModalOpen] = useState(false);
-
-  const handlePregnancyListClick = () => {
-    setIsPregnancyListModalOpen(true);
-  };
-
-  const handleUpdateStatus = async (pregnancyId, fetusId = null) => {
+  const handleUpdateReminder = async (updatedData) => {
+    if (!selectedReminder?.id) return;
     try {
-      // Update single fetus - change to CANCEL for miscarriage
-      if (fetusId) {
-        const response = await api.pregnancy.updatePregnancyStatus(
-          pregnancyId,
-          fetusId,
-          "CANCEL" // Changed from ISSUE to CANCEL
-        );
-        if (response) {
-          // Refresh data to show updated status
-          const updatedPregnancy = await api.pregnancy.getOngoingPregnancy();
-          if (updatedPregnancy) {
-            setPregnancyData(updatedPregnancy);
-            setIsPregnancyActive(true);
-          }
-        }
-      }
-      // Update entire pregnancy to COMPLETED
-      else if (pregnancyId) {
-        const response = await api.pregnancy.updatePregnancyStatus(
-          pregnancyId,
-          null,
-          "COMPLETED"
-        );
-        if (response) {
-          setIsPregnancyActive(false);
-        }
-      }
-
-      // Refresh pregnancy history
-      const historyResponse = await api.pregnancy.getUserPregnancies();
-      if (Array.isArray(historyResponse)) {
-        setPregnancyHistoryData(historyResponse);
-      }
-    } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái:", error);
-      throw error; // Throw the error so it can be caught by the calling function
-    }
-  };
-
-  const allFetusesCompleted = (pregnancies, pregnancyId) => {
-    const pregnancy = pregnancies.find((p) => p.pregnancyId === pregnancyId);
-    return (
-      pregnancy?.fetuses?.every((fetus) => fetus.status === "COMPLETED") ??
-      false
-    );
-  };
-
-  const confirmEndPregnancy = async () => {
-    if (pregnancyData?.pregnancyId) {
-      await handleUpdateStatus(pregnancyData.pregnancyId);
-    }
-    setIsEndPregnancyModalOpen(false);
-  };
-
-  const calculateDates = (weeks, days) => {
-    if (!weeks || !days) return { pregnancyStart: null, dueDate: null };
-
-    const today = new Date();
-    const totalDays = Number(weeks) * 7 + Number(days);
-
-    const pregnancyStart = new Date(today);
-    pregnancyStart.setDate(today.getDate() - totalDays);
-
-    const dueDate = new Date(pregnancyStart);
-    dueDate.setDate(pregnancyStart.getDate() + 280);
-
-    return { pregnancyStart, dueDate };
-  };
-
-  const fetchPregnancyData = async () => {
-    try {
-      const response = await api.pregnancy.getOngoingPregnancy();
-      if (response) {
-        setPregnancyData(response);
-        setSelectedWeek(response.gestationalWeeks || "");
-        setSelectedDay(response.gestationalDays || "");
-        setIsPregnancyActive(response.status !== "COMPLETED");
-        if (response.fetuses && response.fetuses.length > 0) {
-          setNumberOfFetuses(response.fetuses.length);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching pregnancy data:", error);
-      message.error("Không thể lấy dữ liệu thai kỳ");
-    }
-  };
-
-  const fetchPregnancyHistory = async () => {
-    try {
-      const response = await api.pregnancy.getUserPregnancies();
-      if (Array.isArray(response)) {
-        setPregnancyHistoryData(response);
-      } else if (response) {
-        setPregnancyHistoryData([response]);
-      }
-    } catch (error) {
-      console.error("Error fetching pregnancy history:", error);
-      message.error("Không thể lấy lịch sử thai kỳ");
-    }
-  };
-
-  const handleFormSubmit = async () => {
-    try {
-      if (!pregnancyData?.pregnancyId) {
-        throw new Error("Không tìm thấy ID thai kỳ");
-      }
-
-      if (!selectedWeek || !selectedDay || !formData.checkupDate) {
-        message.error("Vui lòng nhập đầy đủ thông tin ngày khám và tuần thai");
-        return;
-      }
-
-      const formattedDate = new Date(formData.checkupDate)
-        .toISOString()
-        .split("T")[0];
-
-      // Create fetus record if measurements are provided
-      if (formData.weight || formData.height || formData.circumference) {
-        await api.fetus.createFetusRecord({
-          fetusId: pregnancyData.fetuses[currentAvatar].fetusId,
-          weight: parseFloat(formData.weight) || 0,
-          height: parseFloat(formData.height) || 0,
-          headCircumference: parseFloat(formData.circumference) || 0,
-          examDate: formattedDate,
-        });
-      }
-
-      const updateData = {
-        examDate: formattedDate,
-        gestationalWeeks: parseInt(selectedWeek),
-        gestationalDays: parseInt(selectedDay),
-        totalFetuses: parseInt(pregnancyData.totalFetuses || 1),
+      const reminderData = {
+        userId,
+        pregnancyId,
+        type: selectedReminder.type,
+        reminderDate: selectedReminder.date.format('YYYY-MM-DD'),
+        status: selectedReminder.status,
+        tasks: []
       };
-
-      // Send update request
-      await api.pregnancy.updatePregnancy(
-        pregnancyData.pregnancyId,
-        updateData
-      );
-
-      // Refresh all data
-      await fetchPregnancyData();
-      await fetchPregnancyHistory();
-
-      message.success("Cập nhật thành công");
-      setIsModalOpen(false);
-      setFormData({
-        weight: "",
-        height: "",
-        circumference: "",
-        checkupDate: "",
-      });
-      setSelectedWeek("");
-      setSelectedDay("");
+  
+      if (selectedReminder.type === 'MEDICAL_TASK' && selectedReminder.tasks[0]) {
+        reminderData.tasks = [{
+          ...selectedReminder.tasks[0],
+          ...updatedData
+        }];
+      }
+  
+      await api.reminders.updateReminder(selectedReminder.id, reminderData);
+      await fetchReminders();
+      message.success('Cập nhật nhắc nhở thành công');
     } catch (error) {
-      console.error("Update error:", error);
-      message.error("Cập nhật thất bại: " + error.message);
+      console.error('Failed to update reminder:', error);
+      message.error('Không thể cập nhật nhắc nhở');
     }
   };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-    setFormData({ weight: "", height: "", circumference: "", checkupDate: "" });
-    setSelectedWeek("");
-    setSelectedDay("");
+  const handleReminderClick = (reminder) => {
+    setSelectedReminder(reminder);
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleModalClose = () => {
+    setSelectedReminder(null);
+    fetchReminders(); // Add this line to refresh the data when modal closes
   };
 
-  const scrollToChart = (ref) => {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const iconList = [
-    { icon: faWeightScale, label: "Cân nặng", ref: weightRef },
-    { icon: faRuler, label: "Chiều dài", ref: heightRef },
-    { icon: faCircleNotch, label: "Chu vi vòng đầu", ref: circumferenceRef },
-    { icon: faNewspaper, label: "Tin tức" },
-    { icon: faCalendarDays, label: "Lịch tiêm", ref: vaccinationRef },
-    {
-      icon: faList,
-      label: "Danh sách thai kì",
-      onClick: handlePregnancyListClick,
-    },
+  const taskTypes = [
+    { value: 'CHECK_UP', label: 'Khám định kỳ' },
+    { value: 'VACCINATION', label: 'Tiêm phòng' },
+    { value: 'TEST', label: 'Xét nghiệm' }
   ];
 
+  const handleToggleComplete = (id) => {
+    setReminders(reminders.map(reminder =>
+      reminder.id === id ? { ...reminder, completed: !reminder.completed } : reminder
+    ));
+  };
+
+  const reminderTypes = [
+    { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai', icon: <MedicineBoxOutlined /> },
+    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế', icon: <MedicineBoxOutlined /> },
+    { value: 'HEALTH_ALERT', label: 'Cảnh báo sức khỏe thai nhi', icon: <FileSearchOutlined /> }
+  ];
+
+  const handleEdit = (reminder) => {
+    setEditingReminder(reminder);
+    setSelectedType(reminder.type);
+    
+    const formData = {
+      type: reminder.type,
+      date: reminder.date && dayjs(reminder.date),
+    };
+
+    if (reminder.type === 'MEDICAL_TASK' && reminder.tasks[0]) {
+      const task = reminder.tasks[0];
+      formData.week = task.week;
+      formData.taskType = task.taskType;
+      formData.title = task.taskName;  // Changed back to title to match form field name
+      formData.description = task.notes;
+    } else if (reminder.type === 'APPOINTMENT') {
+      formData.title = reminder.title;
+    }
+
+    console.log('Setting form data:', formData);
+    form.setFieldsValue(formData);
+  };
   useEffect(() => {
-    const fetchPregnancyData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          message.warning("Vui lòng đăng nhập để xem thông tin thai kỳ");
-          navigate("/login", { state: { from: "/baby" } });
+        setLoading(true);
+        
+        const userData = await api.user.getProfile();
+        if (!userData?.id) {
+          message.error('User ID not found in response');
           return;
         }
 
-        // First fetch pregnancy data
-        const response = await api.pregnancy.getOngoingPregnancy();
-        console.log("Ongoing pregnancy response:", response);
+        setUserId(userData.id);
 
-        if (response) {
-          setPregnancyData(response);
-          setSelectedWeek(response.gestationalWeeks || "");
-          setSelectedDay(response.gestationalDays || "");
-          setIsPregnancyActive(response.status !== "COMPLETED");
-
-          // If there are fetuses, update the number of fetuses
-          if (response.fetuses && response.fetuses.length > 0) {
-            setNumberOfFetuses(response.fetuses.length);
+        try {
+          const pregnancyData = await api.pregnancy.getCurrentPregnancy();
+          if (pregnancyData?.pregnancyId) {  // Changed from id to pregnancyId
+            setPregnancyId(pregnancyData.pregnancyId);  // Use pregnancyId directly
+          } else {
+            message.warning('No active pregnancy found');
           }
+        } catch (pregnancyError) {
+          console.error('Pregnancy fetch error:', pregnancyError);
+          message.warning('Unable to fetch pregnancy data');
         }
 
-        // Then fetch pregnancy history
-        const historyResponse = await api.pregnancy.getUserPregnancies();
-        console.log("Pregnancy history response:", historyResponse);
-
-        if (Array.isArray(historyResponse)) {
-          setPregnancyHistoryData(historyResponse);
-        } else if (historyResponse) {
-          setPregnancyHistoryData([historyResponse]);
-        }
       } catch (error) {
-        console.error("Error fetching pregnancy data:", error);
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          message.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại");
-          localStorage.clear();
-          navigate("/login", { state: { from: "/baby" } });
-        } else {
-          setError("Không thể lấy dữ liệu thai kỳ");
-          message.error("Không thể lấy dữ liệu thai kỳ");
-        }
+        console.error('API Error Details:', error);
+        message.error('Failed to load user data. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPregnancyData();
-  }, [navigate]);
+    fetchInitialData();
+  }, []);
 
+  // Separate useEffect for fetching reminders
   useEffect(() => {
-    const fetchPregnancyHistory = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          message.warning("Vui lòng đăng nhập để xem lịch sử thai kỳ");
-          return;
-        }
-
-        const response = await api.pregnancy.getUserPregnancies();
-        console.log("Pregnancy history response:", response);
-
-        if (Array.isArray(response)) {
-          setPregnancyHistoryData(response);
-        } else if (response) {
-          setPregnancyHistoryData([response]);
-        } else {
-          setPregnancyHistoryData([]);
-        }
-      } catch (error) {
-        console.error("Error fetching pregnancy history:", error);
-        message.error("Không thể lấy lịch sử thai kỳ");
-        setPregnancyHistoryData([]);
-      }
-    };
-
-    fetchPregnancyHistory();
-  }, [isPregnancyActive]);
-
-  useEffect(() => {
-    const fetchFetusRecords = async () => {
-      if (pregnancyData?.fetuses) {
-        try {
-          // Fetch records for all fetuses
-          const allRecordsPromises = pregnancyData.fetuses.map(async (fetus) => {
-            console.log("Fetching for fetusId:", fetus.fetusId);
-            const records = await api.fetus.getFetusMeasurements(fetus.fetusId);
-            return { fetusId: fetus.fetusId, records };
-          });
-
-          const allRecordsResults = await Promise.all(allRecordsPromises);
-          console.log("All fetuses raw data:", allRecordsResults);
-
-          // Transform and combine all records
-          const allTransformedRecords = allRecordsResults.flatMap(
-            ({ fetusId, records }) => {
-              if (!records || !Array.isArray(records)) {
-                console.error("Invalid records format for fetusId:", fetusId);
-                return [];
-              }
-
-              return records.map((record, index) => ({
-                key: `${fetusId}-${index}`,
-                fetusId: fetusId,
-                week: record.week,
-                fetalWeight: record.fetalWeight,
-                femurLength: record.femurLength,
-                headCircumference: record.headCircumference,
-              }));
-            }
-          );
-
-          console.log("All transformed records:", allTransformedRecords);
-          setFetusRecords(allTransformedRecords);
-        } catch (error) {
-          console.error("Error fetching fetus records:", error);
-          message.error("Không thể lấy dữ liệu đo lường thai nhi");
-          setFetusRecords([]);
-        }
-      } else {
-        console.log("No pregnancy data available");
-        setFetusRecords([]);
-      }
-    };
-
-    fetchFetusRecords();
-  }, [pregnancyData]);
-
-  useEffect(() => {
-    const fetchStandards = async () => {
-      if (pregnancyData?.totalFetuses) {
-        try {
-          const standardsData = await api.standards.getPregnancyStandards(
-            pregnancyData.totalFetuses
-          );
-          console.log("Fetched standards:", standardsData);
-          setStandards(standardsData);
-        } catch (error) {
-          console.error("Error fetching standards:", error);
-          message.error("Không thể lấy dữ liệu tiêu chuẩn");
-        }
-      }
-    };
-
-    fetchStandards();
-  }, [pregnancyData?.totalFetuses]);
-
-  useEffect(() => {
-    if (standards && fetusRecords.length > 0) {
-      const newFetusChartData = {};
-
-      pregnancyData?.fetuses?.forEach((fetus, index) => {
-        const currentFetusRecords = fetusRecords.filter(
-          (record) => record.fetusId === fetus.fetusId
-        );
-
-        const weeks = [
-          ...new Set([
-            ...currentFetusRecords.map((r) => r.week),
-            ...standards.map((s) => s.week),
-          ]),
-        ].sort((a, b) => a - b);
-
-        newFetusChartData[fetus.fetusId] = {
-          weightData: {
-            labels: weeks,
-            datasets: [
-              {
-                label: `Cân nặng thực tế - Thai ${String.fromCharCode(
-                  65 + index
-                )}`,
-                data: weeks.map((week) => {
-                  const record = currentFetusRecords.find((r) => r.week === week);
-                  return record ? parseFloat(record.fetalWeight) : null;
-                }),
-                borderColor: "#1890ff",
-                backgroundColor: "rgba(24, 144, 255, 0.1)",
-                fill: false,
-                tension: 0.4,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-              },
-              {
-                label: "Tiêu chuẩn",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard ? parseFloat(standard.avgWeight) : null;
-                }),
-                borderColor: "#52c41a",
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-              },
-              {
-                label: "Giới hạn trên",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard ? parseFloat(standard.maxWeight) : null;
-                }),
-                borderColor: "#ff4d4f",
-                borderDash: [2, 2],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 0,
-              },
-              {
-                label: "Giới hạn dưới",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard ? parseFloat(standard.minWeight) : null;
-                }),
-                borderColor: "#ff4d4f",
-                borderDash: [2, 2],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 0,
-              },
-            ],
-          },
-          heightData: {
-            labels: weeks,
-            datasets: [
-              {
-                label: `Chiều dài thực tế - Thai ${String.fromCharCode(
-                  65 + index
-                )}`,
-                data: weeks.map((week) => {
-                  const record = currentFetusRecords.find(
-                    (r) => r.week === week
-                  );
-                  return record ? parseFloat(record.femurLength) : null;
-                }),
-                borderColor: "#1890ff",
-                backgroundColor: "rgba(24, 144, 255, 0.1)",
-                fill: false,
-                tension: 0.4,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-              },
-              {
-                label: "Tiêu chuẩn",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard ? parseFloat(standard.avgLength) : null;
-                }),
-                borderColor: "#52c41a",
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-              },
-              {
-                label: "Giới hạn trên",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard ? parseFloat(standard.maxLength) : null;
-                }),
-                borderColor: "#ff4d4f",
-                borderDash: [2, 2],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 0,
-              },
-              {
-                label: "Giới hạn dưới",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard ? parseFloat(standard.minLength) : null;
-                }),
-                borderColor: "#ff4d4f",
-                borderDash: [2, 2],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 0,
-              },
-            ],
-          },
-          circumferenceData: {
-            labels: weeks,
-            datasets: [
-              {
-                label: `Chu vi đầu thực tế - Thai ${String.fromCharCode(
-                  65 + index
-                )}`,
-                data: weeks.map((week) => {
-                  const record = currentFetusRecords.find(
-                    (r) => r.week === week
-                  );
-                  return record ? parseFloat(record.headCircumference) : null;
-                }),
-                borderColor: "#1890ff",
-                backgroundColor: "rgba(24, 144, 255, 0.1)",
-                fill: false,
-                tension: 0.4,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-              },
-              {
-                label: "Tiêu chuẩn",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard
-                    ? parseFloat(standard.avgHeadCircumference)
-                    : null;
-                }),
-                borderColor: "#52c41a",
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-              },
-              {
-                label: "Giới hạn trên",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard
-                    ? parseFloat(standard.maxHeadCircumference)
-                    : null;
-                }),
-                borderColor: "#ff4d4f",
-                borderDash: [2, 2],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 0,
-              },
-              {
-                label: "Giới hạn dưới",
-                data: weeks.map((week) => {
-                  const standard = standards.find((s) => s.week === week);
-                  return standard
-                    ? parseFloat(standard.minHeadCircumference)
-                    : null;
-                }),
-                borderColor: "#ff4d4f",
-                borderDash: [2, 2],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 0,
-              },
-            ],
-          },
-        };
-      });
-
-      setFetusChartData(newFetusChartData);
+    if (userId && pregnancyId) {
+      fetchReminders();
     }
-  }, [standards, fetusRecords, pregnancyData]);
+  }, [userId, pregnancyId]);
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,  // This allows the chart to fill its container
-    plugins: {
-      legend: {
-        position: "top",
-        align: "start",
-        labels: {
-          padding: 20,
-          boxWidth: 40,
-        }
-      },
-      title: {
-        display: true,
-        text: "So sánh với tiêu chuẩn",
-        padding: 20,
-        font: {
-          size: 16
-        }
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: true,
-          drawBorder: true,
-        },
-        title: {
-          display: true,
-          text: "Tuần thai",
-          font: {
-            size: 14
-          }
-        }
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          display: true,
-          drawBorder: true,
-        },
-        title: {
-          display: true,
-          text: "Giá trị đo lường",
-          font: {
-            size: 14
-          }
-        }
-      }
+  const fetchReminders = async () => {
+    try {
+      setLoading(true);
+      const response = await api.reminders.getAllReminders();
+      const formattedReminders = response.map(reminder => ({
+        id: reminder.reminderId,
+        type: reminder.type,
+        title: reminder.type === 'MEDICAL_TASK' && reminder.tasks[0] 
+          ? reminder.tasks[0].taskName 
+          : reminder.type === 'HEALTH_ALERT' && reminder.healthAlerts[0]
+          ? `Cảnh báo: ${
+              reminder.healthAlerts[0].healthType === 'LOW_HEIGHT' ? 'Chiều cao thai nhi thấp' :
+              reminder.healthAlerts[0].healthType === 'HIGH_HEIGHT' ? 'Chiều cao thai nhi cao' :
+              reminder.healthAlerts[0].healthType
+            }`
+          : reminderTypes.find(t => t.value === reminder.type)?.label || reminder.type,
+        date: dayjs(reminder.reminderDate),
+        status: reminder.status,
+        createdAt: dayjs(reminder.createdAt),
+        pregnancyId: reminder.pregnancyId,
+        tasks: reminder.tasks || [],
+        healthAlerts: reminder.healthAlerts || []
+      }));
+      setReminders(formattedReminders);
+    } catch (error) {
+      console.error('Failed to fetch reminders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const onFinish = async (values) => {
+    try {
+      if (!userId || !pregnancyId) {
+        message.error('User ID or Pregnancy ID not available');
+        return;
+      }
+
+      const reminderData = {
+        userId: userId,
+        pregnancyId: pregnancyId,
+        type: values.type,
+        reminderDate: values.date.format('YYYY-MM-DD'),
+        status: editingReminder?.status || 'NOT_YET',
+        tasks: []
+      };
+
+      if (values.type === 'MEDICAL_TASK' && values.taskType) {
+        reminderData.tasks = [{
+          week: values.week || 12,
+          taskType: values.taskType,
+          taskName: values.title || values.taskType,
+          notes: values.description || '',
+          status: editingReminder?.tasks[0]?.status || 'NOT_YET'
+        }];
+      }
+
+      if (editingReminder) {
+        await api.reminders.updateReminder(editingReminder.id, reminderData);
+        message.success('Cập nhật nhắc nhở thành công');
+      } else {
+        await api.reminders.createReminder(reminderData);
+        message.success('Tạo nhắc nhở thành công');
+      }
+
+      form.resetFields();
+      setEditingReminder(null);
+      setSelectedType(null);
+      await fetchReminders();
+    } catch (error) {
+      console.error('Failed to save reminder:', error);
+      message.error('Không thể lưu nhắc nhở. Vui lòng thử lại.');
+    }
+  };
+
+
+
+  const handleDelete = async (reminder) => {
+    try {
+      await api.reminders.deleteReminder(reminder.id);
+      message.success('Xóa nhắc nhở thành công');
+      await fetchReminders();
+    } catch (error) {
+      console.error('Failed to delete reminder:', error);
+      message.error('Không thể xóa nhắc nhở. Vui lòng thử lại.');
+    }
+  };
+  
+  const getRemindersForDate = (date) => {
+    return reminders.filter(reminder => 
+      dayjs(reminder.date).format('YYYY-MM-DD') === date.format('YYYY-MM-DD')
+    );
+  };
+
+  // Add this function to customize calendar cell rendering
+  const dateCellRender = (date) => {
+    const dateReminders = getRemindersForDate(date);
+    
+    return (
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {dateReminders.map(reminder => (
+          <li key={reminder.id}>
+            <Badge 
+              status={
+                reminder.type === 'APPOINTMENT' ? 'processing' :
+                reminder.type === 'MEDICAL_TASK' ? 'warning' :
+                reminder.type === 'HEALTH_ALERT' ? 'error' : 'default'
+              } 
+              text={
+                <span style={{ fontSize: '11px' }}>
+                  {reminder.time?.format('HH:mm')} - {reminder.title}
+                </span>
+              }
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  // Update the Calendar section in your JSX
+  // Add this before the return statement
+  const today = dayjs();
+  const sortedReminders = [...reminders].sort((a, b) => {
+    // First, sort by status (NOT_YET first)
+    if (a.status === 'NOT_YET' && b.status !== 'NOT_YET') return -1;
+    if (a.status !== 'NOT_YET' && b.status === 'NOT_YET') return 1;
+    
+    // Then sort by date chronologically
+    if (a.status === b.status) {
+      return dayjs(a.date).valueOf() - dayjs(b.date).valueOf();
+    }
+    
+    // Finally sort SKIP before DONE
+    return a.status === 'SKIP' ? -1 : 1;
+  });
+
   return (
-    <div>
-      <Row
-        gutter={[4, 4]}
-        justify="center"
-        align="middle"
-        style={{ minHeight: "30vh" }}
-      >
-        <Col xs={24} md={4} className="text-center">
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "10px",
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1>Lịch nhắc nhở</h1>
+      
+      <div style={{ display: 'flex', gap: '24px' }}>
+        {/* Calendar Section */}
+        <div style={{ flex: 1 }}>
+          <Calendar 
+            cellRender={dateCellRender}
+            onSelect={(date) => {
+              form.setFieldsValue({ date });
             }}
-          >
-         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-  <Title level={5} style={{ margin: 0 }}>
-    Mang thai lần thứ
-  </Title>
-  <div
-    style={{
-      width: "60px",
-      textAlign: "center",
-      padding: "4px 11px",
-      border: "1px solid #d9d9d9",
-      borderRadius: "2px",
-      backgroundColor: "#f5f5f5"
-    }}
-  >
-    {pregnancyHistoryData?.findIndex(p => p.pregnancyId === pregnancyData?.pregnancyId) + 1 || pregnancyNumber}
-  </div>
-</div>
-          </div>
-        </Col>
+          />
+        </div>
 
-        <Col xs={24} md={6}>
-          <Title level={4}>Mom Information</Title>
-          {[
-            {
-              label: "Tuần thai kỳ hiện tại",
-              value: pregnancyData
-                ? `${pregnancyData.gestationalWeeks} tuần ${pregnancyData.gestationalDays} ngày`
-                : "Chưa có thông tin",
-            },
-            {
-              label: "Ngày bắt đầu mang thai",
-              value: pregnancyData?.startDate
-                ? new Date(pregnancyData.startDate).toLocaleDateString("en-GB")
-                : "Chưa có thông tin",
-            },
-            {
-              label: "Ngày dự sinh",
-              value: pregnancyData?.dueDate
-                ? new Date(pregnancyData.dueDate).toLocaleDateString("en-GB")
-                : "Chưa có thông tin",
-            },
-          ].map((item, index) => (
-            <p key={index} className="info-text">
-              <strong>{item.label}:</strong> {item.value}
-            </p>
-          ))}
-          {isPregnancyActive && pregnancyData?.pregnancyId && (
-            <Button
-              type="primary"
-              danger
-              style={{ marginTop: 10 }}
-              onClick={() => setIsEndPregnancyModalOpen(true)}
+        {/* Form Section */}
+        <div style={{ flex: 1 }}>
+          <Card title={editingReminder ? "Chỉnh sửa nhắc nhở" : "Thêm nhắc nhở mới"}>
+            <Form 
+              form={form}
+              onFinish={onFinish} 
+              layout="vertical"
             >
-              Kết thúc thai kỳ chính
-            </Button>
-          )}
-        </Col>
-
-        <Col xs={24} md={4} className="text-center">
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Title level={4} style={{ margin: 0, fontSize: "13px" }}>
-                Bạn đang mang thai
-              </Title>
-              <div style={{ width: 100 }}>
-                {pregnancyData?.totalFetuses === 1
-                  ? "Đơn thai"
-                  : pregnancyData?.totalFetuses === 2
-                    ? "Song thai"
-                    : pregnancyData?.totalFetuses > 2
-                      ? `${pregnancyData.totalFetuses} thai`
-                      : "Chưa có thông tin"}
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-              }}
-            >
-              {numberOfFetuses > 1 && (
-                <Button
-                  type="text"
-                  onClick={() =>
-                    setCurrentAvatar((prev) =>
-                      prev === 0 ? numberOfFetuses - 1 : prev - 1
-                    )
-                  }
-                />
-              )}
-              {[...Array(numberOfFetuses)].map((_, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  transition={{ duration: 0.5 }}
+              <Form.Item name="type" label="Loại nhắc nhở" rules={[{ required: true }]}>
+                <Select 
+                  placeholder="Chọn loại nhắc nhở"
+                  onChange={(value) => setSelectedType(value)}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "8px",
+                  {reminderTypes.map(type => (
+                    <Option key={type.value} value={type.value}>
+                      {type.icon} {type.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              {selectedType === 'MEDICAL_TASK' && (
+                <>
+                  <Form.Item name="week" label="Tuần thai" rules={[
+                    { 
+                      validator: async (_, value) => {
+                        if (value && (value <= 0)) {
+                          throw new Error('Tuần thai phải lớn hơn 0');
+                        }
+                      }
+                    }
+                  ]}>
+                    <Input type="number" placeholder="Nhập tuần thai" />
+                  </Form.Item>
+                  <Form.Item name="taskType" label="Loại nhiệm vụ" rules={[{ required: true }]}>
+                    <Select placeholder="Chọn loại nhiệm vụ">
+                      {taskTypes.map(type => (
+                        <Option key={type.value} value={type.value}>
+                          {type.label}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item name="title" label="Tiêu đề" rules={[{ required: true }]}>
+                    <Input placeholder="Nhập tiêu đề nhắc nhở" />
+                  </Form.Item>
+                  <Form.Item name="description" label="Mô tả">
+                    <Input.TextArea placeholder="Nhập mô tả chi tiết" />
+                  </Form.Item>
+                </>
+              )}
+              <Form.Item name="date" label="Ngày" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
+              </Form.Item>
+
+              <Form.Item>
+                <Space style={{ width: '100%' }}>
+                  <Button type="primary" htmlType="submit" block>
+                    {editingReminder ? 'Cập nhật' : 'Tạo nhắc nhở'}
+                  </Button>
+                  {editingReminder && (
+                    <Button 
+                      onClick={() => {
+                        setEditingReminder(null);
+                        form.resetFields();
+                      }} 
+                      block
+                    >
+                      Hủy
+                    </Button>
+                  )}
+                </Space>
+              </Form.Item>
+            </Form>
+          </Card>
+        </div>
+      </div>
+
+      {/* Reminders List */}
+      <div style={{ marginTop: '24px' }}>
+        <Card title="Danh sách nhắc nhở">
+          <List
+            dataSource={sortedReminders}
+            renderItem={item => (
+              <List.Item
+                onClick={() => handleReminderClick(item)}
+                style={{ cursor: 'pointer' }}
+                actions={[
+                  <Button 
+                    type="text" 
+                    icon={<EditOutlined />} 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from opening
+                      handleEdit(item);
                     }}
                   >
-                    <Avatar
-                      size={100}
-                      style={{
-                        cursor: "pointer",
-                        border:
-                          currentAvatar === index
-                            ? "2px solid #1890ff"
-                            : "none",
-                      }}
-                      onClick={() => setCurrentAvatar(index)}
-                    >
-                      {String.fromCharCode(65 + index)}
-                    </Avatar>
-                    <div style={{ textAlign: "center", marginTop: "8px" }}>
-                      <Title
-                        level={5}
-                        style={{
-                          margin: 0,
-                          alignContent: "center",
-                          fontSize: "12px",
-                        }}
-                      >
-                        Thai nhi {String.fromCharCode(65 + index)}
-                      </Title>
-                    </div>
-                    {pregnancyData?.fetuses && pregnancyData.fetuses[index] && (
-                      <Space direction="vertical" size="small">
-                        {numberOfFetuses > 1 &&
-                          pregnancyData.status === "ONGOING" &&
-                          pregnancyData.fetuses[index].status === "ACTIVE" && (
-                            <Button
-                              type="primary"
-                              danger
-                              size="small"
-                              onClick={() => {
-                                Modal.confirm({
-                                  title: `Xác nhận kết thúc thai nhi ${String.fromCharCode(
-                                    65 + index
-                                  )}`,
-                                  content:
-                                    "Bạn có chắc chắn muốn kết thúc thai nhi này không? Hành động này không thể hoàn tác.",
-                                  okText: "Xác nhận",
-                                  cancelText: "Hủy",
-                                  onOk: async () => {
-                                    try {
-                                      await handleUpdateStatus(
-                                        pregnancyData.pregnancyId,
-                                        pregnancyData.fetuses[index].fetusId
-                                      );
-                                      message.success(
-                                        `Đã kết thúc thai nhi ${String.fromCharCode(
-                                          65 + index
-                                        )} thành công`
-                                      );
-                                    } catch (error) {
-                                      message.error(
-                                        "Không thể kết thúc thai nhi"
-                                      );
-                                    }
-                                  },
-                                });
-                              }}
-                            >
-                              Kết thúc thai {String.fromCharCode(65 + index)}
-                            </Button>
-                          )}
-                        <Tag
-                          color={
-                            pregnancyData.fetuses[index].status === "ISSUE"
-                              ? "error"
-                              : pregnancyData.fetuses[index].status === "CANCEL"
-                                ? "default"
-                                : pregnancyData.fetuses[index].status ===
-                                  "COMPLETED"
-                                  ? "success"
-                                  : "processing"
-                          }
-                        >
-                          {pregnancyData.fetuses[index].status === "ISSUE"
-                            ? "Có vấn đề"
-                            : pregnancyData.fetuses[index].status === "CANCEL"
-                              ? "Đã sảy thai"
-                              : pregnancyData.fetuses[index].status ===
-                                "COMPLETED"
-                                ? "Đã hoàn thành"
-                                : "Đang phát triển"}
-                        </Tag>
-                      </Space>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-              {numberOfFetuses > 1 && (
-                <Button
-                  type="text"
-                  onClick={() =>
-                    setCurrentAvatar((prev) =>
-                      prev === numberOfFetuses - 1 ? 0 : prev + 1
-                    )
-                  }
-                />
-              )}
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      <Col span={24}>
-        <hr style={{ border: "1px solid #ddd", margin: "10px 0" }} />
-      </Col>
-
-      {/* Add this new section for the records table */}
-      {/* Replace the single table with multiple tables based on number of fetuses */}
-      {pregnancyData?.fetuses?.map((fetus, index) => (
-        <Col
-          span={20}
-          offset={2}
-          style={{ marginBottom: "20px" }}
-          key={fetus.fetusId}
-        >
-          <Card
-            title={`Lịch sử đo lường thai nhi ${String.fromCharCode(
-              65 + index
-            )}`}
-            extra={
-              <Tag
-                color={
-                  fetus.status === "ISSUE"
-                    ? "error"
-                    : fetus.status === "CANCEL"
-                      ? "default"
-                      : fetus.status === "COMPLETED"
-                        ? "success"
-                        : "processing"
-                }
-              >
-                {fetus.status === "ISSUE"
-                  ? "Có vấn đề"
-                  : fetus.status === "CANCEL"
-                    ? "Đã sảy thai"
-                    : fetus.status === "COMPLETED"
-                      ? "Đã hoàn thành"
-                      : "Đang phát triển"}
-              </Tag>
-            }
-          >
-            <Table
-              dataSource={fetusRecords.filter(
-                (record) => record.fetusId === fetus.fetusId
-              )}
-              columns={[
-                {
-                  title: "Tuần thai",
-                  dataIndex: "week",
-                  key: "week",
-                  sorter: (a, b) => a.week - b.week,
-                  render: (weeks) => (weeks ? `${weeks} ` : "N/A"),
-                },
-                {
-                  title: "Cân nặng (g)",
-                  dataIndex: "fetalWeight",
-                  key: "fetalWeight",
-                  render: (value) => value?.toFixed(1) || "N/A",
-                  sorter: (a, b) => (a.fetalWeight || 0) - (b.fetalWeight || 0),
-                },
-                {
-                  title: "Chiều dài (cm)",
-                  dataIndex: "femurLength",
-                  key: "femurLength",
-                  render: (value) => value?.toFixed(1) || "N/A",
-                  sorter: (a, b) => (a.femurLength || 0) - (b.femurLength || 0),
-                },
-                {
-                  title: "Chu vi đầu (mm)",
-                  dataIndex: "headCircumference",
-                  key: "headCircumference",
-                  render: (value) => value?.toFixed(1) || "N/A",
-                  sorter: (a, b) =>
-                    (a.headCircumference || 0) - (b.headCircumference || 0),
-                },
-              ]}
-              pagination={{ pageSize: 5 }}
-            />
-          </Card>
-        </Col>
-      ))}
-
-      <Col span={24}>
-        <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
-      </Col>
-
-      <Modal
-        title="Tạo thai kỳ mới"
-        open={isCreatePregnancyModalOpen}
-        onCancel={() => setIsCreatePregnancyModalOpen(false)}
-        footer={null}
-      >
-        <Form
-          onFinish={async (values) => {
-            try {
-              const response = await api.pregnancy.createPregnancy({
-                gestationalWeeks: parseInt(values.gestationalWeeks),
-                gestationalDays: parseInt(values.gestationalDays),
-                totalFetuses: parseInt(values.totalFetuses),
-                examDate: new Date().toISOString().split("T")[0],
-              });
-              if (response) {
-                message.success("Tạo thai kỳ thành công");
-                setIsCreatePregnancyModalOpen(false);
-                fetchPregnancyData();
-              }
-            } catch (error) {
-              console.error("Create pregnancy error:", error);
-              message.error(
-                "Không thể tạo thai kỳ: " +
-                (error.response?.data?.message || error.message)
-              );
-            }
-          }}
-        >
-          <Form.Item
-            label="Số tuần thai"
-            name="gestationalWeeks"
-            rules={[{ required: true, message: "Vui lòng nhập số tuần thai" }]}
-          >
-            <InputNumber min={1} max={40} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Số ngày thai"
-            name="gestationalDays"
-            rules={[{ required: true, message: "Vui lòng nhập số ngày thai" }]}
-          >
-            <InputNumber min={0} max={6} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Số thai"
-            name="totalFetuses"
-            rules={[{ required: true, message: "Vui lòng nhập số thai" }]}
-          >
-            <InputNumber min={1} max={3} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Ngày khám"
-            name="examDate"
-            rules={[{ required: true, message: "Vui lòng chọn ngày khám" }]}
-          >
-            <Input type="date" style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              Tạo thai kỳ
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal
-        title="Tạo bản ghi thai nhi"
-        open={isCreateFetusRecordModalOpen}
-        onCancel={() => setIsCreateFetusRecordModalOpen(false)}
-        footer={null}
-      >
-        <Form
-          onFinish={async (values) => {
-            try {
-              // Handle both fetuses if multiple fetuses exist
-              const promises = [];
-
-              // First fetus (always exists)
-              const firstFetusData = {
-                fetalWeight: `${values.weight1 || 0}`,
-                femurLength: `${values.height1 || 0}`,
-                headCircumference: `${values.headCircumference1 || 0}`,
-                examDate: pregnancyData.examDate,
-                gestationalWeeks: pregnancyData.gestationalWeeks,
-                gestationalDays: pregnancyData.gestationalDays,
-              };
-              promises.push(
-                api.fetus.createFetusRecord(
-                  pregnancyData.fetuses[0].fetusId,
-                  firstFetusData
-                )
-              );
-
-              // Second fetus (if exists)
-              if (pregnancyData?.fetuses?.length > 1 && values.weight2) {
-                const secondFetusData = {
-                  fetalWeight: `${values.weight2 || 0}`,
-                  femurLength: `${values.height2 || 0}`,
-                  headCircumference: `${values.headCircumference2 || 0}`,
-                  examDate: pregnancyData.examDate,
-                  gestationalWeeks: pregnancyData.gestationalWeeks,
-                  gestationalDays: pregnancyData.gestationalDays,
-                };
-                promises.push(
-                  api.fetus.createFetusRecord(
-                    pregnancyData.fetuses[1].fetusId,
-                    secondFetusData
-                  )
-                );
-              }
-
-              await Promise.all(promises);
-              message.success("Tạo bản ghi thai nhi thành công");
-              setIsCreateFetusRecordModalOpen(false);
-              fetchPregnancyData();
-            } catch (error) {
-              console.error("Create fetus record error:", error);
-              message.error("Không thể tạo bản ghi thai nhi: " + error.message);
-            }
-          }}
-        >
-          {/* First Fetus Form */}
-          <Card title={`Thai A`} style={{ marginBottom: 16 }}>
-            <Form.Item
-              label="Cân nặng (g)"
-              name="weight1"
-              rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
-            >
-              <InputNumber
-                min={0}
-                step={0.1}
-                precision={1}
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Chiều dài (cm)"
-              name="height1"
-              rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
-            >
-              <InputNumber
-                min={0}
-                step={0.1}
-                precision={1}
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Chu vi đầu (mm)"
-              name="headCircumference1"
-              rules={[{ required: true, message: "Vui lòng nhập chu vi đầu" }]}
-            >
-              <InputNumber
-                min={0}
-                step={0.1}
-                precision={1}
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
-          </Card>
-
-          {/* Second Fetus Form (only show if multiple fetuses) */}
-          {pregnancyData?.fetuses?.length > 1 && (
-            <Card title={`Thai B`} style={{ marginBottom: 16 }}>
-              <Form.Item
-                label="Cân nặng (g)"
-                name="weight2"
-                rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
-              >
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  precision={1}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Chiều dài (cm)"
-                name="height2"
-                rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
-              >
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  precision={1}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Chu vi đầu (mm)"
-                name="headCircumference2"
-                rules={[
-                  { required: true, message: "Vui lòng nhập chu vi đầu" },
+                    Chỉnh sửa
+                  </Button>,
+                  <Button 
+                    type="text" 
+                    danger 
+                    icon={<DeleteOutlined />} 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from opening
+                      handleDelete(item);
+                    }}
+                  >
+                    Xóa
+                  </Button>
                 ]}
               >
-                <InputNumber
-                  min={0}
-                  step={0.1}
-                  precision={1}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Card>
-          )}
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              Tạo bản ghi
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {!pregnancyData ? (
-        <Row justify="center" align="middle" style={{ minHeight: "30vh" }}>
-          <Col>
-            <Result
-              icon={<UserOutlined />}
-              title="Bạn chưa có thai kỳ nào đang theo dõi"
-              subTitle="Hãy tạo một thai kỳ mới để bắt đầu theo dõi"
-              extra={
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={() => setIsCreatePregnancyModalOpen(true)}
-                >
-                  Tạo thai kỳ mới
-                </Button>
-              }
-            />
-          </Col>
-        </Row>
-      ) : (
-        <>
-          <Col xs={24} md={24} style={{ width: "100%" }}>
-            <Row
-              gutter={[16, 16]}
-              justify="space-between"
-              style={{ width: "100%" }}
-            >
-              {iconList.map((item, index) => (
-                <Col
-                  flex={1}
-                  style={{ textAlign: "center", position: "relative" }}
-                  key={index}
-                  onClick={() => {
-                    if (item.ref) {
-                      scrollToChart(item.ref);
-                    }
-                    if (item.onClick) {
-                      item.onClick();
-                    }
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "inline-block",
-                      position: "relative",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      const icon = e.currentTarget.querySelector(".icon");
-                      const text = e.currentTarget.querySelector(".tooltip");
-                      icon.style.transform = "scale(1.2)";
-                      icon.style.color = "#a6a9ab";
-                      text.style.opacity = "1";
-                      text.style.visibility = "visible";
-                    }}
-                    onMouseLeave={(e) => {
-                      const icon = e.currentTarget.querySelector(".icon");
-                      const text = e.currentTarget.querySelector(".tooltip");
-                      icon.style.transform = "scale(1)";
-                      icon.style.color = "black";
-                      text.style.opacity = "0";
-                      text.style.visibility = "hidden";
-                    }}
-                  >
-                    <div style={{ position: "relative" }}>
-                      <FontAwesomeIcon
-                        icon={item.icon}
-                        size="3x"
-                        className="icon"
-                        style={{
-                          transition: "transform 0.2s, color 0.2s",
-                        }}
-                      />
-                      {item.badge > 0 && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "-10px",
-                            right: "-10px",
-                            background: "#ff4d4f",
-                            color: "white",
-                            borderRadius: "50%",
-                            width: "20px",
-                            height: "20px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                          }}
-                        >
-                          {item.badge}
-                        </div>
-                      )}
-                    </div>
-
-                    <span
-                      className="tooltip"
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        background: "rgba(0, 0, 0, 0.8)",
-                        color: "white",
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                        fontSize: "14px",
-                        whiteSpace: "nowrap",
-                        opacity: 0,
-                        visibility: "hidden",
-                        transition: "opacity 0.2s ease",
-                      }}
-                    >
-                      {item.label}
+                <List.Item.Meta
+                  avatar={
+                    item.type === 'HEALTH_ALERT' ? <FileSearchOutlined /> :
+                    reminderTypes.find(type => type.value === item.type)?.icon
+                  }
+                  title={
+                    <span style={{ 
+                      textDecoration: (item.status === 'DONE' || item.status === 'SKIP') ? 'line-through' : 'none',
+                      color: (item.status === 'DONE' || item.status === 'SKIP') ? '#999' : 'inherit'
+                    }}>
+                      {item.title}
                     </span>
-                  </div>
-                </Col>
-              ))}
-            </Row>
-          </Col>
-
-          <Col span={24}>
-            <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
-          </Col>
-
-          <div
-            style={{ display: "flex", justifyContent: "center", width: "100%" }}
-          >
-            <Button
-              type="primary"
-              onClick={() => setIsModalOpen(true)}
-              style={{ marginTop: "10px" }}
-            >
-              Nhập số liệu của em bé
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => setIsCreateFetusRecordModalOpen(true)}
-              style={{ marginTop: "10px" }}
-            >
-              Tạo bản ghi thai nhi
-            </Button>
-          </div>
-
-          <Modal
-            title="Nhập số liệu của em bé"
-            open={isModalOpen}
-            onOk={handleFormSubmit}
-            onCancel={handleCancel}
-            width={1000}
-          >
-            <Table
-              dataSource={[formData]}
-              columns={[
-                {
-                  title: "Thai sống trong tử cung",
-                  dataIndex: "date",
-                  key: "date",
-                  width: "27%",
-                  align: "center",
-                  render: () => (
-                    <div style={{ display: "flex", gap: "16px" }}>
-                      <Input
-                        type="number"
-                        style={{ width: "100%" }}
-                        placeholder="Tuần (1-40)"
-                        min={1}
-                        max={40}
-                        value={selectedWeek}
-                        onChange={(e) => {
-                          const value = Math.min(
-                            40,
-                            Math.max(1, Number(e.target.value))
-                          );
-                          setSelectedWeek(value);
-                        }}
-                      />
-                      <span>tuần</span>
-                      <Input
-                        type="number"
-                        style={{ width: "100%" }}
-                        placeholder="Ngày (1-7)"
-                        min={1}
-                        max={7}
-                        value={selectedDay}
-                        onChange={(e) => {
-                          const value = Math.min(
-                            7,
-                            Math.max(1, Number(e.target.value))
-                          );
-                          setSelectedDay(value);
-                        }}
-                      />
-                      <span>ngày</span>
+                  }
+                  description={
+                    <div>
+                      <div>Ngày: {item.date?.format('DD/MM/YYYY')}</div>
+                      <div>Trạng thái: {
+                        item.status === 'NOT_YET' ? 'Chưa hoàn thành' :
+                        item.status === 'DONE' ? 'Hoàn thành' :
+                        item.status === 'SKIP' ? 'Bỏ qua' : 'Không xác định'
+                      }</div>
                     </div>
-                  ),
-                },
-                {
-                  title: "Ngày khám",
-                  dataIndex: "checkupDate",
-                  key: "checkupDate",
-                  width: "18%",
-                  align: "center",
-                  render: (_, record) => (
-                    <Input
-                      type="date"
-                      value={record.checkupDate}
-                      onChange={(e) =>
-                        handleInputChange("checkupDate", e.target.value)
-                      }
-                      style={{ textAlign: "center" }}
-                    />
-                  ),
-                },
-              ]}
-              pagination={false}
-              bordered
-              style={{ marginTop: "20px" }}
-              className="custom-table"
-            />
-          </Modal>
-
-          <Col span={24}>
-            <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
-          </Col>
-
-          {/* Weight Charts */}
-          <Row>
-            {pregnancyData?.fetuses?.map((fetus, index) => (
-              <Col
-                span={20}
-                offset={2}
-                style={{ marginBottom: "20px" }}
-                key={`weight-${fetus.fetusId}`}
-              >
-                <Card
-                  title={`Biểu đồ cân nặng - Thai ${String.fromCharCode(65 + index)}`}
-                  style={{ width: '100%' }}
-                >
-                  <div style={{ height: '600px', width: '100%' }}>
-                    {fetusChartData[fetus.fetusId]?.weightData ? (
-                      <Line
-                        data={fetusChartData[fetus.fetusId].weightData}
-                        options={chartOptions}
-                      />
-                    ) : (
-                      <div>Loading...</div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          {/* Height Charts */}
-          <Row>
-            {pregnancyData?.fetuses?.map((fetus, index) => (
-              <Col
-                span={20}
-                offset={2}
-                style={{ marginBottom: "20px" }}
-                key={`height-${fetus.fetusId}`}
-              >
-                <Card
-                  title={`Biểu đồ chiều dài - Thai ${String.fromCharCode(65 + index)}`}
-                  style={{ width: '100%' }}
-                >
-                  <div style={{ height: '600px', width: '100%' }}>
-                    {fetusChartData[fetus.fetusId]?.heightData ? (
-                      <Line
-                        data={fetusChartData[fetus.fetusId].heightData}
-                        options={chartOptions}
-                      />
-                    ) : (
-                      <div>Loading...</div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          {/* Head Circumference Charts */}
-          <Row>
-            {pregnancyData?.fetuses?.map((fetus, index) => (
-              <Col
-                span={20}
-                offset={2}
-                style={{ marginBottom: "20px" }}
-                key={`circumference-${fetus.fetusId}`}
-              >
-                <Card
-                  title={`Biểu đồ chu vi đầu - Thai ${String.fromCharCode(65 + index)}`}
-                  style={{ width: '100%' }}
-                >
-                  <div style={{ height: '600px', width: '100%' }}>
-                    {fetusChartData[fetus.fetusId]?.circumferenceData ? (
-                      <Line
-                        data={fetusChartData[fetus.fetusId].circumferenceData}
-                        options={chartOptions}
-                      />
-                    ) : (
-                      <div>Loading...</div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          <Col
-            span={20}
-            offset={2}
-            style={{ textAlign: "center", marginBottom: "20px" }}
-            ref={vaccinationRef}
-          >
-            <Col span={24}>
-              <hr style={{ border: "1px solid #ddd", margin: "20px 0" }} />
-            </Col>
-          </Col>
-
-          <Tooltip title="Quay về đầu trang" placement="top">
-            <Button
-              type="primary"
-              style={{
-                position: "fixed",
-                bottom: "50px",
-                right: "50px",
-                borderRadius: "50%",
-                width: "50px",
-                height: "50px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "20px",
-                zIndex: 1000,
-              }}
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            >
-              ↑
-            </Button>
-          </Tooltip>
-
-          <Modal
-            title="Lịch sử thai kỳ"
-            open={isPregnancyListModalOpen}
-            onCancel={() => setIsPregnancyListModalOpen(false)}
-            footer={null}
-            width={1000}
-          >
-            <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-              {pregnancyHistoryData && pregnancyHistoryData.length > 0 ? (
-                pregnancyHistoryData.map((pregnancy, index) => (
-                  <Card
-                    key={pregnancy.pregnancyId || index}
-                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${pregnancy.status === "ONGOING"
-                        ? "Đang mang thai"
-                        : "Đã kết thúc"
-                      }`}
-                    style={{ marginBottom: 16 }}
-                    extra={
-                      pregnancy.status === "ONGOING" && (
-                        <Space>
-                          {pregnancy.fetuses?.length > 1 ? (
-                            <Button
-                              type="primary"
-                              danger
-                              onClick={() => {
-                                Modal.confirm({
-                                  title: "Xác nhận kết thúc toàn bộ thai kỳ",
-                                  content:
-                                    "Bạn có chắc chắn muốn kết thúc toàn bộ thai kỳ này không? Hành động này không thể hoàn tác.",
-                                  okText: "Xác nhận",
-                                  cancelText: "Hủy",
-                                  onOk: () =>
-                                    handleUpdateStatus(pregnancy.pregnancyId),
-                                });
-                              }}
-                            >
-                              Kết thúc toàn bộ thai kỳ
-                            </Button>
-                          ) : (
-                            <Button
-                              type="primary"
-                              danger
-                              onClick={() => {
-                                Modal.confirm({
-                                  title: "Xác nhận kết thúc thai kỳ",
-                                  content:
-                                    "Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.",
-                                  okText: "Xác nhận",
-                                  cancelText: "Hủy",
-                                  onOk: () =>
-                                    handleUpdateStatus(pregnancy.pregnancyId),
-                                });
-                              }}
-                            >
-                              Kết thúc thai kỳ
-                            </Button>
-                          )}
-                        </Space>
-                      )
-                    }
-                  >
-                    <Row gutter={[16, 16]}>
-                      <Col span={12}>
-                        <p>
-                          <strong>Ngày bắt đầu:</strong>{" "}
-                          {pregnancy.startDate
-                            ? new Date(pregnancy.startDate).toLocaleDateString(
-                              "vi-VN"
-                            )
-                            : "Chưa có"}
-                        </p>
-                        <p>
-                          <strong>Ngày dự sinh:</strong>{" "}
-                          {pregnancy.dueDate
-                            ? new Date(pregnancy.dueDate).toLocaleDateString(
-                              "vi-VN"
-                            )
-                            : "Chưa có"}
-                        </p>
-                        <p>
-                          <strong>Ngày khám gần nhất:</strong>{" "}
-                          {pregnancy.examDate
-                            ? new Date(pregnancy.examDate).toLocaleDateString(
-                              "vi-VN"
-                            )
-                            : "Chưa có"}
-                        </p>
-                      </Col>
-                      <Col span={12}>
-                        <p>
-                          <strong>Tuần thai:</strong>{" "}
-                          {pregnancy.gestationalWeeks || 0} tuần{" "}
-                          {pregnancy.gestationalDays || 0} ngày
-                        </p>
-                        <p>
-                          <strong>Số thai:</strong>{" "}
-                          {pregnancy.totalFetuses || 1}
-                        </p>
-                        <p>
-                          <strong>Trạng thái:</strong>{" "}
-                          <Tag
-                            color={
-                              pregnancy.status === "ONGOING"
-                                ? "processing"
-                                : pregnancy.status === "COMPLETED"
-                                  ? "success"
-                                  : "default"
-                            }
-                          >
-                            {pregnancy.status === "ONGOING"
-                              ? "Đang mang thai"
-                              : pregnancy.status === "COMPLETED"
-                                ? "Đã hoàn thành"
-                                : "Đã kết thúc"}
-                          </Tag>
-                        </p>
-                      </Col>
-                    </Row>
-                    {pregnancy?.fetuses && pregnancy.fetuses.length > 0 && (
-                      <>
-                        <Divider>Thông tin thai nhi</Divider>
-                        <Row gutter={[16, 16]}>
-                          {pregnancy.fetuses.map((fetus, idx) => (
-                            <Col span={24} key={fetus.fetusId || idx}>
-                              <Card
-                                type="inner"
-                                title={`Thai nhi ${String.fromCharCode(
-                                  65 + idx
-                                )}`}
-                                extra={
-                                  pregnancy.status === "ONGOING" &&
-                                  fetus.status === "ACTIVE" && (
-                                    <Button
-                                      type="primary"
-                                      danger
-                                      size="small"
-                                      onClick={() => {
-                                        Modal.confirm({
-                                          title: `Xác nhận kết thúc thai nhi ${String.fromCharCode(
-                                            65 + idx
-                                          )}`,
-                                          content:
-                                            "Bạn có chắc chắn muốn kết thúc thai nhi này không? Hành động này không thể hoàn tác.",
-                                          okText: "Xác nhận",
-                                          cancelText: "Hủy",
-                                          onOk: async () => {
-                                            try {
-                                              await api.pregnancy.updatePregnancyStatus(
-                                                pregnancy.pregnancyId,
-                                                fetus.fetusId,
-                                                "CANCEL"
-                                              );
-                                              message.success(
-                                                `Đã kết thúc thai nhi ${String.fromCharCode(
-                                                  65 + idx
-                                                )}`
-                                              );
-                                              await fetchPregnancyData();
-                                              await fetchPregnancyHistory();
-                                            } catch (error) {
-                                              console.error(
-                                                "Error updating fetus status:",
-                                                error
-                                              );
-                                              message.error(
-                                                "Không thể kết thúc thai nhi"
-                                              );
-                                            }
-                                          },
-                                        });
-                                      }}
-                                    >
-                                      Kết thúc thai nhi{" "}
-                                      {String.fromCharCode(65 + idx)}
-                                    </Button>
-                                  )
-                                }
-                              >
-                                <Row gutter={[16, 8]}>
-                                  <Col span={24} style={{ marginBottom: 16 }}>
-                                    <Tag
-                                      color={
-                                        fetus.status === "ISSUE"
-                                          ? "error"
-                                          : fetus.status === "CANCEL"
-                                            ? "default"
-                                            : fetus.status === "COMPLETED"
-                                              ? "success"
-                                              : "processing"
-                                      }
-                                    >
-                                      {fetus.status === "ISSUE"
-                                        ? "Có vấn đề"
-                                        : fetus.status === "CANCEL"
-                                          ? "Đã sảy thai"
-                                          : fetus.status === "COMPLETED"
-                                            ? "Đã hoàn thành"
-                                            : "Đang phát triển"}
-                                    </Tag>
-                                  </Col>
-                                  <Col span={8}>
-                                    <Statistic
-                                      title="Cân nặng"
-                                      value={fetus.weight || "Chưa có"}
-                                      suffix="g"
-                                    />
-                                  </Col>
-                                  <Col span={8}>
-                                    <Statistic
-                                      title="Chiều dài"
-                                      value={fetus.height || "Chưa có"}
-                                      suffix="cm"
-                                    />
-                                  </Col>
-                                  <Col span={8}>
-                                    <Statistic
-                                      title="Chu vi đầu"
-                                      value={fetus.circumference || "Chưa có"}
-                                      suffix="mm"
-                                    />
-                                  </Col>
-                                </Row>
-                              </Card>
-                            </Col>
-                          ))}
-                        </Row>
-                      </>
-                    )}
-                    <Divider>Ghi chú</Divider>
-                    <Text type="secondary">
-                      {pregnancy.notes || "Không có ghi chú"}
-                    </Text>
-                  </Card>
-                ))
-              ) : (
-                <Empty
-                  description="Chưa có lịch sử thai kỳ"
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  }
                 />
+              </List.Item>
+            )}
+          />
+        </Card>
+      </div>
+
+      {/* Detail Modal */}
+      <Modal
+        title="Chi tiết nhắc nhở"
+        open={selectedReminder !== null}
+        onCancel={handleModalClose}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <Select
+              value={selectedReminder?.tempStatus || selectedReminder?.status || 'NOT_YET'}
+              style={{ width: 120 }}
+              onChange={(value) => {
+                setSelectedReminder({ ...selectedReminder, tempStatus: value });
+              }}
+            >
+              <Option value="NOT_YET">Chưa hoàn thành</Option>
+              <Option value="DONE">Hoàn thành</Option>
+              <Option value="SKIP">Bỏ qua</Option>
+            </Select>
+            <Button 
+              type="primary"
+              onClick={async () => {
+                if (!selectedReminder?.id || !selectedReminder?.tempStatus) return;
+                try {
+                  await api.reminders.updateReminderStatus(selectedReminder.id, {
+                    status: selectedReminder.tempStatus
+                  });
+                  
+                  await fetchReminders();
+                  const updatedReminder = reminders.find(r => r.id === selectedReminder.id);
+                  setSelectedReminder({
+                    ...updatedReminder,
+                    status: selectedReminder.tempStatus,
+                    tempStatus: selectedReminder.tempStatus
+                  });
+                  
+                  message.success('Cập nhật trạng thái thành công');
+                } catch (error) {
+                  console.error('Failed to update status:', error);
+                  message.error('Không thể cập nhật trạng thái');
+                }
+              }}
+            > 
+              Xác nhận
+            </Button>
+            <Button onClick={handleModalClose}>Đóng</Button>
+          </div>
+        }
+        width={600}
+      >
+        {selectedReminder && (
+          <div>
+            <h2>{selectedReminder.title}</h2>
+            <div style={{ marginBottom: '16px' }}>
+              <p><strong>Loại nhắc nhở:</strong> {reminderTypes.find(t => t.value === selectedReminder.type)?.label}</p>
+              <p><strong>Ngày:</strong> {selectedReminder.date?.format('DD/MM/YYYY')}</p>
+              <p><strong>Trạng thái:</strong> {
+                selectedReminder.status === 'NOT_YET' ? 'Chưa hoàn thành' :
+                selectedReminder.status === 'DONE' ? 'Hoàn thành' :
+                selectedReminder.status === 'SKIP' ? 'Bỏ qua' : 'Không xác định'
+              }</p>
+              
+              {selectedReminder.type === 'MEDICAL_TASK' && selectedReminder.tasks && selectedReminder.tasks.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h3>Thông tin nhiệm vụ</h3>
+                  <p><strong>Tuần thai:</strong> {selectedReminder.tasks[0].week}</p>
+                  <p><strong>Loại nhiệm vụ:</strong> {taskTypes.find(t => t.value === selectedReminder.tasks[0].taskType)?.label}</p>
+                  <p><strong>Tiêu đề:</strong> {selectedReminder.tasks[0].taskName}</p>
+                  <p><strong>Mô tả:</strong> {selectedReminder.tasks[0].notes || 'Không có mô tả'}</p>
+                </div>
+              )}
+
+              {selectedReminder.type === 'HEALTH_ALERT' && selectedReminder.healthAlerts && selectedReminder.healthAlerts.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h3>Thông tin cảnh báo</h3>
+                  <p><strong>Loại cảnh báo:</strong> {
+                    selectedReminder.healthAlerts[0].healthType === 'LOW_HEIGHT' ? 'Chiều cao thai nhi thấp' : 
+                    selectedReminder.healthAlerts[0].healthType === 'HIGH_HEIGHT' ? 'Chiều cao thai nhi cao' :
+                    selectedReminder.healthAlerts[0].healthType
+                  }</p>
+                  <p><strong>Mức độ:</strong> {
+                    selectedReminder.healthAlerts[0].severity === 'MEDIUM' ? 'Trung bình' :
+                    selectedReminder.healthAlerts[0].severity === 'HIGH' ? 'Cao' : 'Thấp'
+                  }</p>
+                  <p><strong>Nguồn:</strong> {
+                    selectedReminder.healthAlerts[0].source === 'PREGNANCY_RECORDS' ? 'Hồ sơ thai kỳ' :
+                    selectedReminder.healthAlerts[0].source
+                  }</p>
+                  <p><strong>Ghi chú:</strong> {selectedReminder.healthAlerts[0].notes || 'Không có ghi chú'}</p>
+                </div>
               )}
             </div>
-          </Modal>
-
-          <Modal
-            title="Xác nhận kết thúc thai kỳ"
-            open={isEndPregnancyModalOpen}
-            onOk={confirmEndPregnancy}
-            onCancel={() => setIsEndPregnancyModalOpen(false)}
-            okText="Xác nhận"
-            cancelText="Hủy"
-          >
-            <p>
-              Bạn có chắc chắn muốn kết thúc thai kỳ hiện tại không? Hành động
-              này không thể hoàn tác.
-            </p>
-          </Modal>
-        </>
-      )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
-}
+};
 
-export default Baby;
+export default Reminder;
+
+// Add this function near other handler functions

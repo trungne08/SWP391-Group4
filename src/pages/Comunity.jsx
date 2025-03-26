@@ -45,20 +45,19 @@ function Comunity() {
   const [chartData, setChartData] = useState({});
   const [chartLoading, setChartLoading] = useState({});
   const [pregnancyData, setPregnancyData] = useState(null); // Thêm state cho pregnancyData
-
+  
   const handlePostClick = async (postId) => {
     try {
       const post = await api.community.getPostById(postId);
       if (post?.postType === 'GROWTH_CHART') {
-        if (!chartData[postId]) {
-          message.error("Chart data not available for this post");
-        }
+        // Refresh chart data when clicking on a chart post
+        await refreshChartData(postId);
       } else {
         navigate(`/comunity/post/${postId}`);
       }
     } catch (error) {
       console.error("Error handling post click:", error);
-      message.error("Failed to load post details");
+      message.error("Không thể tải thông tin bài viết");
     }
   };
 
