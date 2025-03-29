@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { requestNotificationPermission } from '../firebase/firebase-config';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -38,10 +40,42 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = (userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    setIsAuthenticated(true);
+  const login = async (userData) => {
+    try {
+      setUser(userData);
+      setIsAuthenticated(true);
+      
+      // Lưu thông tin user vào localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      // Request notification permission
+      try {
+        const fcmToken = await requestNotificationPermission();
+        if (fcmToken) {
+          // Send FCM token to backend using the correct endpoint
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/fcm-token`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ token: fcmToken })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to update FCM token');
+          }
+          console.log('FCM Token updated successfully');
+        }
+      } catch (error) {
+        console.error('Notification setup failed:', error);
+      }
+      
+      console.log("User logged in:", userData);
+    } catch (error) {
+      console.error("Login error in context:", error);
+      throw error;
+    }
   };
 
   const logout = () => {

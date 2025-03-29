@@ -1,9 +1,12 @@
-const API_BASE_URL = "https://poetic-helping-mallard.ngrok-free.app";
+import { requestNotificationPermission } from "../firebase/firebase-config";
+
+const API_BASE_URL = "https://hare-causal-prawn.ngrok-free.app";
 
 const api = {
   auth: {
     login: async (credentials) => {
       try {
+        // 1. Đăng nhập
         const response = await fetch(`${API_BASE_URL}/api/user/login`, {
           method: "POST",
           headers: {
@@ -12,46 +15,63 @@ const api = {
           mode: "cors",
           credentials: "include",
           body: JSON.stringify({
-            email: credentials.email.trim(), // Giữ Snguyên là email
+            email: credentials.email.trim(),
             password: credentials.password,
           }),
         });
-
+    
         const data = await response.json();
-        console.log("Server response:", data);
-
+        console.log("Login response data:", data);
+    
+        // 2. Kiểm tra đăng nhập thành công
         if (!response.ok) {
           throw new Error(data.message || "Login failed");
         }
-
-        // Kiểm tra và trích xuất thông tin từ token
-        let tokenData = {};
-        try {
-          tokenData = JSON.parse(atob(data.token.split(".")[1]));
-          console.log("Token data:", tokenData);
-        } catch (err) {
-          console.error("Invalid token format", err);
-          throw new Error("Invalid token received");
-        }
-
-        return {
-          token: data.token,
-          user_id: tokenData.id || tokenData.user_id,
-          username: tokenData.sub,
-          email: tokenData.email,
-          role: tokenData.role,
+    
+        const token = data.token;
+        const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    
+        const userData = {
+          user_id: tokenPayload.id,
+          email: tokenPayload.email,
+          username: tokenPayload.username,
+          role: tokenPayload.role || "USER",
         };
+    
+        // Lưu token và user data
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(userData));
+    
+        // 3. Xin FCM token và gửi lên server
+        try {
+          const fcmToken = await requestNotificationPermission();
+          if (fcmToken) {
+            await fetch(`${API_BASE_URL}/api/users/fcm-token`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ token: fcmToken })
+            });
+            localStorage.setItem('fcmToken', fcmToken);
+          }
+        } catch (fcmError) {
+          console.error("Failed to setup notifications:", fcmError);
+          // Continue even if FCM setup fails
+        }
+    
+        // 4. Trả về thông tin user
+        return userData;
       } catch (error) {
-        console.error("Login error:", error);
+        console.error("API login error:", error);
         throw error;
       }
     },
-
     logout: () => {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     },
-
     register: async (userData) => {
       try {
         console.log("Sending registration data:", userData);
@@ -393,6 +413,7 @@ const api = {
           throw new Error("No token found");
         }
 
+        console.log("Making request to get user membership with token:", token);
         const response = await fetch(
           `${API_BASE_URL}/api/subscriptions/my-subscriptions`,
           {
@@ -407,22 +428,20 @@ const api = {
           }
         );
 
+        console.log("Response status:", response.status);
         const responseText = await response.text();
-        console.log("User membership response:", responseText);
+        console.log("Response text:", responseText);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch user membership");
+          throw new Error(
+            `Failed to fetch user membership: ${response.status}`
+          );
         }
 
-        try {
-          return responseText ? JSON.parse(responseText) : [];
-        } catch (parseError) {
-          console.error("Parse error:", parseError);
-          return [];
-        }
+        return responseText ? JSON.parse(responseText) : [];
       } catch (error) {
         console.error("Get user membership error:", error);
-        return [];
+        throw error; // Throw error instead of returning empty array
       }
     },
 

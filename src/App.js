@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";  // Remove Router import
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";  // Thêm useNavigate
+import { useEffect } from 'react'; // Thêm useEffect
 import Header from "./components/Header"; 
 import Layout from "./layouts/Layouts";
 import AdminLayout from "./layouts/AdminLayout";
@@ -29,16 +30,18 @@ import { useAuth } from './context/AuthContext';  // Add this import
 import SubscriptionHistory from "./pages/SubscriptionHistory";
 import ChangePassword from "./pages/ChangePassword"; // Add this import
 import Post from './pages/Post';  // Add this import
+import NotificationHandler from './components/NotificationHandler';
 
+// AdminRoute component
 const AdminRoute = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
   
   if (user?.role !== 'ADMIN') {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
   
   return children;
@@ -48,7 +51,22 @@ function App() {
   return (
     <AuthProvider>
       <>
+        <NotificationHandler />  {/* Make sure this is placed here */}
         <Routes>
+          {/* Admin routes */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="members" element={<AdminMember />} />
+            <Route path="membership" element={<AdminMembership />} />
+            <Route path="blog" element={<AdminBlog />} />
+          </Route>
+
+          {/* Other routes remain the same */}
           <Route path="/" element={<Layout />}>
             {/* Public routes */}
             <Route index element={<HomePage />} />
@@ -126,39 +144,6 @@ function App() {
               <PrivateRoute>
                 <Reminder />
               </PrivateRoute>
-            } />
-          </Route>
-
-          {/* Admin routes */}
-          <Route path="/admin" element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }>
-            <Route index element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } />
-            <Route path="dashboard" element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } />
-            <Route path="members" element={
-              <AdminRoute>
-                <AdminMember />
-              </AdminRoute>
-            } />
-            <Route path="membership" element={
-              <AdminRoute>
-                <AdminMembership />
-              </AdminRoute>
-            } />
-            <Route path="blog" element={
-              <AdminRoute>
-                <AdminBlog />
-              </AdminRoute>
             } />
           </Route>
         </Routes>

@@ -11,19 +11,15 @@ function Payment() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { packageDetails } = location.state || {};
-  console.log("Package details in Payment:", packageDetails); // Add this log
 
   const handlePayment = async () => {
     try {
       setLoading(true);
       const userData = JSON.parse(localStorage.getItem('user'));
-      if (!userData?.user_id) {
-        message.error('User information not found');
-        return;
-      }
-
-      if (!packageDetails?.id) {
-        message.error('Invalid package information');
+      
+      // Validate user and package data
+      if (!userData?.user_id || !packageDetails?.id) {
+        message.error('Invalid user or package information');
         return;
       }
 

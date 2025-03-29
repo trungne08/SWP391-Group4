@@ -21,46 +21,49 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const response = await api.auth.login(formData);
+      console.log("Login response:", response);
+
+      if (response) {
+        // Request notification permission after successful login
+        try {
+          const fcmToken = await api.notifications.requestPermission();
+          if (fcmToken) {
+            // Send FCM token to backend
+            await api.notifications.updateFcmToken(fcmToken);
+            console.log('FCM Token registered successfully');
+          }
+        } catch (fcmError) {
+          console.error('Failed to setup notifications:', fcmError);
+          // Continue with login even if notification setup fails
+        }
+
+        // Lưu thông tin user vào context
+        await login(response);
+        
+        // Kiểm tra role và chuyển hướng
+        if (response.role === 'ADMIN') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.message || "Email hoặc mật khẩu không đúng");
+    }
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
       [name]: value.trim(),
     }));
-  };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    try {
-      console.log("Attempting login...");
-      const response = await api.auth.login(formData);
-
-      if (response) {
-        localStorage.setItem("token", response.token);
-        const userData = {
-          user_id: response.user_id,
-          username: response.username,
-          email: response.email,
-          fullName: response.fullName, // Thêm fullName, nếu không có thì dùng username
-          role: response.role,
-        };
-        // Log để debug
-        console.log("User Data:", userData);
-
-        localStorage.setItem("user", JSON.stringify(userData));
-        login(userData);
-
-        if (response.role === "MEMBER") {
-          navigate("/", { replace: true });
-        } else if (response.role === "ADMIN") {
-          navigate("/admin", { replace: true });
-        }
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError(err.message || "Invalid email or password");
-    }
   };
   return (
     <Container component="main" maxWidth="xs">

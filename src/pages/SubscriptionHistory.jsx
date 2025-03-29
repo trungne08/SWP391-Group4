@@ -13,9 +13,10 @@ function SubscriptionHistory() {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const userData = JSON.parse(localStorage.getItem('user'));
-      if (!userData?.user_id) {
-        message.error('User information not found');
+      // Kiểm tra token thay vì user data
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Vui lòng đăng nhập để xem lịch sử đăng ký');
         navigate('/login');
         return;
       }

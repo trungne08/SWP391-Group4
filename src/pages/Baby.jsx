@@ -87,8 +87,8 @@ function Baby() {
   const [standards, setStandards] = useState(null);
   const [fetusChartData, setFetusChartData] = useState({});
   // Add these state declarations at the top with other states
-
-
+  const [isCompletePregnancyModalOpen, setIsCompletePregnancyModalOpen] =
+        useState(false);
   const [isConfirmFetusModalOpen, setIsConfirmFetusModalOpen] = useState(false);
   const [selectedFetusIndex, setSelectedFetusIndex] = useState(null);
   const [pregnancyHistoryData, setPregnancyHistoryData] = useState([]);
@@ -107,14 +107,15 @@ function Baby() {
     checkupDate: "",
   });
   const [isEndPregnancyModalOpen, setIsEndPregnancyModalOpen] = useState(false);
-  const [isCancelPregnancyModalOpen, setCancelPregnancyModalOpen] = useState(false);
+  const [isCancelPregnancyModalOpen, setCancelPregnancyModalOpen] =
+    useState(false);
 
   const handleEndPregnancy = () => {
     setIsEndPregnancyModalOpen(true);
   };
 
   const handleCancelPregnancy = () => {
-    setCancelPregnancyModalOpen(true);  // Just open the modal
+    setCancelPregnancyModalOpen(true); // Just open the modal
   };
   const handlePregnancyListClick = () => {
     setIsPregnancyListModalOpen(true);
@@ -135,32 +136,45 @@ function Baby() {
       if (selectedFetusIndex !== null && pregnancyData?.fetuses) {
         const fetusId = pregnancyData.fetuses[selectedFetusIndex].fetusId;
         console.log("Attempting to cancel fetus:", fetusId);
-        
+
         const result = await api.pregnancy.updatePregnancyStatus(
           pregnancyData.pregnancyId,
           fetusId,
-          'CANCEL'
+          "CANCEL"
         );
 
         if (result) {
           await fetchPregnancyData(); // Refresh data
-          message.success(`Đã cập nhật trạng thái thai nhi ${selectedFetusIndex + 1}`);
+          message.success(
+            `Đã cập nhật trạng thái thai nhi ${selectedFetusIndex + 1}`
+          );
           setIsConfirmFetusModalOpen(false);
           setSelectedFetusIndex(null);
         }
       }
     } catch (error) {
-      console.error('Error updating fetus status:', error);
-      message.error('Không thể cập nhật trạng thái thai nhi: ' + (error.message || 'Unknown error'));
+      console.error("Error updating fetus status:", error);
+      message.error(
+        "Không thể cập nhật trạng thái thai nhi: " +
+          (error.message || "Unknown error")
+      );
     }
   };
   const handleUpdateStatus = async (pregnancyId, fetusId) => {
     try {
       let response;
       if (fetusId) {
-        response = await api.pregnancy.updatePregnancyStatus(pregnancyId, fetusId, "CANCEL");
+        response = await api.pregnancy.updatePregnancyStatus(
+          pregnancyId,
+          fetusId,
+          "CANCEL"
+        );
       } else {
-        response = await api.pregnancy.updatePregnancyStatus(pregnancyId, null, "COMPLETED");
+        response = await api.pregnancy.updatePregnancyStatus(
+          pregnancyId,
+          null,
+          "COMPLETED"
+        );
       }
 
       if (response) {
@@ -173,8 +187,6 @@ function Baby() {
       message.error("Không thể cập nhật trạng thái: " + error.message);
     }
   };
-
-
 
   const allFetusesCompleted = (pregnancies, pregnancyId) => {
     const pregnancy = pregnancies.find((p) => p.pregnancyId === pregnancyId);
@@ -190,7 +202,6 @@ function Baby() {
     }
     setIsEndPregnancyModalOpen(false);
   };
-
 
   const calculateDates = (weeks, days) => {
     if (!weeks || !days) return { pregnancyStart: null, dueDate: null };
@@ -310,6 +321,17 @@ function Baby() {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const confirmCompletePregnancy = async () => {
+    try {
+      await handleUpdateStatus(pregnancyData.pregnancyId);
+      message.success("Thai kỳ đã hoàn thành thành công");
+      setIsCompletePregnancyModalOpen(false);
+      window.location.reload(); // Reload the page
+    } catch (error) {
+      message.error("Không thể hoàn thành thai kỳ");
+    }
   };
 
   const scrollToChart = (ref) => {
@@ -800,7 +822,6 @@ function Baby() {
               alignItems: "center",
               gap: "16px",
               padding: "20px",
-
             }}
           >
             <span
@@ -902,14 +923,11 @@ function Baby() {
             <Space>
               <Button
                 type="primary"
-                onClick={handleEndPregnancy}
                 style={{
                   marginTop: 10,
                   background: "linear-gradient(45deg, #52c41a, #73d13d)",
-                  border: "none",
-                  boxShadow: "0 2px 8px rgba(82, 196, 26, 0.3)",
-                  transition: "all 0.3s ease"
                 }}
+                onClick={() => setIsCompletePregnancyModalOpen(true)}
               >
                 Hoàn thành thai kỳ
               </Button>
@@ -917,13 +935,13 @@ function Baby() {
               <Button
                 type="primary"
                 danger
-                onClick={handleCancelPregnancy}  // This will now show the modal
+                onClick={handleCancelPregnancy} // This will now show the modal
                 style={{
                   marginTop: 10,
                   background: "linear-gradient(45deg, #ff4d4f, #ff7875)",
                   border: "none",
                   boxShadow: "0 2px 8px rgba(255, 77, 79, 0.3)",
-                  transition: "all 0.3s ease"
+                  transition: "all 0.3s ease",
                 }}
               >
                 Hủy thai kỳ hiện tại
@@ -932,13 +950,16 @@ function Baby() {
           )}
           <Modal
             title="Xác nhận hoàn thành thai kỳ"
-            open={isEndPregnancyModalOpen}
-            onOk={confirmEndPregnancy}
-            onCancel={() => setIsEndPregnancyModalOpen(false)}
+            open={isCompletePregnancyModalOpen}
+            onOk={confirmCompletePregnancy}
+            onCancel={() => setIsCompletePregnancyModalOpen(false)}
             okText="Xác nhận"
             cancelText="Hủy"
           >
-            <p>Bạn có chắc chắn muốn hoàn thành thai kỳ này không?</p>
+            <p>
+              Bạn có chắc chắn muốn hoàn thành thai kỳ này không? Thai kỳ sẽ
+              được đánh dấu là đã hoàn thành.
+            </p>
           </Modal>
 
           <Modal
@@ -946,7 +967,11 @@ function Baby() {
             open={isCancelPregnancyModalOpen}
             onOk={async () => {
               try {
-                await api.pregnancy.updatePregnancyStatus(pregnancyData.pregnancyId, null, "CANCEL");  // Changed from "CANCEL" to "CANCEL"
+                await api.pregnancy.updatePregnancyStatus(
+                  pregnancyData.pregnancyId,
+                  null,
+                  "CANCEL"
+                ); // Changed from "CANCEL" to "CANCEL"
                 message.success("Thai kỳ đã được hủy");
                 window.location.reload();
               } catch (error) {
@@ -958,9 +983,11 @@ function Baby() {
             okText="Xác nhận"
             cancelText="Hủy"
           >
-            <p>Bạn có chắc chắn muốn hủy thai kỳ này không? Hành động này không thể hoàn tác.</p>
+            <p>
+              Bạn có chắc chắn muốn hủy thai kỳ này không? Hành động này không
+              thể hoàn tác.
+            </p>
           </Modal>
-
         </Col>
 
         <Col xs={24} md={4} className="text-center">
@@ -1003,10 +1030,10 @@ function Baby() {
                 {pregnancyData?.totalFetuses === 1
                   ? "Đơn thai"
                   : pregnancyData?.totalFetuses === 2
-                    ? "Song thai"
-                    : pregnancyData?.totalFetuses > 2
-                      ? `${pregnancyData.totalFetuses} thai`
-                      : "Chưa có thông tin"}
+                  ? "Song thai"
+                  : pregnancyData?.totalFetuses > 2
+                  ? `${pregnancyData.totalFetuses} thai`
+                  : "Chưa có thông tin"}
               </div>
             </div>
 
@@ -1017,7 +1044,6 @@ function Baby() {
                 alignItems: "center",
                 gap: "10px",
                 padding: "20px",
-
               }}
             >
               {numberOfFetuses > 1 && (
@@ -1087,7 +1113,8 @@ function Baby() {
                         {numberOfFetuses > 1 &&
                           pregnancyData.status === "ONGOING" &&
                           (pregnancyData.fetuses[index].status === "ACTIVE" ||
-                            pregnancyData.fetuses[index].status === "ISSUE") && (
+                            pregnancyData.fetuses[index].status ===
+                              "ISSUE") && (
                             <Button
                               type="primary"
                               danger
@@ -1130,7 +1157,10 @@ function Baby() {
         okText="Xác nhận"
         cancelText="Hủy"
       >
-        <p>Bạn có chắc chắn muốn tạm biệt cục vàng này không? Hành động này không thể hoàn tác.</p>
+        <p>
+          Bạn có chắc chắn muốn tạm biệt cục vàng này không? Hành động này không
+          thể hoàn tác.
+        </p>
       </Modal>
 
       <Col span={24}>
@@ -1175,19 +1205,19 @@ function Baby() {
                   fetus.status === "ISSUE"
                     ? "error"
                     : fetus.status === "CANCEL"
-                      ? "default"
-                      : fetus.status === "COMPLETED"
-                        ? "success"
-                        : "processing"
+                    ? "default"
+                    : fetus.status === "COMPLETED"
+                    ? "success"
+                    : "processing"
                 }
               >
                 {fetus.status === "ISSUE"
                   ? "Em bé đang có vấn đề!!!! bạn kiểm tra ở các biểu đồ xem"
                   : fetus.status === "CANCEL"
-                    ? "Đã sảy thai"
-                    : fetus.status === "COMPLETED"
-                      ? "Đã hoàn thành"
-                      : "Đang phát triển"}
+                  ? "Đã sảy thai"
+                  : fetus.status === "COMPLETED"
+                  ? "Đã hoàn thành"
+                  : "Đang phát triển"}
               </Tag>
             }
           >
@@ -1325,7 +1355,7 @@ function Baby() {
               console.error("Create pregnancy error:", error);
               message.error(
                 "Không thể tạo thai kỳ: " +
-                (error.response?.data?.message || error.message)
+                  (error.response?.data?.message || error.message)
               );
             }
           }}
@@ -1367,136 +1397,177 @@ function Baby() {
       </Modal>
 
       <Modal
-  title="Tạo bản ghi thai nhi"
-  open={isCreateFetusRecordModalOpen}
-  onCancel={() => setIsCreateFetusRecordModalOpen(false)}
-  footer={null}
->
-  <Form
-    onFinish={async (values) => {
-      try {
-        const promises = [];
+        title="Tạo bản ghi thai nhi"
+        open={isCreateFetusRecordModalOpen}
+        onCancel={() => setIsCreateFetusRecordModalOpen(false)}
+        footer={null}
+      >
+        <Form
+          onFinish={async (values) => {
+            try {
+              const promises = [];
 
-        // First fetus (only if not cancelled)
-        if (pregnancyData?.fetuses[0]?.status !== "CANCEL") {
-          const firstFetusData = {
-            fetalWeight: `${values.weight1 || 0}`,
-            femurLength: `${values.height1 || 0}`,
-            headCircumference: `${values.headCircumference1 || 0}`,
-            examDate: pregnancyData.examDate,
-            gestationalWeeks: pregnancyData.gestationalWeeks,
-            gestationalDays: pregnancyData.gestationalDays,
-          };
-          promises.push(
-            api.fetus.createFetusRecord(
-              pregnancyData.fetuses[0].fetusId,
-              firstFetusData
-            )
-          );
-        }
+              // First fetus (only if not cancelled)
+              if (pregnancyData?.fetuses[0]?.status !== "CANCEL") {
+                const firstFetusData = {
+                  fetalWeight: `${values.weight1 || 0}`,
+                  femurLength: `${values.height1 || 0}`,
+                  headCircumference: `${values.headCircumference1 || 0}`,
+                  examDate: pregnancyData.examDate,
+                  gestationalWeeks: pregnancyData.gestationalWeeks,
+                  gestationalDays: pregnancyData.gestationalDays,
+                };
+                promises.push(
+                  api.fetus.createFetusRecord(
+                    pregnancyData.fetuses[0].fetusId,
+                    firstFetusData
+                  )
+                );
+              }
 
-        // Second fetus (only if exists and not cancelled)
-        if (pregnancyData?.fetuses?.length > 1 && 
-            values.weight2 && 
-            pregnancyData.fetuses[1]?.status !== "CANCEL") {
-          const secondFetusData = {
-            fetalWeight: `${values.weight2 || 0}`,
-            femurLength: `${values.height2 || 0}`,
-            headCircumference: `${values.headCircumference2 || 0}`,
-            examDate: pregnancyData.examDate,
-            gestationalWeeks: pregnancyData.gestationalWeeks,
-            gestationalDays: pregnancyData.gestationalDays,
-          };
-          promises.push(
-            api.fetus.createFetusRecord(
-              pregnancyData.fetuses[1].fetusId,
-              secondFetusData
-            )
-          );
-        }
+              // Second fetus (only if exists and not cancelled)
+              if (
+                pregnancyData?.fetuses?.length > 1 &&
+                values.weight2 &&
+                pregnancyData.fetuses[1]?.status !== "CANCEL"
+              ) {
+                const secondFetusData = {
+                  fetalWeight: `${values.weight2 || 0}`,
+                  femurLength: `${values.height2 || 0}`,
+                  headCircumference: `${values.headCircumference2 || 0}`,
+                  examDate: pregnancyData.examDate,
+                  gestationalWeeks: pregnancyData.gestationalWeeks,
+                  gestationalDays: pregnancyData.gestationalDays,
+                };
+                promises.push(
+                  api.fetus.createFetusRecord(
+                    pregnancyData.fetuses[1].fetusId,
+                    secondFetusData
+                  )
+                );
+              }
 
-        if (promises.length === 0) {
-          message.warning("Không có thai nhi nào để tạo bản ghi");
-          setIsCreateFetusRecordModalOpen(false);
-          return;
-        }
+              if (promises.length === 0) {
+                message.warning("Không có thai nhi nào để tạo bản ghi");
+                setIsCreateFetusRecordModalOpen(false);
+                return;
+              }
 
-        await Promise.all(promises);
-        message.success("Tạo bản ghi thai nhi thành công");
-        setIsCreateFetusRecordModalOpen(false);
-        fetchPregnancyData();
-      } catch (error) {
-        console.error("Create fetus record error:", error);
-        message.error("Không thể tạo bản ghi thai nhi: " + error.message);
-      }
-    }}
-  >
-    {/* First Fetus Form - Only show if not cancelled */}
- {/* First Fetus Form - Only show if not cancelled */}
-{pregnancyData?.fetuses[0]?.status !== "CANCEL" && (
-  <Card title={`Thai A`} style={{ marginBottom: 16 }}>
-    <Form.Item
-      label="Cân nặng (g)"
-      name="weight1"
-      rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
-    >
-      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
-    </Form.Item>
+              await Promise.all(promises);
+              message.success("Tạo bản ghi thai nhi thành công");
+              setIsCreateFetusRecordModalOpen(false);
+              fetchPregnancyData();
+            } catch (error) {
+              console.error("Create fetus record error:", error);
+              message.error("Không thể tạo bản ghi thai nhi: " + error.message);
+            }
+          }}
+        >
+          {/* First Fetus Form - Only show if not cancelled */}
+          {/* First Fetus Form - Only show if not cancelled */}
+          {pregnancyData?.fetuses[0]?.status !== "CANCEL" && (
+            <Card title={`Thai A`} style={{ marginBottom: 16 }}>
+              <Form.Item
+                label="Cân nặng (g)"
+                name="weight1"
+                rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
+              >
+                <InputNumber
+                  min={0}
+                  step={0.1}
+                  precision={1}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
 
-    <Form.Item
-      label="Chiều dài (cm)"
-      name="height1"
-      rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
-    >
-      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
-    </Form.Item>
+              <Form.Item
+                label="Chiều dài (cm)"
+                name="height1"
+                rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
+              >
+                <InputNumber
+                  min={0}
+                  step={0.1}
+                  precision={1}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
 
-    <Form.Item
-      label="Chu vi đầu (mm)"
-      name="headCircumference1"
-      rules={[{ required: true, message: "Vui lòng nhập chu vi đầu" }]}
-    >
-      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
-    </Form.Item>
-  </Card>
-)}
+              <Form.Item
+                label="Chu vi đầu (mm)"
+                name="headCircumference1"
+                rules={[
+                  { required: true, message: "Vui lòng nhập chu vi đầu" },
+                ]}
+              >
+                <InputNumber
+                  min={0}
+                  step={0.1}
+                  precision={1}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            </Card>
+          )}
 
-{/* Second Fetus Form - Only show if exists and not cancelled */}
-{pregnancyData?.fetuses?.length > 1 && pregnancyData.fetuses[1]?.status !== "CANCEL" && (
-  <Card title={`Thai B`} style={{ marginBottom: 16 }}>
-    <Form.Item
-      label="Cân nặng (g)"
-      name="weight2"
-      rules={[{ required: true, message: "Vui lòng nhập cân nặng" }]}
-    >
-      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
-    </Form.Item>
+          {/* Second Fetus Form - Only show if exists and not cancelled */}
+          {pregnancyData?.fetuses?.length > 1 &&
+            pregnancyData.fetuses[1]?.status !== "CANCEL" && (
+              <Card title={`Thai B`} style={{ marginBottom: 16 }}>
+                <Form.Item
+                  label="Cân nặng (g)"
+                  name="weight2"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập cân nặng" },
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.1}
+                    precision={1}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
 
-    <Form.Item
-      label="Chiều dài (cm)"
-      name="height2"
-      rules={[{ required: true, message: "Vui lòng nhập chiều dài" }]}
-    >
-      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
-    </Form.Item>
+                <Form.Item
+                  label="Chiều dài (cm)"
+                  name="height2"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập chiều dài" },
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.1}
+                    precision={1}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
 
-    <Form.Item
-      label="Chu vi đầu (mm)"
-      name="headCircumference2"
-      rules={[{ required: true, message: "Vui lòng nhập chu vi đầu" }]}
-    >
-      <InputNumber min={0} step={0.1} precision={1} style={{ width: "100%" }} />
-    </Form.Item>
-  </Card>
-)}
+                <Form.Item
+                  label="Chu vi đầu (mm)"
+                  name="headCircumference2"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập chu vi đầu" },
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.1}
+                    precision={1}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </Card>
+            )}
 
-<Form.Item>
-  <Button type="primary" htmlType="submit" block>
-    Tạo bản ghi
-  </Button>
-</Form.Item>
-  </Form>
-</Modal>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Tạo bản ghi
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {!pregnancyData ? (
         <Row justify="center" align="middle" style={{ minHeight: "30vh" }}>
@@ -1757,227 +1828,232 @@ function Baby() {
 
           {/* Weight Charts */}
           <Row>
-            {pregnancyData?.fetuses?.map((fetus, index) => (
-               fetus.status !== "CANCEL" && (
-              <Col
-                span={20}
-                offset={2}
-                style={{ marginBottom: "20px" }}
-                key={`weight-${fetus.fetusId}`}
-                ref={weightChartRef}
-              >
-                <Card
-                  title={
-                    <span
+            {pregnancyData?.fetuses?.map(
+              (fetus, index) =>
+                fetus.status !== "CANCEL" && (
+                  <Col
+                    span={20}
+                    offset={2}
+                    style={{ marginBottom: "20px" }}
+                    key={`weight-${fetus.fetusId}`}
+                    ref={weightChartRef}
+                  >
+                    <Card
+                      title={
+                        <span
+                          style={{
+                            fontSize: "20px",
+                            fontFamily: "Montserrat, sans-serif",
+                            background:
+                              "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            fontWeight: "bold",
+                            padding: "10px 0",
+                          }}
+                        >
+                          ✨ Biểu đồ cân nặng - Cục vàng {index + 1}
+                        </span>
+                      }
                       style={{
-                        fontSize: "20px",
-                        fontFamily: "Montserrat, sans-serif",
+                        width: "100%",
+                        borderRadius: "15px",
+                        boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
                         background:
-                          "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        fontWeight: "bold",
-                        padding: "10px 0",
+                          "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                      }}
+                      headStyle={{
+                        borderBottom: "2px solid rgb(130, 197, 96)",
+                        background: "rgba(255, 215, 0, 0.05)",
                       }}
                     >
-                      ✨ Biểu đồ cân nặng - Cục vàng {index + 1}
-                    </span>
-                  }
-                  style={{
-                    width: "100%",
-                    borderRadius: "15px",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                    background:
-                      "linear-gradient(to right bottom, #fff, #f8f8f8)",
-                  }}
-                  headStyle={{
-                    borderBottom: "2px solid rgb(130, 197, 96)",
-                    background: "rgba(255, 215, 0, 0.05)",
-                  }}
-                >
-                  <div
-                    style={{
-                      height: "600px",
-                      width: "100%",
-                      padding: "20px",
-                      borderRadius: "10px",
-                      background: "#fff",
-                    }}
-                  >
-                    {fetusChartData[fetus.fetusId]?.weightData ? (
-                      <Line
-                        data={fetusChartData[fetus.fetusId].weightData}
-                        options={chartOptions}
-                      />
-                    ) : (
                       <div
                         style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "100%",
-                          fontSize: "16px",
-                          color: "#666",
+                          height: "600px",
+                          width: "100%",
+                          padding: "20px",
+                          borderRadius: "10px",
+                          background: "#fff",
                         }}
                       >
-                        Loading...
+                        {fetusChartData[fetus.fetusId]?.weightData ? (
+                          <Line
+                            data={fetusChartData[fetus.fetusId].weightData}
+                            options={chartOptions}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              height: "100%",
+                              fontSize: "16px",
+                              color: "#666",
+                            }}
+                          >
+                            Loading...
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-               )
-            ))}
+                    </Card>
+                  </Col>
+                )
+            )}
           </Row>
 
           {/* Height Charts */}
           <Row>
-            {pregnancyData?.fetuses?.map((fetus, index) => (
-               fetus.status !== "CANCEL" && (
-              <Col
-                span={20}
-                offset={2}
-                style={{ marginBottom: "20px" }}
-                key={`height-${fetus.fetusId}`}
-                ref={heightChartRef}
-              >
-                <Card
-                  title={
-                    <span
+            {pregnancyData?.fetuses?.map(
+              (fetus, index) =>
+                fetus.status !== "CANCEL" && (
+                  <Col
+                    span={20}
+                    offset={2}
+                    style={{ marginBottom: "20px" }}
+                    key={`height-${fetus.fetusId}`}
+                    ref={heightChartRef}
+                  >
+                    <Card
+                      title={
+                        <span
+                          style={{
+                            fontSize: "20px",
+                            fontFamily: "Montserrat, sans-serif",
+                            background:
+                              "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            fontWeight: "bold",
+                            padding: "10px 0",
+                          }}
+                        >
+                          ✨ Biểu đồ chiều dài - Cục vàng {index + 1}
+                        </span>
+                      }
                       style={{
-                        fontSize: "20px",
-                        fontFamily: "Montserrat, sans-serif",
+                        width: "100%",
+                        borderRadius: "15px",
+                        boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
                         background:
-                          "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        fontWeight: "bold",
-                        padding: "10px 0",
+                          "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                      }}
+                      headStyle={{
+                        borderBottom: "2px solid rgb(130, 197, 96)",
+                        background: "rgba(255, 215, 0, 0.05)",
                       }}
                     >
-                      ✨ Biểu đồ chiều dài - Cục vàng {index + 1}
-                    </span>
-                  }
-                  style={{
-                    width: "100%",
-                    borderRadius: "15px",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                    background:
-                      "linear-gradient(to right bottom, #fff, #f8f8f8)",
-                  }}
-                  headStyle={{
-                    borderBottom: "2px solid rgb(130, 197, 96)",
-                    background: "rgba(255, 215, 0, 0.05)",
-                  }}
-                >
-                  <div
-                    style={{
-                      height: "600px",
-                      width: "100%",
-                      padding: "20px",
-                      borderRadius: "10px",
-                      background: "#fff",
-                    }}
-                  >
-                    {fetusChartData[fetus.fetusId]?.heightData ? (
-                      <Line
-                        data={fetusChartData[fetus.fetusId].heightData}
-                        options={chartOptions}
-                      />
-                    ) : (
                       <div
                         style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "100%",
-                          fontSize: "16px",
-                          color: "#666",
+                          height: "600px",
+                          width: "100%",
+                          padding: "20px",
+                          borderRadius: "10px",
+                          background: "#fff",
                         }}
                       >
-                        Loading...
+                        {fetusChartData[fetus.fetusId]?.heightData ? (
+                          <Line
+                            data={fetusChartData[fetus.fetusId].heightData}
+                            options={chartOptions}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              height: "100%",
+                              fontSize: "16px",
+                              color: "#666",
+                            }}
+                          >
+                            Loading...
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-               )
-            ))}
+                    </Card>
+                  </Col>
+                )
+            )}
           </Row>
 
           {/* Head Circumference Charts */}
           <Row>
-            {pregnancyData?.fetuses?.map((fetus, index) => (
-               fetus.status !== "CANCEL" && (
-              <Col
-                span={20}
-                offset={2}
-                style={{ marginBottom: "20px" }}
-                key={`circumference-${fetus.fetusId}`}
-                ref={circumferenceChartRef}
-              >
-                <Card
-                  title={
-                    <span
+            {pregnancyData?.fetuses?.map(
+              (fetus, index) =>
+                fetus.status !== "CANCEL" && (
+                  <Col
+                    span={20}
+                    offset={2}
+                    style={{ marginBottom: "20px" }}
+                    key={`circumference-${fetus.fetusId}`}
+                    ref={circumferenceChartRef}
+                  >
+                    <Card
+                      title={
+                        <span
+                          style={{
+                            fontSize: "20px",
+                            fontFamily: "Montserrat, sans-serif",
+                            background:
+                              "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            fontWeight: "bold",
+                            padding: "10px 0",
+                          }}
+                        >
+                          ✨ Biểu đồ chu vi đầu - Cục vàng {index + 1}
+                        </span>
+                      }
                       style={{
-                        fontSize: "20px",
-                        fontFamily: "Montserrat, sans-serif",
+                        width: "100%",
+                        borderRadius: "15px",
+                        boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
                         background:
-                          "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        fontWeight: "bold",
-                        padding: "10px 0",
+                          "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                      }}
+                      headStyle={{
+                        borderBottom: "2px solid rgb(130, 197, 96)",
+                        background: "rgba(255, 215, 0, 0.05)",
                       }}
                     >
-                      ✨ Biểu đồ chu vi đầu - Cục vàng {index + 1}
-                    </span>
-                  }
-                  style={{
-                    width: "100%",
-                    borderRadius: "15px",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                    background:
-                      "linear-gradient(to right bottom, #fff, #f8f8f8)",
-                  }}
-                  headStyle={{
-                    borderBottom: "2px solid rgb(130, 197, 96)",
-                    background: "rgba(255, 215, 0, 0.05)",
-                  }}
-                >
-                  <div
-                    style={{
-                      height: "600px",
-                      width: "100%",
-                      padding: "20px",
-                      borderRadius: "10px",
-                      background: "#fff",
-                    }}
-                  >
-                    {fetusChartData[fetus.fetusId]?.circumferenceData ? (
-                      <Line
-                        data={fetusChartData[fetus.fetusId].circumferenceData}
-                        options={chartOptions}
-                      />
-                    ) : (
                       <div
                         style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "100%",
-                          fontSize: "16px",
-                          color: "#666",
+                          height: "600px",
+                          width: "100%",
+                          padding: "20px",
+                          borderRadius: "10px",
+                          background: "#fff",
                         }}
                       >
-                        Loading...
+                        {fetusChartData[fetus.fetusId]?.circumferenceData ? (
+                          <Line
+                            data={
+                              fetusChartData[fetus.fetusId].circumferenceData
+                            }
+                            options={chartOptions}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              height: "100%",
+                              fontSize: "16px",
+                              color: "#666",
+                            }}
+                          >
+                            Loading...
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-               )
-            ))}
+                    </Card>
+                  </Col>
+                )
+            )}
           </Row>
 
           <Col
@@ -2045,10 +2121,11 @@ function Baby() {
                 pregnancyHistoryData.map((pregnancy, index) => (
                   <Card
                     key={pregnancy.pregnancyId || index}
-                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${pregnancy.status === "ONGOING"
-                      ? "Đang mang thai"
-                      : "Đã kết thúc"
-                      }`}
+                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${
+                      pregnancy.status === "ONGOING"
+                        ? "Đang mang thai"
+                        : "Đã kết thúc"
+                    }`}
                     style={{ marginBottom: 16 }}
                     extra={
                       // ... existing code ...
@@ -2131,24 +2208,24 @@ function Baby() {
                           <strong>Ngày bắt đầu:</strong>{" "}
                           {pregnancy.startDate
                             ? new Date(pregnancy.startDate).toLocaleDateString(
-                              "vi-VN"
-                            )
+                                "vi-VN"
+                              )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày dự sinh:</strong>{" "}
                           {pregnancy.dueDate
                             ? new Date(pregnancy.dueDate).toLocaleDateString(
-                              "vi-VN"
-                            )
+                                "vi-VN"
+                              )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày khám gần nhất:</strong>{" "}
                           {pregnancy.examDate
                             ? new Date(pregnancy.examDate).toLocaleDateString(
-                              "vi-VN"
-                            )
+                                "vi-VN"
+                              )
                             : "Chưa có"}
                         </p>
                       </Col>
@@ -2169,15 +2246,15 @@ function Baby() {
                               pregnancy.status === "ONGOING"
                                 ? "processing"
                                 : pregnancy.status === "COMPLETED"
-                                  ? "success"
-                                  : "default"
+                                ? "success"
+                                : "default"
                             }
                           >
                             {pregnancy.status === "ONGOING"
                               ? "Đang mang thai"
                               : pregnancy.status === "COMPLETED"
-                                ? "Đã hoàn thành"
-                                : "Đã kết thúc"}
+                              ? "Đã hoàn thành"
+                              : "Đã kết thúc"}
                           </Tag>
                         </p>
                       </Col>
@@ -2249,19 +2326,19 @@ function Baby() {
                                         fetus.status === "ISSUE"
                                           ? "error"
                                           : fetus.status === "CANCEL"
-                                            ? "default"
-                                            : fetus.status === "COMPLETED"
-                                              ? "success"
-                                              : "processing"
+                                          ? "default"
+                                          : fetus.status === "COMPLETED"
+                                          ? "success"
+                                          : "processing"
                                       }
                                     >
                                       {fetus.status === "ISSUE"
                                         ? "Có vấn đề"
                                         : fetus.status === "CANCEL"
-                                          ? "Đã sảy thai"
-                                          : fetus.status === "COMPLETED"
-                                            ? "Đã hoàn thành"
-                                            : "Đang phát triển"}
+                                        ? "Đã sảy thai"
+                                        : fetus.status === "COMPLETED"
+                                        ? "Đã hoàn thành"
+                                        : "Đang phát triển"}
                                     </Tag>
                                   </Col>
                                   <Col span={8}>
