@@ -53,21 +53,21 @@ function FAQ() {
           sx={{ 
             mb: 6, 
             textAlign: 'center',
-            fontSize: '72px',
-            fontFamily: '"Quicksand", "Segoe UI", sans-serif',
-            fontWeight: 800,
-            color: '#2D3436',
-            textShadow: '2px 2px 4px rgba(255, 192, 203, 0.6)',
+            fontSize: '64px',  // Reduced from 72px
+            fontFamily: '"Montserrat", "Be Vietnam Pro", sans-serif',
+            fontWeight: 600,
+            color: '#1a1a1a',  // Darker color for better contrast
+            textShadow: '1px 1px 2px rgba(255, 192, 203, 0.4)',  // Subtler shadow
+            letterSpacing: '1px',  // Reduced spacing
             position: 'relative',
-            letterSpacing: '4px',
             '&::after': {
               content: '""',
               position: 'absolute',
-              bottom: '-15px',
+              bottom: '-12px',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '120px',
-              height: '4px',
+              width: '80px',  // Shorter underline
+              height: '3px',  // Thinner line
               background: 'linear-gradient(45deg, #FF69B4, #FFB6C1)',
               borderRadius: '2px'
             }

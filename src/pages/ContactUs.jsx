@@ -24,11 +24,11 @@ const ContactUs = () => {
         component="h1" 
         align="center" 
         sx={{
-          fontSize: '72px',
-          fontFamily: "'Comic Sans MS', cursive",
-          fontWeight: 800,
+          fontSize: '64px',
+          fontFamily: 'inherit',
+          fontWeight: 700,
           color: '#2c3e50',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+          textShadow: '2px 2px 4px rgba(255, 192, 203, 0.6)',
           letterSpacing: '2px',
           mb: 3,
           position: 'relative',

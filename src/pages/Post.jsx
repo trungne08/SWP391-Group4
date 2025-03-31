@@ -37,35 +37,53 @@ function Post() {
   };
   const renderChart = () => {
     if (post?.postType === 'GROWTH_CHART' && post?.chartData) {
-      const formattedData = post.chartData.headCircumference?.map(([week, value]) => ({
-        week,
-        value
-      })) || [];
       return (
-        <div style={{ marginTop: "16px", height: "400px" }}>
-          <Text strong>Head Circumference Chart</Text>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={formattedData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="week" 
-                label={{ value: 'Week', position: 'bottom' }} 
-              />
-              <YAxis 
-                dataKey="value" 
-                label={{ value: 'mm', angle: -90, position: 'insideLeft' }} 
-              />
-              <Tooltip formatter={(value) => `${value} mm`} />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#8884d8" 
-                name="Head Circumference" 
-                dot={{ r: 4 }} 
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div style={{ marginTop: "16px", padding: "12px", background: "#f5f5f5", borderRadius: "8px" }}>
+          {[
+            { key: "headCircumference", label: "Head Circumference", unit: "mm", color: "#8884d8" },
+            { key: "fetalWeight", label: "Fetal Weight", unit: "g", color: "#82ca9d" },
+            { key: "femurLength", label: "Femur Length", unit: "mm", color: "#ffc658" },
+          ].map(({ key, label, unit, color }) => {
+            const chartData = post.chartData[key]?.map(([week, value]) => ({ week, value })) || [];
+            const predictionData = post.chartData.predictionLine?.[`${key === "fetalWeight" ? "weight" : key === "headCircumference" ? "head" : "length"}Prediction`]?.map(([week, value]) => ({ week, value })) || [];
+            
+            return chartData.length > 0 && (
+              <div key={key} style={{ marginTop: "16px", height: "200px" }}>
+                <Text strong>{label} Chart</Text>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 40, bottom: 40 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="week" 
+                      label={{ value: 'Week', position: 'bottom', offset: 20 }}
+                      dy={16}
+                    />
+                    <YAxis 
+                      dataKey="value" 
+                      label={{ value: unit, angle: -90, position: 'insideLeft', offset: -10 }}
+                      dx={-10}
+                    />
+                    <Tooltip formatter={(value) => `${value} ${unit}`} />
+                    <Legend verticalAlign="top" height={36} />
+                    <Line type="monotone" dataKey="value" stroke={color} name={label} dot={{ r: 4 }} />
+                    {predictionData.length > 0 && (
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke={`${color}80`}
+                        name={`${label} Prediction`}
+                        dot={false}
+                        data={predictionData}
+                      />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })}
         </div>
       );
     }
