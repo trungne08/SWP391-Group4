@@ -19,48 +19,48 @@ const api = {
             password: credentials.password,
           }),
         });
-    
+
         const data = await response.json();
         console.log("Login response data:", data);
-    
+
         // 2. Kiểm tra đăng nhập thành công
         if (!response.ok) {
           throw new Error(data.message || "Login failed");
         }
-    
+
         const token = data.token;
         const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-    
+
         const userData = {
           user_id: tokenPayload.id,
           email: tokenPayload.email,
           username: tokenPayload.username,
           role: tokenPayload.role || "USER",
         };
-    
+
         // Lưu token và user data
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(userData));
-    
+
         // 3. Xin FCM token và gửi lên server
         try {
           const fcmToken = await requestNotificationPermission();
           if (fcmToken) {
             await fetch(`${API_BASE_URL}/api/users/fcm-token`, {
-              method: 'POST',
+              method: "POST",
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({ token: fcmToken })
+              body: JSON.stringify({ token: fcmToken }),
             });
-            localStorage.setItem('fcmToken', fcmToken);
+            localStorage.setItem("fcmToken", fcmToken);
           }
         } catch (fcmError) {
           console.error("Failed to setup notifications:", fcmError);
           // Continue even if FCM setup fails
         }
-    
+
         // 4. Trả về thông tin user
         return userData;
       } catch (error) {
@@ -369,43 +369,6 @@ const api = {
       }
     },
 
-    registerMembership: async (packageId) => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        console.log("Registering with packageId:", packageId); // Debug log
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/subscriptions/subscribe/${packageId}`, // Endpoint đúng
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ packageId }), // Thêm packageId vào body
-          }
-        );
-
-        const responseText = await response.text();
-        console.log("Response text:", responseText);
-
-        if (!response.ok) {
-          const errorMessage = responseText || "Failed to register membership";
-          console.error("Server error:", errorMessage);
-          throw new Error(errorMessage);
-        }
-
-        return responseText ? JSON.parse(responseText) : { success: true };
-      } catch (error) {
-        console.error("Register membership error:", error);
-        throw error;
-      }
-    },
-
     getUserMembership: async () => {
       try {
         const token = localStorage.getItem("token");
@@ -482,11 +445,12 @@ const api = {
           throw new Error("No token found");
         }
 
-        // ID của gói Premium Plan là 2
-        const premiumPackageId = 2;
+        // Get userId from token
+        const tokenData = JSON.parse(atob(token.split(".")[1]));
+        const userId = tokenData.id;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/subscriptions/subscribe/${premiumPackageId}`,
+          `${API_BASE_URL}/api/membership/upgrade/${userId}`,
           {
             method: "POST",
             headers: {
@@ -589,6 +553,38 @@ const api = {
         return true;
       } catch (error) {
         console.error("Error updating package price:", error);
+        throw error;
+      }
+    },
+
+    getPackageById: async (packageId) => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/membership/packages/${packageId}`, // Endpoint mới
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch package: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        if (!responseText) {
+          throw new Error("Package not found");
+        }
+
+        return JSON.parse(responseText);
+      } catch (error) {
+        console.error("Get package error:", error);
         throw error;
       }
     },
@@ -1803,42 +1799,30 @@ const api = {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        // Get order info from VNPay response
-        const orderInfo = queryParams.get("vnp_OrderInfo");
-        const [userId, packageId] = orderInfo.split("_");
-        const responseCode = queryParams.get("vnp_ResponseCode");
-
-        if (responseCode === "00") {
-          // Create subscription with the package
-          const response = await fetch(
-            `${API_BASE_URL}/api/subscriptions/subscribe/${packageId}`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                transactionId: queryParams.get("vnp_TransactionNo"),
-                amount: parseInt(queryParams.get("vnp_Amount")) / 100,
-                bankCode: queryParams.get("vnp_BankCode"),
-                paymentDate: queryParams.get("vnp_PayDate"),
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || "Failed to process payment");
+        const response = await fetch(
+          `${API_BASE_URL}/api/payment/vnpay-return?${queryParams.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
+        );
 
-          const result = await response.json();
-          return {
-            success: true,
-            ...result,
-          };
-        } else {
-          throw new Error("Payment failed: Transaction declined");
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to process payment");
+        }
+
+        const responseText = await response.text();
+        console.log("Payment return response:", responseText);
+
+        try {
+          return responseText ? JSON.parse(responseText) : { success: true };
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          return { success: true };
         }
       } catch (error) {
         console.error("Process payment return error:", error);

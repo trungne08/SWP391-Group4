@@ -75,40 +75,14 @@ function FeePackage() {
   
   const handlePackageSelect = async (selectedPackage) => {
     if (!isAuthenticated) {
-      message.warning('Please login to subscribe to a package');
+      message.warning('Vui lòng đăng nhập để đăng ký gói thành viên');
       navigate('/login');
       return;
     }
-    
-    try {
-      const response = await api.membership.getUserMembership();
-      console.log("User membership response:", response);
-      console.log("Selected package:", selectedPackage); // Add this log
-      
-      const activeSubscription = response.find(sub => sub.status === 'Active');
-      
-      if (activeSubscription) {
-        if (activeSubscription.packageName === 'Premium Plan' && selectedPackage.name === 'Basic Plan') {
-          message.info('Cannot downgrade from Premium to Basic Plan');
-          return;
-        }
-      }
 
-      // Make sure we pass the correct price
-      navigate('/payment', {
-        state: {
-          packageDetails: {
-            id: selectedPackage.id,
-            name: selectedPackage.name,
-            price: selectedPackage.price, // This should be 150000 for Basic Plan
-            description: selectedPackage.description
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      message.error('Failed to process package selection');
-    }
+    navigate('/payment', {
+      state: { packageDetails: selectedPackage }
+    });
   };
 
   // Remove handleModalConfirm and isModalVisible since we're not using modal anymore

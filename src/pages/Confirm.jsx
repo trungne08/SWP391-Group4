@@ -17,33 +17,51 @@ function Confirm() {
       try {
         const queryParams = new URLSearchParams(location.search);
         const vnp_ResponseCode = queryParams.get('vnp_ResponseCode');
+        // Extract package ID from order info string
+        const orderInfo = queryParams.get('vnp_OrderInfo');
+        const packageId = orderInfo ? orderInfo.split('_')[1] : null;
 
         if (vnp_ResponseCode === '00') {
           const result = await api.payment.processPaymentReturn(queryParams);
           
           if (result.success) {
+            // Get package details only if we have packageId
+            let packageName = 'Unknown Package';
+            if (packageId) {
+              try {
+                const packageDetails = await api.membership.getPackageById(packageId);
+                packageName = packageDetails.name;
+              } catch (err) {
+                console.error('Failed to get package details:', err);
+              }
+            }
+            
+            // Format VNPay payment date
+            const paymentDate = queryParams.get('vnp_PayDate');
+            const formattedPaymentDate = paymentDate ? 
+              `${paymentDate.slice(0,4)}-${paymentDate.slice(4,6)}-${paymentDate.slice(6,8)} ${paymentDate.slice(8,10)}:${paymentDate.slice(10,12)}:${paymentDate.slice(12,14)}`
+              : new Date().toISOString();
+            
             setPaymentStatus('success');
             setTransactionDetails({
-              packageName: result.packageName,
+              packageName: packageName,
               amount: parseInt(queryParams.get('vnp_Amount')) / 100,
               transactionId: queryParams.get('vnp_TransactionNo'),
-              paymentDate: queryParams.get('vnp_PayDate'),
+              paymentDate: formattedPaymentDate,
               bankCode: queryParams.get('vnp_BankCode'),
-              startDate: result.startDate,
-              endDate: result.endDate
             });
-            message.success('Payment successful! Your subscription has been activated.');
+            message.success('Thanh toán thành công! Gói dịch vụ của bạn đã được kích hoạt.');
           } else {
-            throw new Error(result.message || 'Payment verification failed');
+            throw new Error('Xác thực thanh toán thất bại');
           }
         } else {
           setPaymentStatus('failed');
-          message.error('Payment failed: Transaction declined');
+          message.error('Thanh toán thất bại: Giao dịch bị từ chối');
         }
       } catch (error) {
         console.error('Payment processing error:', error);
         setPaymentStatus('failed');
-        message.error(error.message || 'An error occurred while processing payment.');
+        message.error(error.message || 'Đã xảy ra lỗi trong quá trình xử lý thanh toán.');
       }
     };
 
@@ -109,9 +127,6 @@ function Confirm() {
             </Descriptions.Item>
             <Descriptions.Item label="Thời Gian Thanh Toán">
               {new Date(transactionDetails.paymentDate).toLocaleString('vi-VN')}
-            </Descriptions.Item>
-            <Descriptions.Item label="Thời Hạn Đăng Ký">
-              {`${new Date(transactionDetails.startDate).toLocaleDateString('vi-VN')} - ${new Date(transactionDetails.endDate).toLocaleDateString('vi-VN')}`}
             </Descriptions.Item>
           </Descriptions>
         </Card>

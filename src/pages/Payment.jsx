@@ -12,12 +12,11 @@ function Payment() {
   const [loading, setLoading] = useState(false);
   const { packageDetails } = location.state || {};
 
-  const handlePayment = async () => {
+  const handlePayment = async (values) => {
     try {
       setLoading(true);
       const userData = JSON.parse(localStorage.getItem('user'));
       
-      // Validate user and package data
       if (!userData?.user_id || !packageDetails?.id) {
         message.error('Invalid user or package information');
         return;
