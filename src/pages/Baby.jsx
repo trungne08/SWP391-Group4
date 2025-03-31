@@ -20,6 +20,7 @@ import {
   Space,
   Form,
   InputNumber,
+  Alert
 } from "antd";
 
 import { UserOutlined, ArrowUpOutlined } from "@ant-design/icons";
@@ -72,6 +73,7 @@ function Baby() {
   const vaccinationRef = useRef(null);
 
   // State management
+  const [formError, setFormError] = useState(null); // Thêm state để lưu lỗi
   const [pregnancyData, setPregnancyData] = useState(null);
   const [standardData, setStandardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,10 +87,9 @@ function Baby() {
     useState(false);
   const [fetusRecords, setFetusRecords] = useState([]);
   const [standards, setStandards] = useState(null);
-  const [fetusChartData, setFetusChartData] = useState({});
-  // Add these state declarations at the top with other states
+  const [errorMessage, setErrorMessage] = useState(null);
   const [isCompletePregnancyModalOpen, setIsCompletePregnancyModalOpen] =
-        useState(false);
+    useState(false);
   const [isConfirmFetusModalOpen, setIsConfirmFetusModalOpen] = useState(false);
   const [selectedFetusIndex, setSelectedFetusIndex] = useState(null);
   const [pregnancyHistoryData, setPregnancyHistoryData] = useState([]);
@@ -156,7 +157,7 @@ function Baby() {
       console.error("Error updating fetus status:", error);
       message.error(
         "Không thể cập nhật trạng thái thai nhi: " +
-          (error.message || "Unknown error")
+        (error.message || "Unknown error")
       );
     }
   };
@@ -564,6 +565,7 @@ function Baby() {
           ]),
         ].sort((a, b) => a - b);
 
+
         newFetusChartData[fetus.fetusId] = {
           weightData: {
             labels: weeks,
@@ -801,6 +803,139 @@ function Baby() {
     },
   };
 
+  const [fetusChartData, setFetusChartData] = useState({});
+// Add this useEffect to fetch prediction data when component mounts
+useEffect(() => {
+  if (pregnancyData?.fetuses) {
+    pregnancyData.fetuses.forEach(fetus => {
+      fetchGrowthPrediction(fetus.fetusId);
+    });
+  }
+}, [pregnancyData]);
+
+// Modify the fetchGrowthPrediction function
+const fetchGrowthPrediction = async (fetusId) => {
+  try {
+    const predictionData = await api.fetus.getGrowthPrediction(fetusId);
+    console.log("Dữ liệu dự đoán nhận được:", predictionData);
+
+    if (predictionData) {
+      setFetusChartData(prevData => {
+        const fetusData = prevData[fetusId];
+        if (!fetusData) return prevData;
+
+        // Format prediction data
+        const formatPredictionData = (predictions) => {
+          if (!Array.isArray(predictions)) return [];
+          return predictions.map(point => ({
+            x: point[0],  // week
+            y: point[1]   // value
+          }));
+        };
+
+        // Add prediction datasets
+        const weightPrediction = formatPredictionData(predictionData.weightPrediction);
+        const lengthPrediction = formatPredictionData(predictionData.lengthPrediction);
+        const headPrediction = formatPredictionData(predictionData.headPrediction);
+
+        return {
+          ...prevData,
+          [fetusId]: {
+            weightData: {
+              ...fetusData.weightData,
+              datasets: [
+                ...fetusData.weightData.datasets.filter(ds => !ds.label.includes('Dự đoán')),
+                {
+                  label: 'Dự đoán cân nặng',
+                  data: weightPrediction,
+                  borderColor: '#722ed1',
+                  borderDash: [5, 5],
+                  fill: false,
+                  tension: 0.4,
+                  pointRadius: 4,
+                }
+              ]
+            },
+            heightData: {
+              ...fetusData.heightData,
+              datasets: [
+                ...fetusData.heightData.datasets.filter(ds => !ds.label.includes('Dự đoán')),
+                {
+                  label: 'Dự đoán chiều dài',
+                  data: lengthPrediction,
+                  borderColor: '#722ed1',
+                  borderDash: [5, 5],
+                  fill: false,
+                  tension: 0.4,
+                  pointRadius: 4,
+                }
+              ]
+            },
+            circumferenceData: {
+              ...fetusData.circumferenceData,
+              datasets: [
+                ...fetusData.circumferenceData.datasets.filter(ds => !ds.label.includes('Dự đoán')),
+                {
+                  label: 'Dự đoán chu vi đầu',
+                  data: headPrediction,
+                  borderColor: '#722ed1',
+                  borderDash: [5, 5],
+                  fill: false,
+                  tension: 0.4,
+                  pointRadius: 4,
+                }
+              ]
+            }
+          }
+        };
+      });
+    }
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu dự đoán:', error);
+    message.error('Không thể lấy dữ liệu dự đoán');
+  }
+};
+
+
+// ... existing code ...
+
+const fetchFetusData = async () => {
+  if (pregnancyData?.fetuses) {
+    try {
+      // Store fetched data in localStorage
+      const storedData = localStorage.getItem('fetusChartData');
+      if (storedData) {
+        setFetusChartData(JSON.parse(storedData));
+      }
+
+      // Fetch records for current fetus
+      const currentFetus = pregnancyData.fetuses[currentAvatar];
+      if (currentFetus) {
+        const predictionData = await fetchGrowthPrediction(currentFetus.fetusId);
+        
+        // Update localStorage when new data arrives
+        if (predictionData) {
+          localStorage.setItem('fetusChartData', JSON.stringify(predictionData));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fetus data:', error);
+    }
+  }
+};
+
+// Add cleanup on component unmount
+useEffect(() => {
+  fetchFetusData();
+  
+  return () => {
+    // Clean up localStorage when component unmounts
+    localStorage.removeItem('fetusChartData');
+  };
+}, [pregnancyData, currentAvatar]);
+
+// ... existing code ...
+
   return (
     <div>
       <Row
@@ -1030,10 +1165,10 @@ function Baby() {
                 {pregnancyData?.totalFetuses === 1
                   ? "Đơn thai"
                   : pregnancyData?.totalFetuses === 2
-                  ? "Song thai"
-                  : pregnancyData?.totalFetuses > 2
-                  ? `${pregnancyData.totalFetuses} thai`
-                  : "Chưa có thông tin"}
+                    ? "Song thai"
+                    : pregnancyData?.totalFetuses > 2
+                      ? `${pregnancyData.totalFetuses} thai`
+                      : "Chưa có thông tin"}
               </div>
             </div>
 
@@ -1114,7 +1249,7 @@ function Baby() {
                           pregnancyData.status === "ONGOING" &&
                           (pregnancyData.fetuses[index].status === "ACTIVE" ||
                             pregnancyData.fetuses[index].status ===
-                              "ISSUE") && (
+                            "ISSUE") && (
                             <Button
                               type="primary"
                               danger
@@ -1168,10 +1303,16 @@ function Baby() {
       </Col>
       {pregnancyData?.fetuses?.map((fetus, index) => (
         <Col
-          span={20}
+          span={24}
           offset={2}
-          style={{ marginBottom: "20px" }}
+          style={{
+            marginBottom: "20px",
+            padding: "0 100px",  // Tăng padding để thu hẹp chiều ngang
+            maxWidth: "1200px",  // Giới hạn chiều rộng tối đa
+            margin: "0 auto"
+          }}
           key={fetus.fetusId}
+
         >
           <Card
             title={
@@ -1205,19 +1346,19 @@ function Baby() {
                   fetus.status === "ISSUE"
                     ? "error"
                     : fetus.status === "CANCEL"
-                    ? "default"
-                    : fetus.status === "COMPLETED"
-                    ? "success"
-                    : "processing"
+                      ? "default"
+                      : fetus.status === "COMPLETED"
+                        ? "success"
+                        : "processing"
                 }
               >
                 {fetus.status === "ISSUE"
                   ? "Em bé đang có vấn đề!!!! bạn kiểm tra ở các biểu đồ xem"
                   : fetus.status === "CANCEL"
-                  ? "Đã sảy thai"
-                  : fetus.status === "COMPLETED"
-                  ? "Đã hoàn thành"
-                  : "Đang phát triển"}
+                    ? "Đã sảy thai"
+                    : fetus.status === "COMPLETED"
+                      ? "Đã hoàn thành"
+                      : "Đang phát triển"}
               </Tag>
             }
           >
@@ -1334,17 +1475,21 @@ function Baby() {
       <Modal
         title="Tạo thai kỳ mới"
         open={isCreatePregnancyModalOpen}
-        onCancel={() => setIsCreatePregnancyModalOpen(false)}
+        onCancel={() => {
+          setIsCreatePregnancyModalOpen(false);
+          setFormError(null); // Reset lỗi khi đóng modal
+        }}
         footer={null}
       >
         <Form
           onFinish={async (values) => {
             try {
+              setFormError(null); // Reset lỗi trước khi gửi request
               const response = await api.pregnancy.createPregnancy({
                 gestationalWeeks: parseInt(values.gestationalWeeks),
                 gestationalDays: parseInt(values.gestationalDays),
                 totalFetuses: parseInt(values.totalFetuses),
-                examDate: new Date().toISOString().split("T")[0],
+                examDate: values.examDate,
               });
               if (response) {
                 message.success("Tạo thai kỳ thành công");
@@ -1352,14 +1497,34 @@ function Baby() {
                 fetchPregnancyData();
               }
             } catch (error) {
-              console.error("Create pregnancy error:", error);
-              message.error(
-                "Không thể tạo thai kỳ: " +
-                  (error.response?.data?.message || error.message)
-              );
+              // Parse lỗi từ server
+              let errorMessage = "Đã có lỗi xảy ra, vui lòng thử lại.";
+              try {
+                // Nếu lỗi từ server là JSON string (dựa trên api.js đã chỉnh sửa)
+                const errorData = JSON.parse(error.message);
+                errorMessage = errorData.message || errorMessage;
+              } catch (parseError) {
+                // Nếu không parse được JSON, có thể lỗi không phải từ server
+                console.error("Failed to parse error message:", parseError);
+                if (error.response?.data?.message) {
+                  // Nếu dùng axios hoặc fetch mà không ném JSON string
+                  errorMessage = error.response.data.message;
+                }
+              }
+              setFormError(errorMessage); // Lưu message vào state để hiển thị
             }
           }}
         >
+          {/* Hiển thị lỗi nếu có */}
+          {formError && (
+            <Alert
+              message="Lỗi"
+              description={formError} // Hiển thị message từ server
+              type="error"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
           <Form.Item
             label="Số tuần thai"
             name="gestationalWeeks"
@@ -1832,9 +1997,14 @@ function Baby() {
               (fetus, index) =>
                 fetus.status !== "CANCEL" && (
                   <Col
-                    span={20}
+                    span={24}
                     offset={2}
-                    style={{ marginBottom: "20px" }}
+                    style={{
+                      marginBottom: "20px",
+                      padding: "0 100px",  // Tăng padding để thu hẹp chiều ngang
+                      maxWidth: "1200px",  // Giới hạn chiều rộng tối đa
+                      margin: "0 auto"
+                    }}
                     key={`weight-${fetus.fetusId}`}
                     ref={weightChartRef}
                   >
@@ -1850,6 +2020,7 @@ function Baby() {
                             WebkitTextFillColor: "transparent",
                             fontWeight: "bold",
                             padding: "10px 0",
+
                           }}
                         >
                           ✨ Biểu đồ cân nặng - Cục vàng {index + 1}
@@ -1869,29 +2040,45 @@ function Baby() {
                     >
                       <div
                         style={{
-                          height: "600px",
+                          height: "400px",
                           width: "100%",
-                          padding: "20px",
+                          padding: "10px",
                           borderRadius: "10px",
                           background: "#fff",
                         }}
                       >
                         {fetusChartData[fetus.fetusId]?.weightData ? (
                           <Line
-                            data={fetusChartData[fetus.fetusId].weightData}
-                            options={chartOptions}
+                            data={{
+                              ...fetusChartData[fetus.fetusId].weightData,
+                              datasets: [
+                                ...fetusChartData[fetus.fetusId].weightData.datasets,
+
+                              ]
+                            }}
+                            options={{
+                              ...chartOptions,
+                              scales: {
+                                ...chartOptions.scales,
+                                y: {
+                                  ...chartOptions.scales.y,
+                                  title: {
+                                    display: true,
+                                    text: 'Cân nặng (g)'
+                                  }
+                                }
+                              }
+                            }}
                           />
                         ) : (
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              height: "100%",
-                              fontSize: "16px",
-                              color: "#666",
-                            }}
-                          >
+                          <div style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            height: "100%",
+                            fontSize: "16px",
+                            color: "#666",
+                          }}>
                             Loading...
                           </div>
                         )}
@@ -1901,6 +2088,12 @@ function Baby() {
                 )
             )}
           </Row>
+          <Divider style={{
+            margin: "20px 0",
+            borderTop: "2px solid #f0f0f0"
+          }} />
+
+
 
           {/* Height Charts */}
           <Row>
@@ -1908,9 +2101,14 @@ function Baby() {
               (fetus, index) =>
                 fetus.status !== "CANCEL" && (
                   <Col
-                    span={20}
+                    span={24}
                     offset={2}
-                    style={{ marginBottom: "20px" }}
+                    style={{
+                      marginBottom: "20px",
+                      padding: "0 100px",
+                      maxWidth: "1200px",
+                      margin: "0 auto"
+                    }}
                     key={`height-${fetus.fetusId}`}
                     ref={heightChartRef}
                   >
@@ -1920,8 +2118,7 @@ function Baby() {
                           style={{
                             fontSize: "20px",
                             fontFamily: "Montserrat, sans-serif",
-                            background:
-                              "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
+                            background: "linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)",
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",
                             fontWeight: "bold",
@@ -1935,8 +2132,7 @@ function Baby() {
                         width: "100%",
                         borderRadius: "15px",
                         boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                        background:
-                          "linear-gradient(to right bottom, #fff, #f8f8f8)",
+                        background: "linear-gradient(to right bottom, #fff, #f8f8f8)",
                       }}
                       headStyle={{
                         borderBottom: "2px solid rgb(130, 197, 96)",
@@ -1945,17 +2141,35 @@ function Baby() {
                     >
                       <div
                         style={{
-                          height: "600px",
+                          height: "400px",
                           width: "100%",
-                          padding: "20px",
+                          padding: "10px",
                           borderRadius: "10px",
                           background: "#fff",
                         }}
                       >
                         {fetusChartData[fetus.fetusId]?.heightData ? (
                           <Line
-                            data={fetusChartData[fetus.fetusId].heightData}
-                            options={chartOptions}
+                            data={{
+                              ...fetusChartData[fetus.fetusId].heightData,
+                              datasets: [
+                                ...fetusChartData[fetus.fetusId].heightData.datasets,
+
+                              ]
+                            }}
+                            options={{
+                              ...chartOptions,
+                              scales: {
+                                ...chartOptions.scales,
+                                y: {
+                                  ...chartOptions.scales.y,
+                                  title: {
+                                    display: true,
+                                    text: 'Chiều dài (mm)'
+                                  }
+                                }
+                              }
+                            }}
                           />
                         ) : (
                           <div
@@ -1978,15 +2192,25 @@ function Baby() {
             )}
           </Row>
 
+          <Divider style={{
+            margin: "20px 0",
+            borderTop: "2px solid #f0f0f0"
+          }} />
+
           {/* Head Circumference Charts */}
           <Row>
             {pregnancyData?.fetuses?.map(
               (fetus, index) =>
                 fetus.status !== "CANCEL" && (
                   <Col
-                    span={20}
+                    span={24}
                     offset={2}
-                    style={{ marginBottom: "20px" }}
+                    style={{
+                      marginBottom: "20px",
+                      padding: "0 100px",  // Tăng padding để thu hẹp chiều ngang
+                      maxWidth: "1200px",  // Giới hạn chiều rộng tối đa
+                      margin: "0 auto"
+                    }}
                     key={`circumference-${fetus.fetusId}`}
                     ref={circumferenceChartRef}
                   >
@@ -2021,18 +2245,22 @@ function Baby() {
                     >
                       <div
                         style={{
-                          height: "600px",
+                          height: "400px",  // Giảm chiều cao từ 600px xuống 400px
                           width: "100%",
-                          padding: "20px",
+                          padding: "10px",  // Giảm padding nội dung
                           borderRadius: "10px",
                           background: "#fff",
                         }}
                       >
                         {fetusChartData[fetus.fetusId]?.circumferenceData ? (
                           <Line
-                            data={
-                              fetusChartData[fetus.fetusId].circumferenceData
-                            }
+                            data={{
+                              ...fetusChartData[fetus.fetusId].circumferenceData,
+                              datasets: [
+                                ...fetusChartData[fetus.fetusId].circumferenceData.datasets,
+
+                              ]
+                            }}
                             options={chartOptions}
                           />
                         ) : (
@@ -2121,84 +2349,18 @@ function Baby() {
                 pregnancyHistoryData.map((pregnancy, index) => (
                   <Card
                     key={pregnancy.pregnancyId || index}
-                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${
-                      pregnancy.status === "ONGOING"
-                        ? "Đang mang thai"
-                        : "Đã kết thúc"
-                    }`}
+                    title={`Thai kỳ thứ ${index + 1} - Trạng thái: ${pregnancy.status === "ONGOING"
+                      ? "Đang mang thai"
+                      : "Đã kết thúc"
+                      }`}
                     style={{ marginBottom: 16 }}
                     extra={
-                      // ... existing code ...
+                  
                       pregnancy.status === "ONGOING" && (
                         <Space>
-                          <Button
-                            type="primary"
-                            danger
-                            style={{
-                              marginTop: 10,
-                              background:
-                                "linear-gradient(45deg, #ff4d4f, #ff7875)",
-                              // ... existing styles ...
-                            }}
-                            onClick={() => {
-                              Modal.confirm({
-                                title: "Xác nhận kết thúc thai kỳ",
-                                content:
-                                  "Bạn có chắc chắn muốn kết thúc thai kỳ này không? Hành động này không thể hoàn tác.",
-                                okText: "Xác nhận",
-                                cancelText: "Hủy",
-                                onOk: async () => {
-                                  try {
-                                    await handleCancelPregnancy(
-                                      pregnancyData.pregnancyId
-                                    );
-                                    message.success("Đã kết thúc thai kỳ");
-                                  } catch (error) {
-                                    message.error("Không thể kết thúc thai kỳ");
-                                  }
-                                },
-                              });
-                            }}
-                          >
-                            Kết thúc thai kỳ chính
-                          </Button>
-
-                          <Button
-                            type="primary"
-                            style={{
-                              marginTop: 10,
-                              background:
-                                "linear-gradient(45deg, #52c41a, #73d13d)",
-                              // ... existing styles ...
-                            }}
-                            onClick={() => {
-                              Modal.confirm({
-                                title: "Xác nhận hoàn thành thai kỳ",
-                                content:
-                                  "Bạn có chắc chắn muốn đánh dấu thai kỳ này là đã hoàn thành? Hành động này không thể hoàn tác.",
-                                okText: "Xác nhận",
-                                cancelText: "Hủy",
-                                onOk: async () => {
-                                  try {
-                                    await handleUpdateStatus(
-                                      pregnancyData.pregnancyId
-                                    );
-                                    message.success(
-                                      "Thai kỳ đã được đánh dấu là hoàn thành"
-                                    );
-                                  } catch (error) {
-                                    message.error(
-                                      "Không thể hoàn thành thai kỳ"
-                                    );
-                                  }
-                                },
-                              });
-                            }}
-                          >
-                            Hoàn thành thai kỳ
-                          </Button>
+                          
                         </Space>
-                        // ... existing code ...
+                     
                       )
                     }
                   >
@@ -2208,24 +2370,24 @@ function Baby() {
                           <strong>Ngày bắt đầu:</strong>{" "}
                           {pregnancy.startDate
                             ? new Date(pregnancy.startDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày dự sinh:</strong>{" "}
                           {pregnancy.dueDate
                             ? new Date(pregnancy.dueDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Chưa có"}
                         </p>
                         <p>
                           <strong>Ngày khám gần nhất:</strong>{" "}
                           {pregnancy.examDate
                             ? new Date(pregnancy.examDate).toLocaleDateString(
-                                "vi-VN"
-                              )
+                              "vi-VN"
+                            )
                             : "Chưa có"}
                         </p>
                       </Col>
@@ -2246,15 +2408,15 @@ function Baby() {
                               pregnancy.status === "ONGOING"
                                 ? "processing"
                                 : pregnancy.status === "COMPLETED"
-                                ? "success"
-                                : "default"
+                                  ? "success"
+                                  : "default"
                             }
                           >
                             {pregnancy.status === "ONGOING"
                               ? "Đang mang thai"
                               : pregnancy.status === "COMPLETED"
-                              ? "Đã hoàn thành"
-                              : "Đã kết thúc"}
+                                ? "Đã hoàn thành"
+                                : "Đã kết thúc"}
                           </Tag>
                         </p>
                       </Col>
@@ -2313,8 +2475,8 @@ function Baby() {
                                         });
                                       }}
                                     >
-                                      Kết thúc thai nhi{" "}
-                                      {String.fromCharCode(65 + idx)}
+                                      {/* Kết thúc thai nhi{" "}
+                                      {String.fromCharCode(65 + idx)} */}
                                     </Button>
                                   )
                                 }
@@ -2326,22 +2488,22 @@ function Baby() {
                                         fetus.status === "ISSUE"
                                           ? "error"
                                           : fetus.status === "CANCEL"
-                                          ? "default"
-                                          : fetus.status === "COMPLETED"
-                                          ? "success"
-                                          : "processing"
+                                            ? "default"
+                                            : fetus.status === "COMPLETED"
+                                              ? "success"
+                                              : "processing"
                                       }
                                     >
                                       {fetus.status === "ISSUE"
                                         ? "Có vấn đề"
                                         : fetus.status === "CANCEL"
-                                        ? "Đã sảy thai"
-                                        : fetus.status === "COMPLETED"
-                                        ? "Đã hoàn thành"
-                                        : "Đang phát triển"}
+                                          ? "Đã sảy thai"
+                                          : fetus.status === "COMPLETED"
+                                            ? "Đã hoàn thành"
+                                            : "Đang phát triển"}
                                     </Tag>
                                   </Col>
-                                  <Col span={8}>
+                                  {/* <Col span={8}>
                                     <Statistic
                                       title="Cân nặng"
                                       value={fetus.weight || "Chưa có"}
@@ -2361,7 +2523,7 @@ function Baby() {
                                       value={fetus.circumference || "Chưa có"}
                                       suffix="mm"
                                     />
-                                  </Col>
+                                  </Col> */}
                                 </Row>
                               </Card>
                             </Col>
@@ -2369,10 +2531,10 @@ function Baby() {
                         </Row>
                       </>
                     )}
-                    <Divider>Ghi chú</Divider>
+                    {/* <Divider>Ghi chú</Divider>
                     <Text type="secondary">
                       {pregnancy.notes || "Không có ghi chú"}
-                    </Text>
+                    </Text> */}
                   </Card>
                 ))
               ) : (

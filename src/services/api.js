@@ -982,8 +982,6 @@ const api = {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        console.log("Updating status:", { reminderId, status }); // Debug log
-
         const response = await fetch(
           `${API_BASE_URL}/api/reminders/${reminderId}/status`,
           {
@@ -996,16 +994,12 @@ const api = {
           }
         );
 
-        const responseText = await response.text();
-        console.log("Status update response:", responseText);
-
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to update reminder status");
+          throw new Error("Failed to update reminder status");
         }
 
-        const data = await response.json();
-        return data;
+        // Remove the duplicate response.text() call
+        return true;
       } catch (error) {
         console.error("Update reminder status error:", error);
         throw error;
@@ -1327,8 +1321,9 @@ const api = {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Failed to create pregnancy");
+          const errorData = await response.json(); // Lấy dữ liệu lỗi từ server
+          throw new Error(JSON.stringify(errorData)); // Ném lỗi dưới dạng JSON string
+          
         }
 
         const result = await response.json();
@@ -1338,7 +1333,6 @@ const api = {
         throw error;
       }
     },
-
     updatePregnancyStatus: async (pregnancyId, fetusId, status) => {
       try {
         const token = localStorage.getItem("token");
@@ -1387,7 +1381,6 @@ const api = {
         throw error;
       }
     },
-
     // For individual fetus status update (keep existing method)
     updateFetusStatus: async (pregnancyId, fetusId, status) => {
       try {
@@ -1415,7 +1408,6 @@ const api = {
         throw error;
       }
     },
-
     updatePregnancy: async (pregnancyId, updateData) => {
       try {
         const token = localStorage.getItem("token");
@@ -1697,6 +1689,58 @@ const api = {
         return [];
       }
     },
+    getGrowthPrediction: async (fetusId) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/fetus-records/${fetusId}/growth-data`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            mode: "cors",
+            credentials: "include",
+          }
+        );
+
+        const responseText = await response.text();
+        console.log("Growth prediction response:", responseText);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch growth prediction data");
+        }
+
+        try {
+          const data = JSON.parse(responseText);
+          return {
+            weightPrediction: data.weightPrediction || [],
+            lengthPrediction: data.lengthPrediction || [],
+            headPrediction: data.headPrediction || []
+          };
+        } catch (parseError) {
+          console.error("Parse error:", parseError);
+          return {
+            weightPrediction: [],
+            lengthPrediction: [],
+            headPrediction: []
+          };
+        }
+      } catch (error) {
+        console.error("Get growth prediction error:", error);
+        return {
+          weightPrediction: [],
+          lengthPrediction: [],
+          headPrediction: []
+        };
+      }
+    },
   },
   standards: {
     getPregnancyStandards: async (fetusNumber) => {
@@ -1758,6 +1802,7 @@ const api = {
         return [];
       }
     },
+
   },
   payment: {
     createPaymentUrl: async (userId, packageId) => {
