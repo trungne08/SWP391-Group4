@@ -5,12 +5,12 @@ import api from '../services/api';
 const { Title, Text } = Typography;
 
 function AdminMember() {
-  const [members, setMembers] = useState([]);
-  const [pageSize, setPageSize] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [members, setMembers] = useState([]);// Danh sách người dùng
+  const [pageSize, setPageSize] = useState(10); // Số người dùng mỗi trang
+  const [currentPage, setCurrentPage] = useState(1);// Trang hiện tại
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [selectedMember, setSelectedMember] = useState(null);
+  const [loading, setLoading] = useState(true);// Trạng thái loading
+  const [selectedMember, setSelectedMember] = useState(null);// Người dùng được chọn
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);

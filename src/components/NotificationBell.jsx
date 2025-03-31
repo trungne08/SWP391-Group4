@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge, IconButton, Menu, MenuItem, Typography } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { onMessageListener } from '../firebase/firebase-config';
@@ -7,6 +8,7 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const setupNotifications = () => {
@@ -53,6 +55,20 @@ const NotificationBell = () => {
     setUnreadCount(0);
   };
 
+  const handleNotificationClick = (notification) => {
+    // Mark this notification as read
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === notification.id ? { ...notif, read: true } : notif
+      )
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    
+    // Navigate to reminder page
+    navigate('/reminder');
+    setAnchorEl(null); // Close the menu
+  };
+
   return (
     <>
       <IconButton
@@ -82,10 +98,14 @@ const NotificationBell = () => {
           </MenuItem>
         ) : (
           notifications.map((notification) => (
-            <MenuItem key={notification.id} sx={{ 
-              whiteSpace: 'normal',
-              backgroundColor: notification.read ? 'inherit' : '#f0f4f8'
-            }}>
+            <MenuItem 
+              key={notification.id} 
+              sx={{ 
+                whiteSpace: 'normal',
+                backgroundColor: notification.read ? 'inherit' : '#f0f4f8'
+              }}
+              onClick={() => handleNotificationClick(notification)}
+            >
               <div>
                 <Typography variant="subtitle2" fontWeight="bold">
                   {notification.title}
