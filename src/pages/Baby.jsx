@@ -382,7 +382,6 @@ function Baby() {
       label: "Lịch tiêm ",
       onClick: () => navigate("/reminder"),
     },
-    { icon: faPersonBreastfeeding, label: "Lịch tiêm", ref: vaccinationRef },
 
     {
       icon: faList,
