@@ -15,10 +15,10 @@ function ChangePassword() {
         newPassword: values.newPassword,
         confirmPassword: values.confirmPassword
       });
-      message.success('Password changed successfully');
+      message.success('Đổi mật khẩu thành công');
       navigate(-1);
     } catch (error) {
-      message.error(error.message || 'Failed to change password');
+      message.error(error.message || 'Đổi mật khẩu thất bại');
     } finally {
       setLoading(false);
     }
@@ -33,7 +33,7 @@ function ChangePassword() {
       borderRadius: '8px',
       boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
     }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Change Password</h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Đổi Mật Khẩu</h2>
       <Form
         name="changePassword"
         onFinish={onFinish}
@@ -41,36 +41,36 @@ function ChangePassword() {
         style={{ width: '100%' }}
       >
         <Form.Item
-          label="Current Password"
+          label="Mật Khẩu Hiện Tại"
           name="currentPassword"
-          rules={[{ required: true, message: 'Please input your current password!' }]}
+          rules={[{ required: true, message: 'Vui lòng nhập mật khẩu hiện tại!' }]}
         >
           <Input.Password />
         </Form.Item>
 
         <Form.Item
-          label="New Password"
+          label="Mật Khẩu Mới"
           name="newPassword"
           rules={[
-            { required: true, message: 'Please input your new password!' },
-            { min: 6, message: 'Password must be at least 6 characters!' }
+            { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
+            { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
           ]}
         >
           <Input.Password />
         </Form.Item>
 
         <Form.Item
-          label="Confirm New Password"
+          label="Xác Nhận Mật Khẩu Mới"
           name="confirmPassword"
           dependencies={['newPassword']}
           rules={[
-            { required: true, message: 'Please confirm your new password!' },
+            { required: true, message: 'Vui lòng xác nhận mật khẩu mới!' },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue('newPassword') === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('The two passwords do not match!'));
+                return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
               },
             }),
           ]}
@@ -86,10 +86,10 @@ function ChangePassword() {
             marginTop: '12px'
           }}>
             <Button type="primary" htmlType="submit" loading={loading}>
-              Change Password
+              Đổi Mật Khẩu
             </Button>
             <Button onClick={() => navigate(-1)}>
-              Cancel
+              Hủy
             </Button>
           </div>
         </Form.Item>
