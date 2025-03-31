@@ -148,26 +148,30 @@ const HomePage = () => {
             Bắt Đầu Khám Phá
           </Button>
           
-          <Link 
-            to="/reminder"
-            style={{ 
-              textDecoration: 'none',
-              marginTop: '15px',
-              textAlign: 'center',
-            }}
-          >
-            <Typography
-              sx={{
-                color: '#FF69B4',
-                fontSize: '0.9rem',
-                '&:hover': {
-                  textDecoration: 'underline',
-                }
+          {(dueReminders.today.length > 0 || dueReminders.overdue.length > 0) && (
+            <Link 
+              to="/reminder"
+              style={{ 
+                textDecoration: 'none',
+                marginTop: '15px',
+                textAlign: 'center',
               }}
             >
-              Hôm nay có {dueReminders.today.length} nhắc nhở đến hạn và {dueReminders.overdue.length} nhắc nhở quá hạn
-            </Typography>
-          </Link>
+              <Typography
+                sx={{
+                  color: '#FF69B4',
+                  fontSize: '0.9rem',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  }
+                }}
+              >
+                {(dueReminders.today.length > 0 || dueReminders.overdue.length > 0) && 
+                  `Hôm nay có ${dueReminders.today.length} nhắc nhở đến hạn và ${dueReminders.overdue.length} nhắc nhở quá hạn`
+                }
+              </Typography>
+            </Link>
+          )}
         </DialogActions>
       </Dialog>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox, message, Modal, Alert } from 'antd';
+import { Calendar, Form, Input, Select, Button, TimePicker, DatePicker, Card, List, Space, Badge, Checkbox, message, Modal } from 'antd';
 import { ClockCircleOutlined, MedicineBoxOutlined, FileSearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 // Remove one of these duplicate imports
@@ -16,25 +16,7 @@ const Reminder = () => {
   const [editingReminder, setEditingReminder] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [selectedReminder, setSelectedReminder] = useState(null);  // Add this line
-  const [upcomingReminders, setUpcomingReminders] = useState([]);
 
-  // Add this useEffect after your other useEffects
-  useEffect(() => {
-    if (reminders.length > 0) {
-      checkUpcomingReminders();
-    }
-  }, [reminders]);
-
-  // Make sure this function is defined before the useEffect
-  const checkUpcomingReminders = () => {
-    const today = dayjs();
-    const upcoming = reminders.filter(reminder => {
-      const reminderDate = dayjs(reminder.date);
-      const daysUntilReminder = reminderDate.diff(today, 'day');
-      return daysUntilReminder >= 0 && daysUntilReminder <= 2 && reminder.status === 'NOT_YET';
-    });
-    setUpcomingReminders(upcoming);
-  };
   const handleUpdateReminder = async (updatedData) => {
     if (!selectedReminder?.id) return;
     try {
@@ -85,7 +67,8 @@ const Reminder = () => {
 
   const reminderTypes = [
     { value: 'APPOINTMENT', label: 'Lịch hẹn khám thai', icon: <MedicineBoxOutlined /> },
-    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế', icon: <MedicineBoxOutlined /> }
+    { value: 'MEDICAL_TASK', label: 'Nhiệm vụ y tế', icon: <MedicineBoxOutlined /> },
+    { value: 'HEALTH_ALERT', label: 'Cảnh báo sức khỏe thai nhi', icon: <FileSearchOutlined /> }
   ];
 
   const handleEdit = (reminder) => {
@@ -177,15 +160,12 @@ const Reminder = () => {
         healthAlerts: reminder.healthAlerts || []
       }));
       setReminders(formattedReminders);
-      checkUpcomingReminders(); // Add this line
     } catch (error) {
       console.error('Failed to fetch reminders:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  
 
   const onFinish = async (values) => {
     try {
@@ -295,24 +275,6 @@ const Reminder = () => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {upcomingReminders.length > 0 && (
-        <Alert
-          message="Nhắc nhở sắp tới"
-          description={
-            <ul style={{ margin: 0, paddingLeft: '20px' }}>
-              {upcomingReminders.map(reminder => (
-                <li key={reminder.id}>
-                  {`${reminder.title} - ${reminder.date.format('DD/MM/YYYY')}`}
-                </li>
-              ))}
-            </ul>
-          }
-          type="error"
-          showIcon
-          closable
-          style={{ marginBottom: '24px' }}
-        />
-      )}
       <h1>Lịch nhắc nhở</h1>
       
       <div style={{ display: 'flex', gap: '24px' }}>
@@ -566,3 +528,5 @@ const Reminder = () => {
 };
 
 export default Reminder;
+
+// Add this function near other handler functions
